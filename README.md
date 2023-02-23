@@ -59,6 +59,7 @@ Open the terminal and enter the following commands to ensure you have all of the
 ```buildoutcfg
 # Check if you already have homebrew
 $ which brew
+
 # If you see /usr/local/bin/brew, you already have it! If you don't...
 $ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
@@ -69,11 +70,14 @@ Enter your macOS credentials if and when asked. If you get a pop-up alert asking
 ```buildoutcfg
 # Check if you already have python
 $ python --version
+
 # If you see 'Python 3.9.5', you already have it! If you don't...
 $ brew update && brew upgrade
 $ brew install python3
+
 # To check if this was successful...
 $ pip3
+
 # You should only see the help information from pip3 if your python installation was successful
 ```
 

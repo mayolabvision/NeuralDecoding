@@ -1,3 +1,14 @@
+# Example of correctly formatting data
+
+# Neural data should be a matrix of size "number of time bins" x "number of neurons", where each entry is the firing rate of a given neuron in a given time bin
+#The output you are decoding should be a matrix of size "number of time bins" x "number of features you are decoding"
+#In this example, we load Matlab data that contains
+
+#The spike times of all neurons. In Matlab, "spike_times" is a cell of size "number of neurons" x 1. Within spike_times{i} is a vector containing all the spike times of neuron i.
+#A continuous stream of the output variables. In this example, we are aiming to decode velocity. In Matlab, "vels" is a matrix of size "number of recorded time points" x 2 (x and y velocities were recorded) that contains the x and y velocity components at all time points. "vel_times" is a vector that states the time at all recorded time points.
+
+shutup.please() # if you want to supress warnings, type $ pip install shutup into your terminal
+
 # Import all necessary packages and functions
 import numpy as np
 from scipy import io
@@ -35,5 +46,5 @@ vels_binned  =  bin_output(vels,vel_times,dt,t_start,t_end,downsample_factor)
 # Pickle the file
 data_folder='/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets/' #FOLDER YOU WANT TO SAVE THE DATA TO
 
-with open(data_folder+'MTFEF-pa29dir4A-1600ms.pickle','wb') as f:
+with open(data_folder+'test_MTFEF-pa29dir4A-1600ms.pickle','wb') as f:
     pickle.dump([neural_data,vels_binned],f)

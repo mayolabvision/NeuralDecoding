@@ -13,7 +13,7 @@ session  =  'pa29dir4A';
 preint   =  800;
 postint  =  800;
 
-folder  =  '/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets';
+folder  =  '/Users/kendranoneman/Projects/mayo/data/neural-decoding';
 data = load('-mat',sprintf('%s/raw/combinedMaestroSpkSortMTFEF.%s.mat',folder,session));
 
 data.exp.dataMaestroPlx(find(cellfun(@isempty, {data.exp.dataMaestroPlx.units}.'))) = []; % throw out empty trials
@@ -64,8 +64,11 @@ trialTbl.Number = (1:size(trialTbl,1))';
 outputs  =  trialTbl.Eye_Traces;
 outputs  =  [vertcat(outputs{:,1}) vertcat(outputs{:,2}) vertcat(outputs{:,3}) vertcat(outputs{:,4}) vertcat(outputs{:,5}) vertcat(outputs{:,6}) vertcat(outputs{:,7}) vertcat(outputs{:,8})];
 
+pos  =  outputs(:,1:2);
+vels  =  outputs(:,3:4);
+
 output_times = rowfun(@add_time, trialTbl, 'InputVariables',{'Times','StartTime'},'OutputFormat','cell');
-output_times = vertcat(output_times{:});
+vel_times = vertcat(output_times{:});
 
 %%
 %%%%%%%%%%%%%%% Unit Info %%%%%%%%%%%%%%%%%%%
@@ -152,7 +155,7 @@ unitsTbl.UnitName   =  categorical(string(unitsTbl.UnitName));
 unitsTbl.BrainArea  =  categorical(string(unitsTbl.BrainArea));
 
 % Save to a file
-save(sprintf('%s/preprocessed/MTFEF-%s-1600ms.mat',folder,session),'spike_times','outputs','output_times','trialTbl','unitsTbl');
+save(sprintf('%s/preprocessed/MTFEF-%s-1600ms.mat',folder,session),'spike_times','pos','vels','vel_times');
 
 function eye_times = add_time(tms,a)
     eye_times = tms{1} + (a-1);

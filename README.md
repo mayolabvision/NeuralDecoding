@@ -84,7 +84,7 @@ $ pip3
 $ pip install notebook
 ```
 
-3. Clone this repository onto your local machine
+4. Clone the **NeuralDecoding** repository onto your local machine
 
 ```buildoutcfg
 # Change the current working directory to the location where you want the cloned directory.
@@ -93,7 +93,7 @@ $ git clone git@github.com:mayolabvision/NeuralDecoding.git
 # If it says "Unpacking objects: 100%... done., then it worked!
 ```
 
-4. Install the **Neural_Decoding** package from the Kording Lab.
+5. Install the **Neural_Decoding** package from the Kording Lab.
 
 ```buildoutcfg
 $ pip install Neural-Decoding

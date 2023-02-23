@@ -14,7 +14,7 @@ It is still somewhat unknown how these neurons, that are selective to different 
 ### Immediate goals and questions:
 
 1. Can we decode eye movement trajectories from neuronal activity?
-    - Yes. Previous results (from Bing) show that we can decode what direction the eyes moved from neural activity.
+    - Previous results (from Bing) show that we can decode what direction the eyes moved from neural activity.
     - What do neurons "care about"? What are they sensitive to? 
 2. How do neurons from different brain regions contribute to generating eye movements? 
     - Will neuronal activity in one brain region (FEF v. MT) do a better job of decoding eye movements?

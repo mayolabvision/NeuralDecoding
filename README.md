@@ -47,15 +47,12 @@ It is still somewhat unknown how these neurons, that are selective to different 
 * **Saccade**: a rapid movement of the eye between fixation points
 * **Smooth pursuit**: a type of eye movement in which the eyes remain fixated on a moving object
 
-### Experimental Paradigm:
-
-
 
 ## Getting Started:
 ### For Mac OS X
 Open the terminal and enter the following commands to ensure you have all of the necessary programs/packages installed:
 
-1. Homebrew
+1. Install **Homebrew**
 ```buildoutcfg
 # Check if you already have homebrew
 $ which brew
@@ -65,7 +62,7 @@ $ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/
 ```
 Enter your macOS credentials if and when asked. If you get a pop-up alert asking you to install Apple's command line developer tools, install them and homebrew will finish installing after. 
 
-2. Python3
+2. Install **Python3**
 
 ```buildoutcfg
 # Check if you already have python
@@ -80,4 +77,27 @@ $ pip3
 
 # You should only see the help information from pip3 if your python installation was successful
 ```
+
+3. Install **Jupyter Notebook**
+
+```buildoutcfg
+$ pip install notebook
+```
+
+3. Clone this repository onto your local machine
+
+```buildoutcfg
+# Change the current working directory to the location where you want the cloned directory.
+$ git clone git@github.com:mayolabvision/NeuralDecoding.git
+
+# If it says "Unpacking objects: 100%... done., then it worked!
+```
+
+4. Install the **Neural_Decoding** package from the Kording Lab.
+
+```buildoutcfg
+$ pip install Neural-Decoding
+```
+This should install of the basic packages and dependencies you will need to run all of the decoders, but if it doesn't ask Kendra for help.
+
 

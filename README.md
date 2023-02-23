@@ -100,4 +100,6 @@ $ pip install Neural-Decoding
 ```
 This should install of the basic packages and dependencies you will need to run all of the decoders, but if it doesn't ask Kendra for help.
 
+## Other Useful Links:
 
+* [Reading .mat files in Python](https://discourse.julialang.org/t/how-to-read-tables-out-of-a-mat-file/70098)

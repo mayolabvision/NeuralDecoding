@@ -9,7 +9,33 @@ In our lab we are interested in understanding how the brain coordinates eye move
 As an example, imagine you are trying to swat a fly. As the fly zooms around the room, you are trying to keep your eyes fixated on its flight trajectory so when it eventually lands you can be ready to pounce. In your brain, there are different regions responsible for handling different aspects of this scenario. There are *sensory* regions that keep track of where the fly is and how fast it is moving; and then there are *motor* regions which determine where you'll need to look based on the information sent to it by the sensory areas. To accurately keep your eyes positioned on the fly, these brain regions with seemingly different roles have to rapidly communicate back and forth.
 This relaying of sensorimotor signals occurs at the level of neurons, which act as information messengers via electrical impulses. Neurons within one brain region and across different brain regions communicate with one another to accomplish some goal, like moving the eyes to track a fly. But even within a single brain region, neurons care about different things and are sensitive to different aspects of our environments. Some neurons may care about the identity of a visual stimulus (e.g. fly, bee, or butterfly) whereas other neurons are sensitive to what direction the flying insect is moving. 
 
-It is still somewhat unknown how these neurons, that are selective to different features of the visual world, come together to accomplish some goal. How can we determine what neurons *care about* and how do their selectivities to certain stimuli modualte their activity?  
+It is still somewhat unknown how these neurons, that are selective to different features of the visual world, come together to accomplish some goal. How can we determine what neurons *care about* and how do their selectivities to certain stimuli modualte their activity?   
+
+### Immediate goals and questions:
+
+1. Can we decode eye movement trajectories from neuronal activity?
+    - Yes. Previous results (from Bing) show that we can decode what direction the eyes moved from neural activity.
+    - What do neurons "care about"? What are they sensitive to? 
+2. How do neurons from different brain regions contribute to generating eye movements? 
+    - Will neuronal activity in one brain region (FEF v. MT) do a better job of decoding eye movements?
+3. How many neurons in each brain region are required to reach some fixed level of decoding performance? 
+4. Does the neural decoder generalize well across different stimulus features? How tolerant or intolerant are neurons to specific visual parameters?
+    - If you build a decoder based on neural activity recorded when the monkey sees a stimulus with a high contrast, will it perform as well when shown brain activity recorded with a dimmer contrast?
+    - What about the speed of a moving target on the screen?
+5. How does model efficiency and performance compare across different types of decoders?
+    - There are many types of regression (Wiener filter, Wiener cascade, Kalman filter, Naive Bayes, Support Vector Regression, XGBoost, Dense Neural Network, Recurrent Neural Net, GRU, LSTM) and classification (Logistic Regression, Support Vector Classification, XGBoost, Dense Neural Network, Recurrent Neural Net, GRU, LSTM) models to try.
+
+### Future ideas and applications:
+1. Can we decode what type of eye movements the monkey is making?
+    - From neurons in FEF, which respond to either/both saccades or pursuit, can we decode which type of eye movement they are making? Using *pursuity* neurons, can we decode what direction the monkey pursued a target? What direction they made a saccade? 
+2. Can we use this decoding model for real-time, online BCI experiments?
+    - As the monkey moves their eyes, could you change the task they are doing based on real-time decoding?
+3. Can we use this decoding model to conduct "blind" recording and decodings?
+    - Based on the decoding technique that we know works (eye movements from neurons), could you move the recording electrode to an entirely new place blindly and be able to decode anything?
+4. Can we use brain-decoded eye positions to inform/complement standard eye movement recordings?
+    - Do neural recordings do a good job pairing up to eye tracking data?
+    - Could you skip over eye tracking by using a decoder?
+5. Could we use these types of decoding models to inform the design of visual prostheses?
 
 ### Basic definitions:
 * **Neuron**: a specialized cell transmitting nerve impulses

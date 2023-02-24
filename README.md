@@ -49,10 +49,33 @@ It is still somewhat unknown how these neurons, that are selective to different 
 
 
 ## Getting Started:
-### For Mac OS X
+
+###  Installing all necessary code and packages
+**Modules you will need**:
+* python
+* homebrew
+* pip
+* git
+* Jupyter 
+
+#### For Mac OS X
 Open the terminal and enter the following commands to ensure you have all of the necessary programs/packages installed:
 
-1. Install **Homebrew**
+1. Download or clone this repository (mayolabvision: NeuralDecoding) onto your local machine.
+```buildoutcfg
+# Change the current working directory to the location where you want the cloned directory.
+$ git clone git@github.com:mayolabvision/NeuralDecoding.git
+
+# If it says "Unpacking objects: 100%... done., then it worked!
+```
+In this project-dedicated repository, you will find:
+* **Glaser_Chowdhury-Machine_Learning_for_Neural_Decoding-2020.pdf**: paper with more information about how each type of decoder works and how they are applied to neuroscience
+* **example/decoding_eye_position_example.ipynb**: example python jupyter notebook showing how to upload the preprocessed data (type .pickle) and run each of the decoders
+* **example/results/**: outputs from example python notebook 
+* **/datasets **: contains pre-processed .pickle files for each recording session (explained in more detail in *data format* section)
+* **/handy_functions**: contains pre-processing functions (both in python and matlab), code for the decoding models, and other metrics.     
+
+2. Install **Homebrew**
 ```buildoutcfg
 # Check if you already have homebrew
 $ which brew
@@ -62,7 +85,7 @@ $ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/
 ```
 Enter your macOS credentials if and when asked. If you get a pop-up alert asking you to install Apple's command line developer tools, install them and homebrew will finish installing after. 
 
-2. Install **Python3**
+3. Install **Python3**
 
 ```buildoutcfg
 # Check if you already have python
@@ -78,22 +101,22 @@ $ pip3
 # You should only see the help information from pip3 if your python installation was successful
 ```
 
-3. Install **Jupyter Notebook**
+4. Install the **Neural_Decoding** package from the Kording Lab.
+
+```buildoutcfg
+$ pip install Neural-Decoding
+```
+This should install of the basic packages and dependencies you will need to run all of the decoders, but if it doesn't ask Kendra for help.
+
+
+5. Install **Jupyter Notebook**
 
 ```buildoutcfg
 $ pip install notebook
 ```
 
-4. Clone the **NeuralDecoding** repository onto your local machine
 
-```buildoutcfg
-# Change the current working directory to the location where you want the cloned directory.
-$ git clone git@github.com:mayolabvision/NeuralDecoding.git
-
-# If it says "Unpacking objects: 100%... done., then it worked!
-```
-
-5. Install the **Neural_Decoding** package from the Kording Lab.
+6. Install the **Neural_Decoding** package from the Kording Lab.
 
 ```buildoutcfg
 $ pip install Neural-Decoding

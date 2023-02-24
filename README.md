@@ -56,7 +56,12 @@ It is still somewhat unknown how these neurons, that are selective to different 
 * homebrew
 * pip
 * git
-* Jupyter 
+* Jupyter
+* TensorFlow
+* Keras
+* XGBoost
+* scikit-learn
+* BayesianOptimization
 
 #### For Mac OS X
 Open the terminal and enter the following commands to ensure you have all of the necessary programs/packages installed:
@@ -114,7 +119,6 @@ This should install of the basic packages and dependencies you will need to run 
 ```buildoutcfg
 $ pip install notebook
 ```
-
 
 6. Install the **Neural_Decoding** package from the Kording Lab.
 

@@ -4,61 +4,61 @@ import numpy as np
 from numpy.linalg import inv as inv #Used in kalman filter
 
 #Used for naive bayes decoder
-try:
-    import statsmodels.api as sm
-except ImportError:
-    print("\nWARNING: statsmodels is not installed. You will be unable to use the Naive Bayes Decoder")
-    pass
-try:
-    import math
-except ImportError:
-    print("\nWARNING: math is not installed. You will be unable to use the Naive Bayes Decoder")
-    pass
-try:
-    from scipy.spatial.distance import pdist
-    from scipy.spatial.distance import squareform
-    from scipy.stats import norm
-    from scipy.spatial.distance import cdist
-except ImportError:
-    print("\nWARNING: scipy is not installed. You will be unable to use the Naive Bayes Decoder")
-    pass
+#try:
+import statsmodels.api as sm
+#except ImportError:
+#    print("\nWARNING: statsmodels is not installed. You will be unable to use the Naive Bayes Decoder")
+#    pass
+#try:
+import math
+#except ImportError:
+#    print("\nWARNING: math is not installed. You will be unable to use the Naive Bayes Decoder")
+#    pass
+#try:
+from scipy.spatial.distance import pdist
+from scipy.spatial.distance import squareform
+from scipy.stats import norm
+from scipy.spatial.distance import cdist
+#except ImportError:
+#    print("\nWARNING: scipy is not installed. You will be unable to use the Naive Bayes Decoder")
+#    pass
 
 
 
 #Import scikit-learn (sklearn) if it is installed
-try:
-    from sklearn import linear_model #For Wiener Filter and Wiener Cascade
-    from sklearn.svm import SVR #For support vector regression (SVR)
-    from sklearn.svm import SVC #For support vector classification (SVM)
-except ImportError:
-    print("\nWARNING: scikit-learn is not installed. You will be unable to use the Wiener Filter or Wiener Cascade Decoders")
-    pass
+#try:
+from sklearn import linear_model 
+from sklearn.svm import SVR #For support vector regression (SVR)
+from sklearn.svm import SVC #For support vector classification (SVM)
+#except ImportError:
+#    print("\nWARNING: scikit-learn is not installed. You will be unable to use the Wiener Filter or Wiener Cascade Decoders")
+#    pass
 
 #Import XGBoost if the package is installed
-try:
-    import xgboost as xgb #For xgboost
-except ImportError:
-    print("\nWARNING: Xgboost package is not installed. You will be unable to use the xgboost decoder")
-    pass
+#try:
+import xgboost as xgb #For xgboost
+#except ImportError:
+#    print("\nWARNING: Xgboost package is not installed. You will be unable to use the xgboost decoder")
+#    pass
 
 #Import functions for Keras if Keras is installed
 #Note that Keras has many more built-in functions that I have not imported because I have not used them
 #But if you want to modify the decoders with other functions (e.g. regularization), import them here
-try:
-    import keras
-    keras_v1=int(keras.__version__[0])<=1
-    from keras.models import Sequential
-    from keras.layers import Dense, LSTM, SimpleRNN, GRU, Activation, Dropout
-    from keras.utils import np_utils
-except ImportError:
-    print("\nWARNING: Keras package is not installed. You will be unable to use all neural net decoders")
-    pass
+#try:
+import keras
+keras_v1=int(keras.__version__[0])<=1
+from keras.models import Sequential
+from keras.layers import Dense, LSTM, SimpleRNN, GRU, Activation, Dropout
+from keras.utils import np_utils
+#except ImportError:
+#    print("\nWARNING: Keras package is not installed. You will be unable to use all neural net decoders")
+#    pass
 
-try:
-    from sklearn.preprocessing import OneHotEncoder
-except ImportError:
-    print("\nWARNING: Sklearn OneHotEncoder not installed. You will be unable to use XGBoost for Classification")
-    pass
+#try:
+from sklearn.preprocessing import OneHotEncoder
+#except ImportError:
+#    print("\nWARNING: Sklearn OneHotEncoder not installed. You will be unable to use XGBoost for Classification")
+#    pass
 
 
 

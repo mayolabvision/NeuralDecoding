@@ -7,7 +7,7 @@
 #The spike times of all neurons. In Matlab, "spike_times" is a cell of size "number of neurons" x 1. Within spike_times{i} is a vector containing all the spike times of neuron i.
 #A continuous stream of the output variables. In this example, we are aiming to decode velocity. In Matlab, "vels" is a matrix of size "number of recorded time points" x 2 (x and y velocities were recorded) that contains the x and y velocity components at all time points. "vel_times" is a vector that states the time at all recorded time points.
 
-shutup.please() # if you want to supress warnings, type $ pip install shutup into your terminal
+#shutup.please() # if you want to supress warnings, type $ pip install shutup into your terminal
 
 # Import all necessary packages and functions
 import numpy as np
@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 from scipy import io
 from scipy import stats
 
-from functions.preprocessing_funcs import bin_spikes
-from functions.preprocessing_funcs import bin_output
+from preprocessing_funcs import bin_spikes
+from preprocessing_funcs import bin_output
 
 # Load in variables from datafile
 folder       = '/Users/kendranoneman/Projects/mayo/data/neural-decoding/preprocessed/'
@@ -46,5 +46,5 @@ vels_binned  =  bin_output(vels,vel_times,dt,t_start,t_end,downsample_factor)
 # Pickle the file
 data_folder='/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets/' #FOLDER YOU WANT TO SAVE THE DATA TO
 
-with open(data_folder+'test_MTFEF-pa29dir4A-1600ms.pickle','wb') as f:
+with open(data_folder+'MTFEF-pa29dir4A-1600ms.pickle','wb') as f:
     pickle.dump([neural_data,vels_binned],f)

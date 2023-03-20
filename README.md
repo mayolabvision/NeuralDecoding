@@ -11,6 +11,8 @@ The coordination of sensorimotor signals occurs at the level of neurons, which a
 
 It is still unknown how these neurons, that are selective to different features of the visual world, come together to accomplish natural visual behavior such as adaptively moving the eyes. How can we determine what neurons "care about", and how does neuronal activity change in response to different types of stimuli?
 
+<img align="right" img width="514" alt="neuralDecoding_graphicalAbstract" src="https://user-images.githubusercontent.com/37158560/226387792-1016170b-3429-48a5-9fdc-3a38239a1a6d.png">
+
 ### Immediate goals and questions:
 
 1. Can we decode eye movement trajectories from neuronal activity?

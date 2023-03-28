@@ -130,3 +130,4 @@ This should install of the basic packages and dependencies you will need to run 
 ## Other Useful Links:
 
 * [Reading .mat files in Python](https://discourse.julialang.org/t/how-to-read-tables-out-of-a-mat-file/70098)
+* [Using TensorFlow w/ Silicon Macs, via MiniForge](https://towardsdatascience.com/installing-tensorflow-and-jupyter-notebook-on-apple-silicon-macs-d30b14c74a08)

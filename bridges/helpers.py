@@ -1,8 +1,8 @@
 import os
 import numpy
 
-def make_name(mix,q,e,T,N,cc_eps):
-    return "mix{}-q{}-e{}-T{}-N{}-ccep{}".format(mix,q,e,T,N,cc_eps)
+def make_name(s,m,ba,n,r,bn,ttv):
+    return "s{}-m{}-ba{}-n{}-r{}-bn{}-ttv{}".format(s,m,ba,n,r,bn,ttv)
 
 def checkdir(name):
     if not os.path.exists(name):
@@ -12,20 +12,17 @@ def checkdir(name):
 def get_params(i):
     line = numpy.loadtxt('params.txt')[i]
     print(line)
-    mix = int(line[1])
-    q = int(line[2])
-    e = int(line[3])
-    T = float(line[4])
-    N = int(line[5])
-    cc_eps = float(line[6])
-    return mix,q,e,T,N,cc_eps
+    s = int(line[1])
+    m = int(line[2])
+    ba = int(line[3])
+    n = int(line[4])
+    r = int(line[5])
+    bn = int(line[6])
+    ttv = int(line[7])
+    return s,m,ba,n,r,bn,ttv
 
 def make_filenames(jobname):
-    m="runs/"+jobname+"/msd.log"
-    i="runs/"+jobname+"/init.xml"
-    t="runs/"+jobname+"/traj.dcd"
-    e="runs/"+jobname+"/restart.xml"
-    l="runs/"+jobname+"/log.log"
+    f="runs/"+jobname+".pickle"
     checkdir("runs/"+jobname)
-    return m,i,t,e,l
+    return f
 

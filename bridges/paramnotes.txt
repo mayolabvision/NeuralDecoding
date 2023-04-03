@@ -1,16 +1,35 @@
-#SET mix q e T N cc_eps                                  
+#SET,session,model,brainArea,numNeurons,repeats,binsPrePost,trainTestValid
+#0      1      1       2         10      1000        1            1   
 
-#mix1: 1:1 R:C        
-#mix2: 1:2 R:C
+#s1:  pa29dir4A-1600ms         
 
-#q1: qA=0 qB=0 qC=0
-#q2: qA=1 qB=-1 qC=0
-#q3: correct full charges
-#q4: correct full charges scaled to have correct dipole moment
+#m1:  Wiener Filter
+#m2:  Wiener Cascade
+#m3:  Kalman Filter
+#m4:  Naive Bayes
+#m5:  Support Vector Regression
+#m6:  XGBoost
+#m7:  Dense Neural Network
+#m8:  Recurrent Neural Net
+#m9:  GRU
+#m10: LSTM
 
-#e1: AA=1 BB=1 CC=1 AB=.5 
-#e2: AA=1 BB=.2 CC=1 AB=.2
-#e3: BB=0.06, AB=0.25: approximately correct Oxygen interactions from opls and martini C60
-#e4: AA=1 BB=0.06 CC=X AB=0.25 AC=1: cc epsilons are being changed
+#ba1: MT
+#ba2: FEF
 
-#Interaction Set #6: q1-e4
+#n1:  1 neuron (# of input nodes)
+#n2:  2 neurons
+#...
+#nN:  N neurons
+
+#r1: 1 shuffle (# of times randomly sample N neurons) 
+#r2: 2 shuffles
+#... 
+#rR: R shuffles
+
+#[bins of neural data before, bins of neural data after] to the output are used for decoding
+#bn1: [6 6]
+
+#[train, test, valid] fraction of data
+#ttv1: [0.7 0.15 0.15]
+

@@ -9,10 +9,8 @@
 #SBATCH -t 24:00:00
 #SBATCH --gres=gpu:1
 
-module use /scratch/erjank_project/mike_modules/modulefiles/
-module purge
-module load hoomd/2.1.0-sp
+source activate py3.9.5
 
-python charged-5.py $1
+python decoding-1.py $1
 #cp files you'd like to move off of scratch
 #mv files that you'd like moved off of scratch

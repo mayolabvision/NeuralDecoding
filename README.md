@@ -131,6 +131,7 @@ $ pip install Neural-Decoding
 #### For Windows
 
 1. Download **Anaconda**.  
+
 Python and all the necessary packages come with Anaconda, so you do not need to install them separately.
 
 

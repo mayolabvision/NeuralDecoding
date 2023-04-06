@@ -138,13 +138,7 @@ Python and all the necessary packages come with Anaconda, so you do not need to 
 2. Launch **Jupyter Notebook** from Anaconda Navigator
 
 
-3. Click New - Folder from the top right
-
-
-4. Ceate python file within the folder
-
-
-5. Install the **Neural_Decoding** package from the Kording Lab.
+3. Install the **Neural_Decoding** package from the Kording Lab.
 ```buildoutcfg
 # Type the command below to the notebook
 $ ! pip install Neural-Decoding

@@ -129,6 +129,7 @@ conda install -c conda-forge statsmodels
 pip install -U scikit-learn
 pip install xgboost # if this one fails because of numpy, change version of numpy with $pip install --ignore-installed numpy==1.24.2
 pip install keras
+conda install -c conda-forge tensorflow
 ```
 
 4d. Make a new kernel for this conda environment

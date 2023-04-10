@@ -108,24 +108,26 @@ pip3
 # You should only see the help information from pip3 if your python installation was successful
 ```
 
-4. Install the **Neural_Decoding** package from the Kording Lab.
-
+4a. Build a new conda environment
 ```buildoutcfg
-pip install Neural-Decoding
+# I called my environment **neuraldecoding**
+conda create --name neuraldecoding python=3.9.5
 ```
-This should install of the basic packages and dependencies you will need to run all of the decoders, but if it doesn't ask Kendra for help.
-
-
-5. Install **Jupyter Notebook**
-
+4b. Activate that conda environment
 ```buildoutcfg
+conda activate neuraldecoding
+```
+4c. Install required packages in this new environment (including the **Neural_Decoding** package from the Kording lab)
+```buildoutcfg
+pip install jupyter
 pip install notebook
+conda install -c conda-forge matplotlib
+pip install Neural-Decoding
 ```
 
-6. Install the **Neural_Decoding** package from the Kording Lab.
-
+4d. Make a new kernel for this conda environment
 ```buildoutcfg
-pip install Neural-Decoding
+ipython kernel install --name "neuraldecoding" --user
 ```
 
 #### For Windows

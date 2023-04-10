@@ -98,7 +98,7 @@ Enter your macOS credentials if and when asked. If you get a pop-up alert asking
 # Check if you already have python
 python --version
 
-# If you see 'Python 3.9.5', you already have it! If you don't...
+# If you see 'Python 3.~something~', you already have it! If you don't...
 brew update && brew upgrade
 brew install python3
 
@@ -111,7 +111,8 @@ pip3
 4a. Build a new conda environment
 ```buildoutcfg
 # I called my environment **neuraldecoding**
-conda create --name neuraldecoding python=3.9.5
+# The latest versions of Python don't work with TensorFlow yet, so you have to use 3.6  
+conda create --name neuraldecoding python=3.6
 ```
 4b. Activate that conda environment
 ```buildoutcfg
@@ -119,10 +120,15 @@ conda activate neuraldecoding
 ```
 4c. Install required packages in this new environment (including the **Neural_Decoding** package from the Kording lab)
 ```buildoutcfg
+pip install Neural-Decoding
 pip install jupyter
 pip install notebook
 conda install -c conda-forge matplotlib
-pip install Neural-Decoding
+conda install -c anaconda scipy
+conda install -c conda-forge statsmodels
+pip install -U scikit-learn
+pip install xgboost # if this one fails because of numpy, change version of numpy with $pip install --ignore-installed numpy==1.24.2
+pip install keras
 ```
 
 4d. Make a new kernel for this conda environment

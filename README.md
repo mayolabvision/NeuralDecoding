@@ -71,7 +71,7 @@ Open the terminal and enter the following commands to ensure you have all of the
 1. Download or clone this repository (mayolabvision: NeuralDecoding) onto your local machine.
 ```buildoutcfg
 # Change the current working directory to the location where you want the cloned directory.
-$ git clone git@github.com:mayolabvision/NeuralDecoding.git
+git clone git@github.com:mayolabvision/NeuralDecoding.git
 
 # If it says "Unpacking objects: 100%... done., then it worked!
 ```
@@ -85,10 +85,10 @@ In this project-dedicated repository, you will find:
 2. Install **Homebrew**
 ```buildoutcfg
 # Check if you already have homebrew
-$ which brew
+which brew
 
 # If you see /usr/local/bin/brew, you already have it! If you don't...
-$ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 Enter your macOS credentials if and when asked. If you get a pop-up alert asking you to install Apple's command line developer tools, install them and homebrew will finish installing after. 
 
@@ -96,36 +96,46 @@ Enter your macOS credentials if and when asked. If you get a pop-up alert asking
 
 ```buildoutcfg
 # Check if you already have python
-$ python --version
+python --version
 
-# If you see 'Python 3.9.5', you already have it! If you don't...
-$ brew update && brew upgrade
-$ brew install python3
+# If you see 'Python 3.~something~', you already have it! If you don't...
+brew update && brew upgrade
+brew install python3
 
 # To check if this was successful...
-$ pip3
+pip3
 
 # You should only see the help information from pip3 if your python installation was successful
 ```
 
-4. Install the **Neural_Decoding** package from the Kording Lab.
-
+4a. Build a new conda environment
 ```buildoutcfg
-$ pip install Neural-Decoding
+# I called my environment **neuraldecoding**
+# The latest versions of Python don't work with TensorFlow yet, so you have to use 3.6  
+conda create --name neuraldecoding python=3.6
 ```
-This should install of the basic packages and dependencies you will need to run all of the decoders, but if it doesn't ask Kendra for help.
-
-
-5. Install **Jupyter Notebook**
-
+4b. Activate that conda environment
 ```buildoutcfg
-$ pip install notebook
+conda activate neuraldecoding
+```
+4c. Install required packages in this new environment (including the **Neural_Decoding** package from the Kording lab)
+```buildoutcfg
+pip install Neural-Decoding
+pip install jupyter
+pip install notebook
+conda install -c conda-forge matplotlib
+conda install -c anaconda scipy
+conda install -c conda-forge statsmodels
+pip install -U scikit-learn
+pip install xgboost # if this one fails because of numpy, change version of numpy with $pip install --ignore-installed numpy==1.24.2
+pip install keras
+conda install -c conda-forge tensorflow
+pip install bayesian-optimization
 ```
 
-6. Install the **Neural_Decoding** package from the Kording Lab.
-
+4d. Make a new kernel for this conda environment
 ```buildoutcfg
-$ pip install Neural-Decoding
+ipython kernel install --name "neuraldecoding" --user
 ```
 
 #### For Windows

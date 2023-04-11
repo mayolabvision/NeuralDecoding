@@ -1,26 +1,32 @@
-#SET,session,model,brainArea,numNeurons,repeats,binsPrePost,trainTestValid
-#0      1      1       2         10      1000        1            1   
+#SET,session,timesPrePost,model,output,numMT,numFEF,repeats,binsPrePost,trainTestValid
+#0      1          1        1      0     20    20     1000        1            1   
 
-#s1:  pa29dir4A-1600ms         
+#s0:  pa29dir4A      
 
-#m1:  Wiener Filter
-#m2:  Wiener Cascade
-#m3:  Kalman Filter
-#m4:  Naive Bayes
-#m5:  Support Vector Regression
-#m6:  XGBoost
-#m7:  Dense Neural Network
-#m8:  Recurrent Neural Net
-#m9:  GRU
-#m10: LSTM
+#t0:  pre=600ms,post=600ms 
 
-#ba1: MT
-#ba2: FEF
+#m0:  Wiener Filter
+#m1:  Wiener Cascade
+#m2:  Kalman Filter
+#m3:  Naive Bayes
+#m4:  Support Vector Regression
+#m5:  XGBoost
+#m6:  Dense Neural Network
+#m7:  Recurrent Neural Net
+#m8:  GRU
+#m9:  LSTM
 
-#n1:  1 neuron (# of input nodes)
-#n2:  2 neurons
+#o1: horizontal & vertical position
+
+#nm1: 1 MT neuron
+#nm2: 2 MT neurons
 #...
-#nN:  N neurons
+#nmM: M MT neurons
+
+#nf1: 1 FEF neuron
+#nf2: 2 FEF neurons
+#...
+#nfF: M FEF neurons
 
 #r1: 1 shuffle (# of times randomly sample N neurons) 
 #r2: 2 shuffles

@@ -34,8 +34,9 @@
 #rR: R shuffles
 
 #[bins of neural data before, bins of neural data after] to the output are used for decoding
-#bn1: [6 6]
+#bn0: [0 1 0]
+#bn1: [6 1 6]
 
 #[train, test, valid] fraction of data
-#ttv1: [0.7 0.15 0.15]
+#ttv0: [0.7 0.15 0.15]
 

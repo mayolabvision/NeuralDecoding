@@ -9,10 +9,11 @@
 #SBATCH -t 00:01:00
 #SBATCH --ntasks-per-node=8
 
-on-conda 
-source activate /jet/home/knoneman/miniconda3/envs/neuraldecoding
+module purge
+module load anaconda3/2022.10
+source /jet/home/knoneman/miniconda3/envs/neuraldecoding/bin/activate
 
-cd /jet/home/knoneman/NeuralDecoding 
+cd X
 
 python ../decoding-1.py $1
 #cp files you'd like to move off of scratch

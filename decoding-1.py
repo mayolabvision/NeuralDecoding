@@ -6,8 +6,8 @@ import pickle
 import time
 import pandas as pd
 
-folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'
-sys.path.append(folder+"handy_functions") # go to parent dir
+# folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'
+#sys.path.append("handy_functions") # go to parent dir
 
 from preprocessing_funcs import get_spikes_with_history
 from metrics import get_R2
@@ -113,10 +113,10 @@ y_valid_predicted_wf=model_wf.predict(X_flat_valid)
 
 #Get metric of fit
 R2s_wf=get_R2(y_valid,y_valid_predicted_wf)
-print('R2s:', R2s_wf)
+rhos_wf=get_rho(y_valid,y_valid_pred_wf)
 
 with open(folder+pfile,'wb') as f:
-    pickle.dump([y_valid,y_train_mean,y_valid_predicted_wf,R2s_wf],f)
+    pickle.dump([y_valid,y_train_mean,y_valid_predicted_wf,R2s_wf,rhos_wf],f)
 
 
 # ### Wiener Cascade Decoder

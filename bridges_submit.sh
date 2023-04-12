@@ -11,9 +11,9 @@
 
 module purge
 module load anaconda3/2022.10
-source /jet/home/knoneman/miniconda3/envs/neuraldecoding/bin/activate
+conda activate neuraldecoding
 
-cd X
+module load /jet/home/knoneman/NeuralDecoding/handy_functions
 
 python ../decoding-1.py $1
 #cp files you'd like to move off of scratch

@@ -1,2 +1,2 @@
 0 0 0 0 0 24 41 1 0 0 #lineID,session,timesPrePost,model,output,numMT,numFEF,repeats,binsPrePost,trainTestValid 
-0 1 0 1 0 20 20 1000 1 1 
+1 1 0 1 0 20 20 1000 1 1 

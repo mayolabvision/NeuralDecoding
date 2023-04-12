@@ -9,7 +9,11 @@
 #SBATCH -t 24:00:00
 #SBATCH --gres=gpu:1
 
-source activate py3.9.5
+module purge
+module load anaconda3/2022.10
+source /jet/home/knoneman/miniconda3/envs/neuraldecoding/bin/activate
+
+cd X
 
 python decoding-1.py $1
 #cp files you'd like to move off of scratch

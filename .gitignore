@@ -3,5 +3,5 @@ example/results/*
 *.swp
 *Untitled*
 *__pycache__*
-bridges/outfiles
+runs/outfiles
 

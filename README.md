@@ -124,7 +124,7 @@ pip install Neural-Decoding
 pip install jupyter
 pip install notebook
 conda install -c conda-forge matplotlib
-conda install -c anaconda scipy
+pip install scipy==1.7 
 conda install -c conda-forge statsmodels
 pip install -U scikit-learn
 pip install xgboost # if this one fails because of numpy, change version of numpy with $pip install --ignore-installed numpy==1.24.2

@@ -138,23 +138,24 @@ pip install bayesian-optimization
 ipython kernel install --name "neuraldecoding" --user
 ```
 
-#### For Windows
+#### For Windows  
 
-1. Download **Anaconda**.  
-
-Python and all the necessary packages come with Anaconda, so you do not need to install them separately.
-
-
-2. Launch **Jupyter Notebook** from Anaconda Navigator
-
-
-3. Install the **Neural_Decoding** package from the Kording Lab.
+1. Download or clone this repository (mayolabvision: NeuralDecoding) onto your local machine.
 ```buildoutcfg
-# Type the command below to the notebook
-$ ! pip install Neural-Decoding
-```
-This should install of the basic packages and dependencies you will need to run all of the decoders, but if it doesn't ask Kendra for help.
+# Change the current working directory to the location where you want the cloned directory.
+git clone git@github.com:mayolabvision/NeuralDecoding.git
 
+# If it says "Unpacking objects: 100%... done., then it worked!  
+```  
+
+2. Install **Visual Studio Code**  
+
+3. Go to Extension, search and download **Jupyter Notebook** with VSCode  
+
+4. Install **pip** and download all the libraries required to run the code  
+
+
+This should install of the basic packages and dependencies you will need to run all of the decoders, but if it doesn't ask Kendra for help.
 
 
 ## Other Useful Links:

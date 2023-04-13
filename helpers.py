@@ -30,7 +30,7 @@ def make_filenames(jobname):
 
 def get_session(j,t,d):
     sessions = ['pa29dir4A']
-    times = [[500,300],[800,800]]
+    times = [[500,300],[100,100]]
     return sessions[j]+'-pre'+str(times[t][0])+'-post'+str(times[t][1])+'-dt'+str(d),sessions[j]+'-pre'+str(times[t][0])+'-post'+str(times[t][1])
 
 

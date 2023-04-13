@@ -1,6 +1,5 @@
 import numpy as np
 
-
 ######## BIN_SPIKES ########
 def bin_spikes(spike_times,dt,wdw_start,wdw_end):
     """

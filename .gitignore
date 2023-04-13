@@ -2,6 +2,7 @@
 example/results/*
 *.swp
 *Untitled*
-*__pycache__*
+**/__pycache__/
+*.pyc
 runs/outfiles
 datasets/*.mat

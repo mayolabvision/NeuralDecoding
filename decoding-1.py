@@ -5,12 +5,14 @@ from scipy import stats
 import pickle
 import time
 import pandas as pd
+import os.path
 
 #folder = '/jet/home/knoneman/NeuralDecoding/'
 folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'
 sys.path.append(folder+"handy_functions") # go to parent dir
 
 from preprocessing_funcs import get_spikes_with_history
+from matlab_funcs import mat_to_pickle
 from metrics import get_R2
 from metrics import get_rho
 from decoders import WienerCascadeDecoder
@@ -33,6 +35,13 @@ jobname = helpers.make_name(s,t,d,m,o,nm,nf,r,bn,ttv)
 pfile = helpers.make_filenames(jobname)
 
 sess,sess_nodt = helpers.get_session(s,t,d)
+
+if not os.path.isfile(folder+'datasets/vars-'+sess+'.pickle'):
+    if os.path.isfile(folder+'datasets/vars-'+sess_nodt+'.mat'):
+        mat_to_pickle('vars-'+sess_nodt,d)
+        print('preprocessed file has been properly pickled, yay')
+    else:
+        print('you need to go run data_formatting.m within MATLAB, then come right back (:')
 
 with open(folder+'datasets/vars-'+sess+'.pickle','rb') as f:
     neural_data,out_binned=pickle.load(f,encoding='latin1')
@@ -101,10 +110,8 @@ from evaluateModels import wienerFilter
 [y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos] = wienerFilter(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test)
 print(R2s)
 
-print(folder+pfile)
 with open(folder+pfile,'wb') as p:
     pickle.dump([y_train,y_valid,y_test,y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos],p)
-p.close()
 # ### Wiener Cascade Decoder
 
 # In[ ]:

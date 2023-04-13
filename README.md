@@ -150,7 +150,7 @@ git clone git@github.com:mayolabvision/NeuralDecoding.git
 
 2. Install **Visual Studio Code**  
 
-3. Install **python**, make sure to check **Add Python 3.X to Path** while installing  
+3. Install **Python3**, make sure to check **Add Python 3.X to Path** while installing  
 ```buildoutcfg
 # Check if you already have python
 python --version

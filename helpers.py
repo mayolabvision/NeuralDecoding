@@ -1,8 +1,8 @@
 import os
 import numpy
 
-def make_name(s,t,d,m,o,nm,nf,r,bn,ttv):
-    return "s{}-t{}-d{}-m{}-o{}-nm{}-nf{}-r{}-bn{}-ttv{}".format(s,t,d,m,o,nm,nf,r,bn,ttv)
+def make_name(s,t,d,m,o,nm,nf,r,bn,cf):
+    return "s{}-t{}-d{}-m{}-o{}-nm{}-nf{}-r{}-bn{}-cf{}".format(s,t,d,m,o,nm,nf,r,bn,cf)
 
 def checkdir(name):
     if not os.path.exists(name):
@@ -21,8 +21,8 @@ def get_params(i):
     nf = int(line[7])
     r = int(line[8])
     bn = int(line[9])
-    ttv = int(line[10])
-    return s,t,d,m,o,nm,nf,r,bn,ttv
+    cf = int(line[10])
+    return s,t,d,m,o,nm,nf,r,bn,cf
 
 def make_filenames(jobname):
     f="runs/"+jobname+".pickle"
@@ -37,13 +37,6 @@ def get_session(j,t,d):
 def get_bins(bn):
     bins = [[0,1,0],[6,1,6],[7,1,7]]
     return bins[bn][0],bins[bn][1],bins[bn][2]
-
-def get_range(ttv):
-    ranges = [[0.7,0.15],[0.8,0.1]]
-    training_range = [0,ranges[ttv][0]]
-    testing_range = [ranges[ttv][0],ranges[ttv][0]+ranges[ttv][1]]
-    valid_range = [ranges[ttv][0]+ranges[ttv][1],1]
-    return training_range,testing_range,valid_range
 
 def define_outputs(o):
     outputs = [[0,1],[2,3]]

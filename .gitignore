@@ -3,6 +3,8 @@ example/results/*
 *.swp
 *Untitled*
 **/__pycache__/
+handy_functions/__pycache__/decoders.cpython-39.pyc
 *.pyc
 runs/outfiles
 datasets/*.mat
+runs/

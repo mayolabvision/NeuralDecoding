@@ -1,5 +1,5 @@
-#SET,session,timesPrePost,binwidth,model,output,numMT,numFEF,repeats,binsPrePost,trainTestValid
-#0      1          1         50        1      0     20    20     1000        1            1   
+#SET,session,timesPrePost,binwidth,model,output,numMT,numFEF,repeats,binsPrePost,numFolds
+#0      1          1         50      1     0     20    20     1000        1         1      
 
 #s0:  pa29dir4A      
 
@@ -9,14 +9,14 @@
 
 #m0:  Wiener Filter
 #m1:  Wiener Cascade
-#m2:  Kalman Filter
-#m3:  Naive Bayes
-#m4:  Support Vector Regression
-#m5:  XGBoost
-#m6:  Dense Neural Network
-#m7:  Recurrent Neural Net
-#m8:  GRU
-#m9:  LSTM
+#m2:  Support Vector Regression
+#m3:  XGBoost
+#m4:  Dense Neural Network
+#m5:  Recurrent Neural Net
+#m6:  GRU
+#m7:  LSTM
+#m8:  Kalman Filter
+#m9:  Naive Bayes
 
 #o1: horizontal & vertical position
 
@@ -39,6 +39,7 @@
 #bn0: [0 1 0]
 #bn1: [6 1 6]
 
-#[train, test, valid] fraction of data
-#ttv0: [0.7 0.15 0.15]
-
+#cf1: 1 cross-validation fold
+#cf2: 2 cross-validation folds
+#...
+#cfF: F cross-validation folds

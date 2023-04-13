@@ -7,6 +7,9 @@ import time
 import pandas as pd
 import os.path
 
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
+
 #folder = '/jet/home/knoneman/NeuralDecoding/'
 folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'
 sys.path.append(folder+"handy_functions") # go to parent dir
@@ -30,8 +33,8 @@ from bayes_opt import BayesianOptimization
 
 import helpers
 
-s,t,d,m,o,nm,nf,r,bn,ttv = helpers.get_params(int(sys.argv[1]))
-jobname = helpers.make_name(s,t,d,m,o,nm,nf,r,bn,ttv)
+s,t,d,m,o,nm,nf,r,bn,cf = helpers.get_params(int(sys.argv[1]))
+jobname = helpers.make_name(s,t,d,m,o,nm,nf,r,bn,cf)
 pfile = helpers.make_filenames(jobname)
 
 sess,sess_nodt = helpers.get_session(s,t,d)
@@ -49,8 +52,9 @@ with open(folder+'datasets/vars-'+sess+'.pickle','rb') as f:
 units = pd.read_csv(folder+'datasets/units-'+sess_nodt+'.csv')
 
 [bins_before,bins_current,bins_after] = helpers.get_bins(bn)
-[training_range,testing_range,valid_range] = helpers.get_range(ttv)
 
+
+############ randomly drawing neurons #############
 mt_inds = []
 fef_inds = []
 for row in range(r):
@@ -65,53 +69,129 @@ num_examples=X.shape[0]
 X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
 y=out_binned
 
-training_set=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples))-bins_after)
-testing_set=np.arange(int(np.round(testing_range[0]*num_examples))+bins_before,int(np.round(testing_range[1]*num_examples))-bins_after)
-valid_set=np.arange(int(np.round(valid_range[0]*num_examples))+bins_before,int(np.round(valid_range[1]*num_examples))-bins_after)
+########### cross-validation #############
 
-#Get training data
-X_train=X[training_set,:,:]
-X_flat_train=X_flat[training_set,:]
-y_train=y[training_set,:]
+training_range_all=[[[.2,1]],[[0,.1],[.3,1]],[[0,.2],[.4,1]],[[0,.3],[.5,1]],[[0,.4],[.6,1]],
+                   [[0,.5],[.7,1]],[[0,.6],[.8,1]],[[0,.7],[.9,1]],[[0,.8]],[[.1,.9]]]
+valid_range_all=[[0,.1],[.1,.2],[.2,.3],[.3,.4],[.4,.5],
+                 [.5,.6],[.6,.7],[.7,.8],[.8,.9],[.9,1]]
+testing_range_all=[[.1,.2],[.2,.3],[.3,.4],[.4,.5],[.5,.6],
+                 [.6,.7],[.7,.8],[.8,.9],[.9,1],[0,.1]]
 
-#Get testing data
-X_test=X[testing_set,:,:]
-X_flat_test=X_flat[testing_set,:]
-y_test=y[testing_set,:]
+num_folds=len(valid_range_all) #Number of cross validation folds
 
-#Get validation data
-X_valid=X[valid_set,:,:]
-X_flat_valid=X_flat[valid_set,:]
-y_valid=y[valid_set,:]
+#Actual data
+y_test_all=[]
+y_train_all=[]
+y_valid_all=[]
+
+R2s_all=[]
+rhos_all=[]
+y_test_pred_all=[]
+y_train_pred_all=[]
+y_valid_pred_all=[]
+
+t1=time.time()
+
+for i in range(cf): #Loop through the folds
+
+    testing_range=testing_range_all[i]
+    testing_set=np.arange(int(np.round(testing_range[0]*num_examples))+bins_before,int(np.round(testing_range[1]*num_examples))-bins_after)
+
+    valid_range=valid_range_all[i]
+    valid_set=np.arange(int(np.round(valid_range[0]*num_examples))+bins_before,int(np.round(valid_range[1]*num_examples))-bins_after)
+
+    training_ranges=training_range_all[i]
+    for j in range(len(training_ranges)): #Go through different separated portions of the training set
+        training_range=training_ranges[j]
+        if j==0: #If it's the first portion of the training set, make it the training set
+            training_set=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples))-bins_after)
+        if j==1: #If it's the second portion of the training set, concatentate it to the first
+            training_set_temp=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples))-bins_after)
+            training_set=np.concatenate((training_set,training_set_temp),axis=0)
 
 
-X_train_mean=np.nanmean(X_train,axis=0)
-X_train_std=np.nanstd(X_train,axis=0)
-X_train=(X_train-X_train_mean)/X_train_std
-X_test=(X_test-X_train_mean)/X_train_std
-X_valid=(X_valid-X_train_mean)/X_train_std
+    #Get training data
+    X_train=X[training_set,:,:]
+    X_flat_train=X_flat[training_set,:]
+    y_train=y[training_set,:]
 
-#Z-score "X_flat" inputs. 
-X_flat_train_mean=np.nanmean(X_flat_train,axis=0)
-X_flat_train_std=np.nanstd(X_flat_train,axis=0)
-X_flat_train=(X_flat_train-X_flat_train_mean)/X_flat_train_std
-X_flat_test=(X_flat_test-X_flat_train_mean)/X_flat_train_std
-X_flat_valid=(X_flat_valid-X_flat_train_mean)/X_flat_train_std
+    #Get testing data
+    X_test=X[testing_set,:,:]
+    X_flat_test=X_flat[testing_set,:]
+    y_test=y[testing_set,:]
 
-#Zero-center outputs
-y_train_mean=np.mean(y_train,axis=0)
-y_train=y_train-y_train_mean
-y_test=y_test-y_train_mean
-y_valid=y_valid-y_train_mean
+    #Get validation data
+    X_valid=X[valid_set,:,:]
+    X_flat_valid=X_flat[valid_set,:]
+    y_valid=y[valid_set,:]
 
-# ### Wiener Filter Decoder
-from evaluateModels import wienerFilter
+    ##### PREPROCESS DATA #####
+    
+    #Z-score "X" inputs. 
+    X_train_mean=np.nanmean(X_train,axis=0) #Mean of training data
+    X_train_std=np.nanstd(X_train,axis=0) #Stdev of training data
+    X_train=(X_train-X_train_mean)/X_train_std #Z-score training data
+    X_test=(X_test-X_train_mean)/X_train_std #Preprocess testing data in same manner as training data
+    X_valid=(X_valid-X_train_mean)/X_train_std #Preprocess validation data in same manner as training data
 
-[y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos] = wienerFilter(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test)
-print(R2s)
+    #Z-score "X_flat" inputs. 
+    X_flat_train_mean=np.nanmean(X_flat_train,axis=0)
+    X_flat_train_std=np.nanstd(X_flat_train,axis=0)
+    X_flat_train=(X_flat_train-X_flat_train_mean)/X_flat_train_std
+    X_flat_test=(X_flat_test-X_flat_train_mean)/X_flat_train_std
+    X_flat_valid=(X_flat_valid-X_flat_train_mean)/X_flat_train_std
 
+    #Zero-center outputs
+    y_train_mean=np.nanmean(y_train,axis=0) #Mean of training data outputs
+    y_train=y_train-y_train_mean #Zero-center training output
+    y_test=y_test-y_train_mean #Preprocess testing data in same manner as training data
+    y_valid=y_valid-y_train_mean #Preprocess validation data in same manner as training data
+    
+    #Z-score outputs (for SVR)
+    y_train_std=np.nanstd(y_train,axis=0)
+    y_zscore_train=y_train/y_train_std
+    y_zscore_test=y_test/y_train_std
+    y_zscore_valid=y_valid/y_train_std 
+
+    y_test_all.append(y_test)
+    y_train_all.append(y_train)
+    y_valid_all.append(y_valid)
+
+    # Wiener Filter Decoder
+    if m == 0:
+        from evaluateModels import wienerFilter
+        [y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos,BOparams] = wienerFilter(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test)
+
+    # Wiener Cascade Decoder
+    if m == 1:
+        from evaluateModels import wienerCascade
+        [y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos,BOparams] = wienerCascade(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test)
+
+    # SVR Decoder
+    if m == 2:
+        from evaluateModels import wienerCascade
+        [y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos,BOparams] = wienerCascade(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test)
+
+    # XGBoost Decoder
+    if m == 3:
+        from evaluateModels import XGBoost
+        [y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos,BOparams] = XGBoost(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test)
+
+    y_train_pred_all.append(y_train_predicted)
+    y_valid_pred_all.append(y_valid_predicted)
+    y_test_pred_all.append(y_test_predicted)
+    R2s_all.append(R2s)
+    rhos_all.append(rhos)
+    
+    time_elapsed=time.time()-t1 #How much time has passed
+    print ("\n") #Line break after each fold   
+    
 with open(folder+pfile,'wb') as p:
-    pickle.dump([y_train,y_valid,y_test,y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos],p)
+    pickle.dump([y_train_all,y_valid_all,y_test_all,y_train_pred_all,y_valid_pred_all,y_test_pred_all,np.array(R2s_all),np.array(rhos_all),time_elapsed],p)
+
+print("time elapsed: %.3f seconds" % time_elapsed)
+print(np.mean(R2s_all,axis=0))
 # ### Wiener Cascade Decoder
 
 # In[ ]:

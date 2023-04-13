@@ -6,7 +6,8 @@ import pickle
 import time
 import pandas as pd
 
-folder = '/jet/home/knoneman/NeuralDecoding/'
+#folder = '/jet/home/knoneman/NeuralDecoding/'
+folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'
 sys.path.append(folder+"handy_functions") # go to parent dir
 
 from preprocessing_funcs import get_spikes_with_history
@@ -27,16 +28,16 @@ from bayes_opt import BayesianOptimization
 
 import helpers
 
-s,t,m,o,nm,nf,r,bn,ttv = helpers.get_params(int(sys.argv[1]))
-jobname = helpers.make_name(s,t,m,o,nm,nf,r,bn,ttv)
+s,t,d,m,o,nm,nf,r,bn,ttv = helpers.get_params(int(sys.argv[1]))
+jobname = helpers.make_name(s,t,d,m,o,nm,nf,r,bn,ttv)
 pfile = helpers.make_filenames(jobname)
 
-sess = helpers.get_session(s,t)
+sess,sess_nodt = helpers.get_session(s,t,d)
 
 with open(folder+'datasets/vars-'+sess+'.pickle','rb') as f:
     neural_data,out_binned=pickle.load(f,encoding='latin1')
   
-units = pd.read_csv(folder+'datasets/units-'+sess+'.csv')
+units = pd.read_csv(folder+'datasets/units-'+sess_nodt+'.csv')
 
 [bins_before,bins_current,bins_after] = helpers.get_bins(bn)
 [training_range,testing_range,valid_range] = helpers.get_range(ttv)
@@ -50,15 +51,9 @@ for row in range(r):
 neural_data = neural_data[:,sorted(np.concatenate((np.array((mt_inds[0])),np.array((fef_inds[0])))))];
 out_binned = out_binned[:,helpers.define_outputs(o)]
 
-# Format for recurrent neural networks (SimpleRNN, GRU, LSTM)
-# Function to get the covariate matrix that includes spike history from previous bins
 X = get_spikes_with_history(neural_data,bins_before,bins_after,bins_current)
 num_examples=X.shape[0]
-
-# Format for Wiener Filter, Wiener Cascade, XGBoost, and Dense Neural Network
-#Put in "flat" format, so each "neuron / time" is a single feature
 X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
-
 y=out_binned
 
 training_set=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples))-bins_after)
@@ -101,28 +96,18 @@ y_test=y_test-y_train_mean
 y_valid=y_valid-y_train_mean
 
 # ### Wiener Filter Decoder
+from evaluateModels import wienerFilter
 
-#Declare model
-model_wf=WienerFilterDecoder()
+[y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos] = wienerFilter(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test)
+print(R2s)
 
-#Fit model
-model_wf.fit(X_flat_train,y_train)
-
-#Get predictions
-y_valid_predicted_wf=model_wf.predict(X_flat_valid)
-
-#Get metric of fit
-R2s_wf=get_R2(y_valid,y_valid_predicted_wf)
-rhos_wf=get_rho(y_valid,y_valid_predicted_wf)
-
-with open(folder+pfile,'wb') as f:
-    pickle.dump([y_valid,y_train_mean,y_valid_predicted_wf,R2s_wf,rhos_wf],f)
-
-
+print(folder+pfile)
+with open(folder+pfile,'wb') as p:
+    pickle.dump([y_train,y_valid,y_test,y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos],p)
+p.close()
 # ### Wiener Cascade Decoder
 
 # In[ ]:
-
 '''
 #Declare model
 model_wc=WienerCascadeDecoder(degree=3)

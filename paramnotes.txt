@@ -1,9 +1,11 @@
-#SET,session,timesPrePost,model,output,numMT,numFEF,repeats,binsPrePost,trainTestValid
-#0      1          1        1      0     20    20     1000        1            1   
+#SET,session,timesPrePost,binwidth,model,output,numMT,numFEF,repeats,binsPrePost,trainTestValid
+#0      1          1         50        1      0     20    20     1000        1            1   
 
 #s0:  pa29dir4A      
 
-#t0:  pre=600ms,post=600ms 
+#t0:  pre=600ms,post=600ms
+
+#d50: 50 ms bin width
 
 #m0:  Wiener Filter
 #m1:  Wiener Cascade

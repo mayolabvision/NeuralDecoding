@@ -20,7 +20,7 @@ types        =  {'pure','forward','backward'}; % types of trials
 % "output_times":   vector that states the time at all recorded time points 
 
 %%%%%%%%%%%%%%%%% load session data %%%%%%%%%%%%%%%%%%%%
-data = load('-mat',sprintf('%s/raw/combinedMaestroSpkSortMTFEF.%s.mat',folder,session));
+data = load('-mat',sprintf('Users/kendranoneman/Projects/mayo/data/neural-decoding/raw/combinedMaestroSpkSortMTFEF.%s.mat',session));
 
 [exp_clean,unitnames,snrs] = struct_clean(data.exp);
 tagS  =  {exp_clean.dataMaestroPlx.tagSection}.'; tagS = vertcat(tagS{:});
@@ -139,7 +139,7 @@ eyes_stacked = cellfun(@(q) vertcat(q{:})',eyes_trimmed,'uni',0);
 outputs = vertcat(eyes_stacked{:});
 out_times     =  (1:size(trialTbl,1)*(preint+postint))';
 
-save(sprintf('%s/preprocessed/vars-%s-pre%03d-post%03d.mat',folder,session,preint,postint),'spike_times','outputs','out_times','-v7');
-writetable(unitsTbl,sprintf('%s/preprocessed/units-%s-pre%03d-post%03d.csv',folder,session,preint,postint))
+save(sprintf('%s/vars-%s-pre%03d-post%03d.mat',folder,session,preint,postint-800),'spike_times','outputs','out_times','-v7');
+writetable(unitsTbl,sprintf('%s/units-%s-pre%03d-post%03d.csv',folder,session,preint,postint-800))
 
 end

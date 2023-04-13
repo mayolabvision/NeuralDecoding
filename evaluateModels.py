@@ -1,14 +1,23 @@
 ##################### BASIC EVALUATION OF ALL THE MODEL TYPES #########################
 
+from decoders import WienerFilterDecoder
+import numpy as np
+from metrics import get_R2
+from metrics import get_rho
+
+
 # MODEL 0 - Wiener Filter Decoder
-def wienerFilter(X_flat_train,X_flat_valid,y_train):
+def wienerFilter(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test):
     model=WienerFilterDecoder()
     model.fit(X_flat_train,y_train)
+    y_train_predicted=model.predict(X_flat_train)
     y_valid_predicted=model.predict(X_flat_valid)
-    R2s=get_R2(y_valid,y_valid_predicted)
-
-    return y_valid_predicted,R2s
-
+    y_test_predicted=model.predict(X_flat_test)
+    
+    R2s = [np.mean(get_R2(y_train,y_train_predicted)), np.mean(get_R2(y_valid,y_valid_predicted)), np.mean(get_R2(y_test,y_test_predicted))] 
+    rhos = [np.mean(get_rho(y_train,y_train_predicted)), np.mean(get_rho(y_valid,y_valid_predicted)), np.mean(get_rho(y_test,y_test_predicted))] 
+    
+    return y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos
 
 # MODEL 1 - Wiener Cascade Decoder
 def wienerCascade(X_flat_train,X_flat_valid,y_train,degree):

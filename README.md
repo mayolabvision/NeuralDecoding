@@ -150,10 +150,18 @@ git clone git@github.com:mayolabvision/NeuralDecoding.git
 
 2. Install **Visual Studio Code**  
 
-3. Go to Extension, search and download **Jupyter Notebook** with VSCode  
+3. Install **python**, make sure to check **Add Python 3.X to Path** while installing  
 
-4. Install **pip** and download all the libraries required to run the code  
+4. Go to Extension, search and download **Jupyter Notebook** with VSCode  
 
+5. Install **pip** and download all the libraries required to run the code  
+It normally comes with Python
+```buildoutcfg
+# Check if pip is already installed in cmd
+pip --version
+
+# If it says 'python' is not recognizable... then pip is not installed inside the computer
+```  
 
 This should install of the basic packages and dependencies you will need to run all of the decoders, but if it doesn't ask Kendra for help.
 

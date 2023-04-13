@@ -163,7 +163,7 @@ pip3
 # You should only see the help information from pip3 if your python installation was successful  
 ```  
 
-4. Go to Extension, search and download **Jupyter Notebook** with VSCode    
+4. Go to Extension, search and download **Jupyter Notebook** within VSCode    
 
 This should install of the basic packages and dependencies you will need to run all of the decoders, but if it doesn't ask Kendra for help.
 

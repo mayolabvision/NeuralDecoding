@@ -11,7 +11,6 @@
 import numpy as np
 from scipy import io
 import pickle
-import matplotlib.pyplot as plt
 from scipy import io
 from scipy import stats
 import sys

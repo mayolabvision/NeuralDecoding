@@ -1,5 +1,5 @@
-#SET,session,timesPrePost,binwidth,model,output,numMT,numFEF,repeats,binsPrePost,numFolds
-#0      1          1         50      1     0     20    20     1000        1         1      
+#SET,session,timesPrePost,binwidth,model,output,numMT,numFEF,binsPrePost,outerFolds, innerFolds
+#0      1          1         50      1     0     20    20        1          5            5      
 
 #s0:  pa29dir4A      
 
@@ -9,8 +9,8 @@
 
 #m0:  Wiener Filter
 #m1:  Wiener Cascade
-#m2:  Support Vector Regression
-#m3:  XGBoost
+#m2:  XGBoost
+#m3:  Support Vector Regression
 #m4:  Dense Neural Network
 #m5:  Recurrent Neural Net
 #m6:  GRU
@@ -30,16 +30,17 @@
 #...
 #nfF: M FEF neurons
 
-#r1: 1 shuffle (# of times randomly sample N neurons) 
-#r2: 2 shuffles
-#... 
-#rR: R shuffles
-
 #[bins of neural data before, bins of neural data after] to the output are used for decoding
 #bn0: [0 1 0]
 #bn1: [6 1 6]
 
-#cf1: 1 cross-validation fold
-#cf2: 2 cross-validation folds
+#fo1: 1 cross-validation fold (outer)
+#fo2: 2 cross-validation folds
 #...
-#cfF: F cross-validation folds
+#foF: F cross-validation folds
+
+#fi1: 1 cross-validation fold (inner)
+#fi2: 2 cross-validation folds
+#...
+#fiF: F cross-validation folds
+

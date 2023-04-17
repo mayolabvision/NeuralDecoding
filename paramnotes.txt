@@ -19,6 +19,7 @@
 #m9:  Naive Bayes
 
 #o1: horizontal & vertical position
+#o2: horizontal & vertical velocity
 
 #nm1: 1 MT neuron
 #nm2: 2 MT neurons

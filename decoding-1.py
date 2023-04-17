@@ -31,10 +31,15 @@ from sklearn.svm import SVR
 from sklearn.svm import SVC 
 from bayes_opt import BayesianOptimization
 
+from sklearn.model_selection import KFold
+import itertools
+import warnings
+warnings.filterwarnings('ignore', 'Solver terminated early.*')
+
 import helpers
 
-s,t,d,m,o,nm,nf,r,bn,cf = helpers.get_params(int(sys.argv[1]))
-jobname = helpers.make_name(s,t,d,m,o,nm,nf,r,bn,cf)
+s,t,d,m,o,nm,nf,bn,fo,fi = helpers.get_params(int(sys.argv[1]))
+jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi)
 pfile = helpers.make_filenames(jobname)
 
 sess,sess_nodt = helpers.get_session(s,t,d)
@@ -54,13 +59,22 @@ units = pd.read_csv(folder+'datasets/units-'+sess_nodt+'.csv')
 [bins_before,bins_current,bins_after] = helpers.get_bins(bn)
 
 
-############ randomly drawing neurons #############
+############ getting all possible combinations of neurons #############
+
 mt_inds = []
 fef_inds = []
-for row in range(r):
-    mt_inds.append(sorted(np.random.choice(units[units['BrainArea'] == 'MT'].index, nm, replace=False)))
-    fef_inds.append(sorted(np.random.choice(units[units['BrainArea'] == 'FEF'].index, nf, replace=False)))
-    
+
+mt = sorted(units.loc[units['BrainArea'] == 'MT'].index)
+fef = sorted(units.loc[units['BrainArea'] == 'FEF'].index)
+
+mt_set = itertools.combinations(mt, len(mt))
+fef_set = itertools.combinations(fef, len(fef))
+
+for i in mt_set:
+    mt_inds.append(i)
+for i in fef_set:
+    fef_inds.append(i)
+
 neural_data = neural_data[:,sorted(np.concatenate((np.array((mt_inds[0])),np.array((fef_inds[0])))))];
 out_binned = out_binned[:,helpers.define_outputs(o)]
 
@@ -69,114 +83,210 @@ num_examples=X.shape[0]
 X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
 y=out_binned
 
-########### cross-validation #############
+########### model evaluations #############
+def wc_evaluate(degree):
+    model=WienerCascadeDecoder(degree) #Define model
+    model.fit(X_flat_train,y_train) #Fit model
+    y_valid_predicted=model.predict(X_flat_valid) #Validation set predictions
+    return np.mean(get_R2(y_valid,y_valid_predicted)) #R2 value of validation set (mean over x and y position/velocity)
 
-training_range_all=[[[.2,1]],[[0,.1],[.3,1]],[[0,.2],[.4,1]],[[0,.3],[.5,1]],[[0,.4],[.6,1]],
-                   [[0,.5],[.7,1]],[[0,.6],[.8,1]],[[0,.7],[.9,1]],[[0,.8]],[[.1,.9]]]
-valid_range_all=[[0,.1],[.1,.2],[.2,.3],[.3,.4],[.4,.5],
-                 [.5,.6],[.6,.7],[.7,.8],[.8,.9],[.9,1]]
-testing_range_all=[[.1,.2],[.2,.3],[.3,.4],[.4,.5],[.5,.6],
-                 [.6,.7],[.7,.8],[.8,.9],[.9,1],[0,.1]]
+def xgb_evaluate(max_depth,num_round,eta):
+    model=XGBoostDecoder(max_depth=int(max_depth), num_round=int(num_round), eta=float(eta)) #Define model
+    model.fit(X_flat_train,y_train) #Fit model
+    y_valid_predicted=model.predict(X_flat_valid) #Get validation set predictions
+    return np.mean(get_R2(y_valid,y_valid_predicted)) #Return mean validation set R2
 
-num_folds=len(valid_range_all) #Number of cross validation folds
+def svr_evaluate(C):
+    model=SVRDecoder(C=C, max_iter=2000)
+    model.fit(X_flat_train,y_zscore_train) #Note for SVR that we use z-scored y values
+    y_valid_predicted=model.predict(X_flat_valid)
+    return np.mean(get_R2(y_zscore_valid,y_valid_predicted))
+
+########### cross-validation ###############3
+inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
+outer_cv = KFold(n_splits=fo, random_state=None, shuffle=False)
 
 #Actual data
-y_test_all=[]
 y_train_all=[]
-y_valid_all=[]
-
-R2s_all=[]
-rhos_all=[]
-y_test_pred_all=[]
+y_test_all=[]
 y_train_pred_all=[]
-y_valid_pred_all=[]
+y_test_pred_all=[]
+
+mean_R2_all=np.empty(fo)
+mean_rho_all=np.empty(fo)
 
 t1=time.time()
 
-for i in range(cf): #Loop through the folds
+for i, (train0_index, test_index) in enumerate(outer_cv.split(X)):
+    print("\n")
 
-    testing_range=testing_range_all[i]
-    testing_set=np.arange(int(np.round(testing_range[0]*num_examples))+bins_before,int(np.round(testing_range[1]*num_examples))-bins_after)
+    X_train0 = X[train0_index,:,:]
+    X_flat_train0 = X_flat[train0_index,:]
+    y_train0 = y[train0_index,:]
 
-    valid_range=valid_range_all[i]
-    valid_set=np.arange(int(np.round(valid_range[0]*num_examples))+bins_before,int(np.round(valid_range[1]*num_examples))-bins_after)
+    X_test = X[test_index,:,:]
+    X_flat_test = X_flat[test_index,:]
+    y_test = y[test_index,:]
 
-    training_ranges=training_range_all[i]
-    for j in range(len(training_ranges)): #Go through different separated portions of the training set
-        training_range=training_ranges[j]
-        if j==0: #If it's the first portion of the training set, make it the training set
-            training_set=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples))-bins_after)
-        if j==1: #If it's the second portion of the training set, concatentate it to the first
-            training_set_temp=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples))-bins_after)
-            training_set=np.concatenate((training_set,training_set_temp),axis=0)
-
-
-    #Get training data
-    X_train=X[training_set,:,:]
-    X_flat_train=X_flat[training_set,:]
-    y_train=y[training_set,:]
-
-    #Get testing data
-    X_test=X[testing_set,:,:]
-    X_flat_test=X_flat[testing_set,:]
-    y_test=y[testing_set,:]
-
-    #Get validation data
-    X_valid=X[valid_set,:,:]
-    X_flat_valid=X_flat[valid_set,:]
-    y_valid=y[valid_set,:]
-
-    ##### PREPROCESS DATA #####
-    
-    #Z-score "X" inputs. 
-    X_train_mean=np.nanmean(X_train,axis=0) #Mean of training data
-    X_train_std=np.nanstd(X_train,axis=0) #Stdev of training data
-    X_train=(X_train-X_train_mean)/X_train_std #Z-score training data
-    X_test=(X_test-X_train_mean)/X_train_std #Preprocess testing data in same manner as training data
-    X_valid=(X_valid-X_train_mean)/X_train_std #Preprocess validation data in same manner as training data
-
-    #Z-score "X_flat" inputs. 
-    X_flat_train_mean=np.nanmean(X_flat_train,axis=0)
-    X_flat_train_std=np.nanstd(X_flat_train,axis=0)
-    X_flat_train=(X_flat_train-X_flat_train_mean)/X_flat_train_std
-    X_flat_test=(X_flat_test-X_flat_train_mean)/X_flat_train_std
-    X_flat_valid=(X_flat_valid-X_flat_train_mean)/X_flat_train_std
-
-    #Zero-center outputs
-    y_train_mean=np.nanmean(y_train,axis=0) #Mean of training data outputs
-    y_train=y_train-y_train_mean #Zero-center training output
-    y_test=y_test-y_train_mean #Preprocess testing data in same manner as training data
-    y_valid=y_valid-y_train_mean #Preprocess validation data in same manner as training data
-    
-    #Z-score outputs (for SVR)
-    y_train_std=np.nanstd(y_train,axis=0)
-    y_zscore_train=y_train/y_train_std
-    y_zscore_test=y_test/y_train_std
-    y_zscore_valid=y_valid/y_train_std 
-
+    y_train_all.append(y_train0)
     y_test_all.append(y_test)
-    y_train_all.append(y_train)
-    y_valid_all.append(y_valid)
 
-    # Wiener Filter Decoder
-    if m == 0:
-        from evaluateModels import wienerFilter
-        [y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos,BOparams] = wienerFilter(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test)
+    hp_tune = []
+    for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0)):
+        print(j)
+        X_train = X_train0[train_index,:,:]
+        X_flat_train = X_flat_train0[train_index,:]
+        y_train = y_train0[train_index,:]
 
-    # Wiener Cascade Decoder
-    if m == 1:
-        from evaluateModels import wienerCascade
-        [y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos,BOparams] = wienerCascade(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test)
+        X_valid = X_train0[valid_index,:,:]
+        X_flat_valid = X_flat_train0[valid_index,:]
+        y_valid = y_train0[valid_index,:]
 
-    # SVR Decoder
-    if m == 2:
-        from evaluateModels import wienerCascade
-        [y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos,BOparams] = wienerCascade(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test)
+        ##### PREPROCESS DATA #####
+        
+        X_valid=(X_valid-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
+        X_train=(X_train-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
+        X_flat_valid=(X_flat_valid-np.nanmean(X_flat_train,axis=0))/(np.nanstd(X_flat_train,axis=0))
+        X_flat_train=(X_flat_train-np.nanmean(X_flat_train,axis=0))/(np.nanstd(X_flat_train,axis=0))
+        y_valid=y_valid-np.mean(y_train,axis=0)
+        y_train=y_train-np.mean(y_train,axis=0) 
+        y_zscore_valid=y_valid/(np.nanstd(y_train,axis=0)) 
+        y_zscore_train=y_train/(np.nanstd(y_train,axis=0))
 
-    # XGBoost Decoder
-    if m == 3:
-        from evaluateModels import XGBoost
-        [y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos,BOparams] = XGBoost(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test)
+        y_test_all.append(y_test)
+        y_train_all.append(y_train)
+
+        # Wiener Filter Decoder
+        if m == 0:
+            if j==fi-1:
+                X_flat_test=(X_flat_test-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
+                X_flat_train0=(X_flat_train0-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
+                y_test=y_test-np.mean(y_train0,axis=0)
+                y_train0=y_train0-np.mean(y_train0,axis=0) 
+
+                model=WienerFilterDecoder() #Define model
+                model.fit(X_flat_train0,y_train0) #Fit model
+                y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
+                y_test_predicted=model.predict(X_flat_test) #Validation set predictions
+
+                print(np.mean(get_R2(y_test,y_test_predicted)))
+
+                mean_R2_all[i] = np.mean(get_R2(y_test,y_test_predicted))
+                mean_rho_all[i] = np.mean(get_rho(y_test,y_test_predicted))
+                y_train_pred_all.append(y_train_predicted) 
+                y_test_pred_all.append(y_test_predicted) 
+
+        # Wiener Cascade Decoder
+        if m == 1:
+            BO = BayesianOptimization(wc_evaluate, {'degree': (1, 5.01)}, verbose=0,allow_duplicate_points=True)
+            BO.maximize(init_points=3, n_iter=5) #Set number of initial runs and subsequent tests, and do the optimization
+            params = max(BO.res, key=lambda x:x['target'])
+            hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([(round(((BO.res[key]['params']['degree'])*2))/2) for key in range(len(BO.res))]))).T)
+
+            if j==fi-1:
+                df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','degree'])
+                df_mn = df.groupby(['degree']).agg(['count','mean'])
+                deg = df_mn['R2']['mean'].idxmax()
+
+                X_flat_test=(X_flat_test-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
+                X_flat_train0=(X_flat_train0-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
+                y_test=y_test-np.mean(y_train0,axis=0)
+                y_train0=y_train0-np.mean(y_train0,axis=0) 
+
+                # Run model w/ above hyperparameters
+                model=WienerCascadeDecoder(deg) #Define model
+                model.fit(X_flat_train0,y_train0) #Fit model
+                y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
+                y_test_predicted=model.predict(X_flat_test) #Validation set predictions
+
+                print(np.mean(get_R2(y_test,y_test_predicted)))
+
+                mean_R2_all[i] = np.mean(get_R2(y_test,y_test_predicted))
+                mean_rho_all[i] = np.mean(get_rho(y_test,y_test_predicted))
+                y_train_pred_all.append(y_train_predicted) 
+                y_test_pred_all.append(y_test_predicted) 
+
+        # XGBoost Decoder
+        if m == 2:
+            BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)})
+            BO.maximize(init_points=5, n_iter=10)
+            params = max(BO.res, key=lambda x:x['target'])
+            hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['max_depth']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_round']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['eta'],2) for key in range(len(BO.res))]))).T)
+
+            if j==fi-1:
+                df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','max_depth','num_round','eta'])
+                df = df.sort_values(by=['R2'])
+                df_max = df.groupby(['max_depth','num_round']).mean()
+                df_max = df_max.reset_index()
+                best_params = df_max.iloc[df_max['R2'].idxmax()]
+                max_depth = best_params['max_depth']
+                num_round = best_params['num_round']
+                eta = best_params['eta']
+
+                X_flat_test=(X_flat_test-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
+                X_flat_train0=(X_flat_train0-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
+                y_test=y_test-np.mean(y_train0,axis=0)
+                y_train0=y_train0-np.mean(y_train0,axis=0)
+
+                model=XGBoostDecoder(max_depth=int(max_depth), num_round=int(num_round), eta=float(eta))
+                model.fit(X_flat_train0,y_train0) #Fit model
+                y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
+                y_test_predicted=model.predict(X_flat_test) #Validation set predictions
+
+                print(np.mean(get_R2(y_test,y_test_predicted)))
+
+                mean_R2_all[i] = np.mean(get_R2(y_test,y_test_predicted))
+                mean_rho_all[i] = np.mean(get_rho(y_test,y_test_predicted))
+                y_train_pred_all.append(y_train_predicted)
+                y_test_pred_all.append(y_test_predicted)
+
+        # SVR Decoder
+        if m == 3:
+            BO = BayesianOptimization(svr_evaluate, {'C': (.5, 10)}, verbose=1, allow_duplicate_points=True)
+            BO.maximize(init_points=3, n_iter=3)
+            params = max(BO.res, key=lambda x:x['target'])
+            hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['C'],1) for key in range(len(BO.res))]))).T)
+
+            if j==fi-1:
+                df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','C'])
+                df_mn = df.groupby(['C']).agg(['count','mean'])
+                C = df_mn['R2']['mean'].idxmax()
+
+                X_flat_test=(X_flat_test-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
+                X_flat_train0=(X_flat_train0-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
+                y_test=y_test-np.mean(y_train0,axis=0)
+                y_train0=y_train0-np.mean(y_train0,axis=0)
+                y_zscore_test=y_test/(np.nanstd(y_train0,axis=0))
+                y_zscore_train0=y_train0/(np.nanstd(y_train0,axis=0))
+
+                model=SVRDecoder(C=C, max_iter=2000)
+                model.fit(X_flat_train0,y_zscore_train0) #Fit model
+                y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
+                y_test_predicted=model.predict(X_flat_test) #Validation set predictions
+
+                print(np.mean(get_R2(y_zscore_test,y_test_predicted)))
+
+                mean_R2_all[i] = np.mean(get_R2(y_zscore_test,y_test_predicted))
+                mean_rho_all[i] = np.mean(get_rho(y_zscore_test,y_test_predicted))
+                y_train_pred_all.append(y_train_predicted)
+                y_test_pred_all.append(y_test_predicted)
+
+time_elapsed=time.time()-t1 #How much time has passed
+print("time elapsed: %.3f seconds" % time_elapsed)
+
+with open(folder+pfile,'wb') as p:
+    pickle.dump([y_train_all,y_test_all,y_train_pred_all,y_test_pred_all,mean_R2_all,mean_rho_all,time_elapsed],p)
+
+'''
+        # SVR Decoder
+        if m == 2:
+            from evaluateModels import wienerCascade
+            [y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos,BOparams] = wienerCascade(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test)
+
+        # XGBoost Decoder
+        if m == 3:
+            from evaluateModels import XGBoost
+            [y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos,BOparams] = XGBoost(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test)
 
     y_train_pred_all.append(y_train_predicted)
     y_valid_pred_all.append(y_valid_predicted)
@@ -195,6 +305,7 @@ print(np.mean(R2s_all,axis=0))
 # ### Wiener Cascade Decoder
 
 # In[ ]:
+'''
 '''
 #Declare model
 model_wc=WienerCascadeDecoder(degree=3)

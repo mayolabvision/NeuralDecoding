@@ -1,3 +1,4 @@
-0 0 0 50 0 0 24 41 1 0 10 #lineID,session,timesPrePost,binwidth,model,output,numMT,numFEF,repeats,binsPrePost,numFolds
-1 0 0 50 1 0 24 41 1 0 10 
-2 0 0 50 3 0 24 41 1 0 10 
+0 0 0 50 0 0 24 41 0 5 5 #lineID,session,timesPrePost,binwidth,model,output,numMT,numFEF,binsPrePost,outerFolds,innerFolds
+1 0 0 50 1 0 24 41 0 5 5
+2 0 0 50 2 0 24 41 0 5 5
+3 0 0 50 3 0 24 41 0 5 5

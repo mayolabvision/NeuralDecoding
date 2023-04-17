@@ -60,7 +60,6 @@ def svr_evaluate(C):
     return np.mean(get_R2(y_zscore_valid,y_valid_predicted))
 
 X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test = decodingSetup.get_dataParams(int(sys.argv[1]))
-print(X_train0)
 
 s,t,d,m,o,nm,nf,bn,fo,fi = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi)
@@ -204,8 +203,6 @@ for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[outer_fol
 
 time_elapsed=time.time()-t1 #How much time has passed
 print("time elapsed: %.3f seconds" % time_elapsed)
-
-
 
 with open(cwd+pfile+'/fold_'+str(outer_fold)+'.pickle','wb') as p:
     pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed],p)

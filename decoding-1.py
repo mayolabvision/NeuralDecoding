@@ -10,8 +10,8 @@ import os.path
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
-folder = '/jet/home/knoneman/NeuralDecoding/'
-#folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'
+#folder = '/jet/home/knoneman/NeuralDecoding/'
+folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'
 sys.path.append(folder+"handy_functions") # go to parent dir
 
 from preprocessing_funcs import get_spikes_with_history

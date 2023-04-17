@@ -14,7 +14,6 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 #folder = '/jet/home/knoneman/NeuralDecoding/'
 #folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'
 cwd = os.getcwd()
-print(cwd)
 sys.path.append(cwd+"/handy_functions") # go to parent dir
 
 from preprocessing_funcs import get_spikes_with_history
@@ -28,7 +27,6 @@ def get_dataParams(linenum):
     s,t,d,m,o,nm,nf,bn,fo,fi = helpers.get_params(int(linenum))
     jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi)
     pfile = helpers.make_directory(jobname)
-    print(pfile)
 
     sess,sess_nodt = helpers.get_session(s,t,d)
 

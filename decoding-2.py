@@ -65,6 +65,20 @@ def dnn_evaluate(num_units,frac_dropout,n_epochs): #4
     y_valid_predicted=model.predict(X_flat_valid)
     return np.mean(get_R2(y_valid,y_valid_predicted))
 
+def rnn_evaluate(num_units,frac_dropout,n_epochs):
+    model=SimpleRNNDecoder(units=int(num_units),dropout=float(frac_dropout),num_epochs=int(n_epochs))
+    model.fit(X_train,y_train)
+    y_valid_predicted=model.predict(X_valid)
+    return np.mean(get_R2(y_valid,y_valid_predicted))
+
+def gru_evaluate(num_units,frac_dropout,n_epochs):
+    model=GRUDecoder(units=int(num_units),dropout=float(frac_dropout),num_epochs=int(n_epochs))
+    model.fit(X_train,y_train)
+    y_valid_predicted=model.predict(X_valid)
+    return np.mean(get_R2(y_valid,y_valid_predicted))
+
+
+############ training ################
 X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test = decodingSetup.get_dataParams(int(sys.argv[1]))
 
 s,t,d,m,o,nm,nf,bn,fo,fi = helpers.get_params(int(sys.argv[1]))
@@ -89,7 +103,6 @@ for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[outer_fol
     y_valid = y_train0[outer_fold][valid_index,:]
 
     ##### PREPROCESS DATA #####
-
     X_valid=(X_valid-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
     X_train=(X_train-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
     X_flat_valid=(X_flat_valid-np.nanmean(X_flat_train,axis=0))/(np.nanstd(X_flat_train,axis=0))
@@ -233,6 +246,70 @@ for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[outer_fol
             model.fit(X_flat_train0,y_train0) #Fit model
             y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
             y_test_predicted=model.predict(X_flat_test) #Validation set predictions
+
+            print(np.mean(get_R2(y_test,y_test_predicted)))
+            
+            mean_R2 = np.mean(get_R2(y_test,y_test_predicted))
+            mean_rho = np.mean(get_rho(y_test,y_test_predicted))
+
+    # RNN
+    if m == 5:
+        BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
+        BO.maximize(init_points=20, n_iter=20)
+        params = max(BO.res, key=lambda x:x['target'])
+        hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
+
+        if j==fi-1:
+            df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','num_units','n_epochs','frac_dropout'])
+            df = df.sort_values(by=['R2'])
+            df_max = df.groupby(['num_units','n_epochs']).mean()
+            df_max = df_max.reset_index()
+            best_params = df_max.iloc[df_max['R2'].idxmax()]
+            num_units = best_params['num_units']
+            n_epochs = best_params['n_epochs']
+            frac_dropout = best_params['frac_dropout']
+
+            X_test=(X_test[outer_fold]-np.nanmean(X_train0[outer_fold],axis=0))/(np.nanstd(X_train0[outer_fold],axis=0))
+            X_train0=(X_train0[outer_fold]-np.nanmean(X_train0[outer_fold],axis=0))/(np.nanstd(X_train0[outer_fold],axis=0))
+            y_test=y_test[outer_fold]-np.mean(y_train0[outer_fold],axis=0)
+            y_train0=y_train0[outer_fold]-np.mean(y_train0[outer_fold],axis=0) 
+
+            model=SimpleRNNDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
+            model.fit(X_train0,y_train0) #Fit model
+            y_train_predicted=model.predict(X_train0) #Validation set predictions
+            y_test_predicted=model.predict(X_test) #Validation set predictions
+
+            print(np.mean(get_R2(y_test,y_test_predicted)))
+            
+            mean_R2 = np.mean(get_R2(y_test,y_test_predicted))
+            mean_rho = np.mean(get_rho(y_test,y_test_predicted))
+
+    # GRU Decoder
+    if m == 6:
+        BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
+        BO.maximize(init_points=20, n_iter=20)
+        params = max(BO.res, key=lambda x:x['target'])
+        hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
+
+        if j==fi-1:
+            df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','num_units','n_epochs','frac_dropout'])
+            df = df.sort_values(by=['R2'])
+            df_max = df.groupby(['num_units','n_epochs']).mean()
+            df_max = df_max.reset_index()
+            best_params = df_max.iloc[df_max['R2'].idxmax()]
+            num_units = best_params['num_units']
+            n_epochs = best_params['n_epochs']
+            frac_dropout = best_params['frac_dropout']
+
+            X_test=(X_test[outer_fold]-np.nanmean(X_train0[outer_fold],axis=0))/(np.nanstd(X_train0[outer_fold],axis=0))
+            X_train0=(X_train0[outer_fold]-np.nanmean(X_train0[outer_fold],axis=0))/(np.nanstd(X_train0[outer_fold],axis=0))
+            y_test=y_test[outer_fold]-np.mean(y_train0[outer_fold],axis=0)
+            y_train0=y_train0[outer_fold]-np.mean(y_train0[outer_fold],axis=0) 
+
+            model=GRUDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
+            model.fit(X_train0,y_train0) #Fit model
+            y_train_predicted=model.predict(X_train0) #Validation set predictions
+            y_test_predicted=model.predict(X_test) #Validation set predictions
 
             print(np.mean(get_R2(y_test,y_test_predicted)))
             

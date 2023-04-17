@@ -26,8 +26,11 @@ def get_params(i):
     fi = int(line[10]) 
     return s,t,d,m,o,nm,nf,bn,fo,fi
 
-def make_filenames(jobname):
-    f="runs/"+jobname+".pickle"
+def make_directory(jobname):
+    cwd = os.getcwd()
+    f="/runs/"+jobname
+    if not os.path.isdir(cwd+f):
+       os.makedirs(cwd+f)
     return f
 
 def get_session(j,t,d):

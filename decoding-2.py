@@ -11,8 +11,9 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 #folder = '/jet/home/knoneman/NeuralDecoding/'
-folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'
-sys.path.append(folder+"handy_functions") # go to parent dir
+#folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'
+cwd = os.getcwd()
+sys.path.append(cwd+"/handy_functions") # go to parent dir
 
 from preprocessing_funcs import get_spikes_with_history
 from matlab_funcs import mat_to_pickle
@@ -37,50 +38,7 @@ import warnings
 warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
 import helpers
-
-s,t,d,m,o,nm,nf,bn,fo,fi = helpers.get_params(int(sys.argv[1]))
-jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi)
-pfile = helpers.make_filenames(jobname)
-
-sess,sess_nodt = helpers.get_session(s,t,d)
-
-if not os.path.isfile(folder+'datasets/vars-'+sess+'.pickle'):
-    if os.path.isfile(folder+'datasets/vars-'+sess_nodt+'.mat'):
-        mat_to_pickle('vars-'+sess_nodt,d)
-        print('preprocessed file has been properly pickled, yay')
-    else:
-        print('you need to go run data_formatting.m within MATLAB, then come right back (:')
-
-with open(folder+'datasets/vars-'+sess+'.pickle','rb') as f:
-    neural_data,out_binned=pickle.load(f,encoding='latin1')
-  
-units = pd.read_csv(folder+'datasets/units-'+sess_nodt+'.csv')
-
-[bins_before,bins_current,bins_after] = helpers.get_bins(bn)
-
-############ getting all possible combinations of neurons #############
-
-mt_inds = []
-fef_inds = []
-
-mt = sorted(units.loc[units['BrainArea'] == 'MT'].index)
-fef = sorted(units.loc[units['BrainArea'] == 'FEF'].index)
-
-mt_set = itertools.combinations(mt, len(mt))
-fef_set = itertools.combinations(fef, len(fef))
-
-for i in mt_set:
-    mt_inds.append(i)
-for i in fef_set:
-    fef_inds.append(i)
-
-neural_data = neural_data[:,sorted(np.concatenate((np.array((mt_inds[0])),np.array((fef_inds[0])))))];
-out_binned = out_binned[:,helpers.define_outputs(o)]
-
-X = get_spikes_with_history(neural_data,bins_before,bins_after,bins_current)
-num_examples=X.shape[0]
-X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
-y=out_binned
+import decodingSetup
 
 ########### model evaluations #############
 def wc_evaluate(degree):
@@ -101,180 +59,156 @@ def svr_evaluate(C):
     y_valid_predicted=model.predict(X_flat_valid)
     return np.mean(get_R2(y_zscore_valid,y_valid_predicted))
 
-########### cross-validation ###############3
+X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test = decodingSetup.get_dataParams(int(sys.argv[1]))
+print(X_train0)
+
+s,t,d,m,o,nm,nf,bn,fo,fi = helpers.get_params(int(sys.argv[1]))
+jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi)
+pfile = helpers.make_directory(jobname)
+
+outer_fold = int(sys.argv[2])
+
 inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
-outer_cv = KFold(n_splits=fo, random_state=None, shuffle=False)
-
-#Actual data
-y_train_all=[]
-y_test_all=[]
-y_train_pred_all=[]
-y_test_pred_all=[]
-
-mean_R2_all=np.empty(fo)
-mean_rho_all=np.empty(fo)
 
 t1=time.time()
 
-for i, (train0_index, test_index) in enumerate(outer_cv.split(X)):
-    print("\n")
+hp_tune = []
+for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[outer_fold])):
+    print(j)
+    X_train = X_train0[outer_fold][train_index,:,:]
+    X_flat_train = X_flat_train0[outer_fold][train_index,:]
+    y_train = y_train0[outer_fold][train_index,:]
 
-    X_train0 = X[train0_index,:,:]
-    X_flat_train0 = X_flat[train0_index,:]
-    y_train0 = y[train0_index,:]
+    X_valid = X_train0[outer_fold][valid_index,:,:]
+    X_flat_valid = X_flat_train0[outer_fold][valid_index,:]
+    y_valid = y_train0[outer_fold][valid_index,:]
 
-    X_test = X[test_index,:,:]
-    X_flat_test = X_flat[test_index,:]
-    y_test = y[test_index,:]
+    ##### PREPROCESS DATA #####
 
-    y_train_all.append(y_train0)
-    y_test_all.append(y_test)
+    X_valid=(X_valid-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
+    X_train=(X_train-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
+    X_flat_valid=(X_flat_valid-np.nanmean(X_flat_train,axis=0))/(np.nanstd(X_flat_train,axis=0))
+    X_flat_train=(X_flat_train-np.nanmean(X_flat_train,axis=0))/(np.nanstd(X_flat_train,axis=0))
+    y_valid=y_valid-np.mean(y_train,axis=0)
+    y_train=y_train-np.mean(y_train,axis=0) 
+    y_zscore_valid=y_valid/(np.nanstd(y_train,axis=0)) 
+    y_zscore_train=y_train/(np.nanstd(y_train,axis=0))
 
-    hp_tune = []
-    for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0)):
-        print(j)
-        X_train = X_train0[train_index,:,:]
-        X_flat_train = X_flat_train0[train_index,:]
-        y_train = y_train0[train_index,:]
+    # Wiener Filter Decoder
+    if m == 0:
+        if j==fi-1:
+            X_flat_test=(X_flat_test[outer_fold]-np.nanmean(X_flat_train0[outer_fold],axis=0))/(np.nanstd(X_flat_train0[outer_fold],axis=0))
+            X_flat_train0=(X_flat_train0[outer_fold]-np.nanmean(X_flat_train0[outer_fold],axis=0))/(np.nanstd(X_flat_train0[outer_fold],axis=0))
+            y_test=y_test[outer_fold]-np.mean(y_train0[outer_fold],axis=0)
+            y_train0=y_train0[outer_fold]-np.mean(y_train0[outer_fold],axis=0) 
 
-        X_valid = X_train0[valid_index,:,:]
-        X_flat_valid = X_flat_train0[valid_index,:]
-        y_valid = y_train0[valid_index,:]
+            model=WienerFilterDecoder() #Define model
+            model.fit(X_flat_train0,y_train0) #Fit model
+            y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
+            y_test_predicted=model.predict(X_flat_test) #Validation set predictions
 
-        ##### PREPROCESS DATA #####
-        
-        X_valid=(X_valid-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
-        X_train=(X_train-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
-        X_flat_valid=(X_flat_valid-np.nanmean(X_flat_train,axis=0))/(np.nanstd(X_flat_train,axis=0))
-        X_flat_train=(X_flat_train-np.nanmean(X_flat_train,axis=0))/(np.nanstd(X_flat_train,axis=0))
-        y_valid=y_valid-np.mean(y_train,axis=0)
-        y_train=y_train-np.mean(y_train,axis=0) 
-        y_zscore_valid=y_valid/(np.nanstd(y_train,axis=0)) 
-        y_zscore_train=y_train/(np.nanstd(y_train,axis=0))
+            print(np.mean(get_R2(y_test,y_test_predicted)))
+            
+            mean_R2 = np.mean(get_R2(y_test,y_test_predicted))
+            mean_rho = np.mean(get_rho(y_test,y_test_predicted))
 
-        y_test_all.append(y_test)
-        y_train_all.append(y_train)
+    # Wiener Cascade Decoder
+    if m == 1:
+        BO = BayesianOptimization(wc_evaluate, {'degree': (1, 20.99)}, verbose=1,allow_duplicate_points=True)
+        BO.maximize(init_points=10, n_iter=10) #Set number of initial runs and subsequent tests, and do the optimization
+        params = max(BO.res, key=lambda x:x['target'])
+        hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([(round(((BO.res[key]['params']['degree'])*2))/2) for key in range(len(BO.res))]))).T)
 
-        # Wiener Filter Decoder
-        if m == 0:
-            if j==fi-1:
-                X_flat_test=(X_flat_test-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
-                X_flat_train0=(X_flat_train0-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
-                y_test=y_test-np.mean(y_train0,axis=0)
-                y_train0=y_train0-np.mean(y_train0,axis=0) 
+        if j==fi-1:
+            df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','degree'])
+            df_mn = df.groupby(['degree']).agg(['count','mean'])
+            deg = df_mn['R2']['mean'].idxmax()
+            
+            X_flat_test=(X_flat_test[outer_fold]-np.nanmean(X_flat_train0[outer_fold],axis=0))/(np.nanstd(X_flat_train0[outer_fold],axis=0))
+            X_flat_train0=(X_flat_train0[outer_fold]-np.nanmean(X_flat_train0[outer_fold],axis=0))/(np.nanstd(X_flat_train0[outer_fold],axis=0))
+            y_test=y_test[outer_fold]-np.mean(y_train0[outer_fold],axis=0)
+            y_train0=y_train0[outer_fold]-np.mean(y_train0[outer_fold],axis=0) 
 
-                model=WienerFilterDecoder() #Define model
-                model.fit(X_flat_train0,y_train0) #Fit model
-                y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
-                y_test_predicted=model.predict(X_flat_test) #Validation set predictions
+            # Run model w/ above hyperparameters
+            model=WienerCascadeDecoder(deg) #Define model
+            model.fit(X_flat_train0,y_train0) #Fit model
+            y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
+            y_test_predicted=model.predict(X_flat_test) #Validation set predictions
 
-                print(np.mean(get_R2(y_test,y_test_predicted)))
+            print(np.mean(get_R2(y_test,y_test_predicted)))
 
-                mean_R2_all[i] = np.mean(get_R2(y_test,y_test_predicted))
-                mean_rho_all[i] = np.mean(get_rho(y_test,y_test_predicted))
-                y_train_pred_all.append(y_train_predicted) 
-                y_test_pred_all.append(y_test_predicted) 
+            mean_R2 = np.mean(get_R2(y_test,y_test_predicted))
+            mean_rho = np.mean(get_rho(y_test,y_test_predicted))
 
-        # Wiener Cascade Decoder
-        if m == 1:
-            BO = BayesianOptimization(wc_evaluate, {'degree': (1, 20.99)}, verbose=1,allow_duplicate_points=True)
-            BO.maximize(init_points=10, n_iter=10) #Set number of initial runs and subsequent tests, and do the optimization
-            params = max(BO.res, key=lambda x:x['target'])
-            hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([(round(((BO.res[key]['params']['degree'])*2))/2) for key in range(len(BO.res))]))).T)
+    # XGBoost Decoder
+    if m == 2:
+        BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 6.99), 'num_round': (100,600.99), 'eta': (0.01, 8)}, verbose=1,allow_duplicate_points=True)
+        BO.maximize(init_points=10, n_iter=10)
+        params = max(BO.res, key=lambda x:x['target'])
+        hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['max_depth']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_round']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['eta'],2) for key in range(len(BO.res))]))).T)
 
-            if j==fi-1:
-                df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','degree'])
-                df_mn = df.groupby(['degree']).agg(['count','mean'])
-                deg = df_mn['R2']['mean'].idxmax()
+        if j==fi-1:
+            df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','max_depth','num_round','eta'])
+            df = df.sort_values(by=['R2'])
+            df_max = df.groupby(['max_depth','num_round']).mean()
+            df_max = df_max.reset_index()
+            best_params = df_max.iloc[df_max['R2'].idxmax()]
+            max_depth = best_params['max_depth']
+            num_round = best_params['num_round']
+            eta = best_params['eta']
+            
+            X_flat_test=(X_flat_test[outer_fold]-np.nanmean(X_flat_train0[outer_fold],axis=0))/(np.nanstd(X_flat_train0[outer_fold],axis=0))
+            X_flat_train0=(X_flat_train0[outer_fold]-np.nanmean(X_flat_train0[outer_fold],axis=0))/(np.nanstd(X_flat_train0[outer_fold],axis=0))
+            y_test=y_test[outer_fold]-np.mean(y_train0[outer_fold],axis=0)
+            y_train0=y_train0[outer_fold]-np.mean(y_train0[outer_fold],axis=0) 
 
-                X_flat_test=(X_flat_test-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
-                X_flat_train0=(X_flat_train0-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
-                y_test=y_test-np.mean(y_train0,axis=0)
-                y_train0=y_train0-np.mean(y_train0,axis=0) 
+            model=XGBoostDecoder(max_depth=int(max_depth), num_round=int(num_round), eta=float(eta))
+            model.fit(X_flat_train0,y_train0) #Fit model
+            y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
+            y_test_predicted=model.predict(X_flat_test) #Validation set predictions
 
-                # Run model w/ above hyperparameters
-                model=WienerCascadeDecoder(deg) #Define model
-                model.fit(X_flat_train0,y_train0) #Fit model
-                y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
-                y_test_predicted=model.predict(X_flat_test) #Validation set predictions
+            print(np.mean(get_R2(y_test,y_test_predicted)))
+            
+            mean_R2 = np.mean(get_R2(y_test,y_test_predicted))
+            mean_rho = np.mean(get_rho(y_test,y_test_predicted))
 
-                print(np.mean(get_R2(y_test,y_test_predicted)))
 
-                mean_R2_all[i] = np.mean(get_R2(y_test,y_test_predicted))
-                mean_rho_all[i] = np.mean(get_rho(y_test,y_test_predicted))
-                y_train_pred_all.append(y_train_predicted) 
-                y_test_pred_all.append(y_test_predicted) 
+    # SVR Decoder
+    if m == 3:
+        BO = BayesianOptimization(svr_evaluate, {'C': (2, 6.99)}, verbose=1, allow_duplicate_points=True)
+        BO.maximize(init_points=10, n_iter=10)
+        params = max(BO.res, key=lambda x:x['target'])
+        hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['C'],1) for key in range(len(BO.res))]))).T)
 
-        # XGBoost Decoder
-        if m == 2:
-            BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 6.99), 'num_round': (100,600.99), 'eta': (0.01, 8)}, verbose=1,allow_duplicate_points=True)
-            BO.maximize(init_points=10, n_iter=10)
-            params = max(BO.res, key=lambda x:x['target'])
-            hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['max_depth']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_round']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['eta'],2) for key in range(len(BO.res))]))).T)
+        if j==fi-1:
+            df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','C'])
+            df_mn = df.groupby(['C']).agg(['count','mean'])
+            C = df_mn['R2']['mean'].idxmax()
+            
+            X_flat_test=(X_flat_test[outer_fold]-np.nanmean(X_flat_train0[outer_fold],axis=0))/(np.nanstd(X_flat_train0[outer_fold],axis=0))
+            X_flat_train0=(X_flat_train0[outer_fold]-np.nanmean(X_flat_train0[outer_fold],axis=0))/(np.nanstd(X_flat_train0[outer_fold],axis=0))
+            y_test=y_test[outer_fold]-np.mean(y_train0[outer_fold],axis=0)
+            y_train0=y_train0[outer_fold]-np.mean(y_train0[outer_fold],axis=0) 
+            y_zscore_test=y_test/(np.nanstd(y_train0,axis=0))
+            y_zscore_train0=y_train0/(np.nanstd(y_train0,axis=0))
 
-            if j==fi-1:
-                df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','max_depth','num_round','eta'])
-                df = df.sort_values(by=['R2'])
-                df_max = df.groupby(['max_depth','num_round']).mean()
-                df_max = df_max.reset_index()
-                best_params = df_max.iloc[df_max['R2'].idxmax()]
-                max_depth = best_params['max_depth']
-                num_round = best_params['num_round']
-                eta = best_params['eta']
+            model=SVRDecoder(C=C, max_iter=2000)
+            model.fit(X_flat_train0,y_zscore_train0) #Fit model
+            y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
+            y_test_predicted=model.predict(X_flat_test) #Validation set predictions
 
-                X_flat_test=(X_flat_test-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
-                X_flat_train0=(X_flat_train0-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
-                y_test=y_test-np.mean(y_train0,axis=0)
-                y_train0=y_train0-np.mean(y_train0,axis=0)
-
-                model=XGBoostDecoder(max_depth=int(max_depth), num_round=int(num_round), eta=float(eta))
-                model.fit(X_flat_train0,y_train0) #Fit model
-                y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
-                y_test_predicted=model.predict(X_flat_test) #Validation set predictions
-
-                print(np.mean(get_R2(y_test,y_test_predicted)))
-
-                mean_R2_all[i] = np.mean(get_R2(y_test,y_test_predicted))
-                mean_rho_all[i] = np.mean(get_rho(y_test,y_test_predicted))
-                y_train_pred_all.append(y_train_predicted)
-                y_test_pred_all.append(y_test_predicted)
-
-        # SVR Decoder
-        if m == 3:
-            BO = BayesianOptimization(svr_evaluate, {'C': (2, 6.99)}, verbose=1, allow_duplicate_points=True)
-            BO.maximize(init_points=10, n_iter=10)
-            params = max(BO.res, key=lambda x:x['target'])
-            hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['C'],1) for key in range(len(BO.res))]))).T)
-
-            if j==fi-1:
-                df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','C'])
-                df_mn = df.groupby(['C']).agg(['count','mean'])
-                C = df_mn['R2']['mean'].idxmax()
-
-                X_flat_test=(X_flat_test-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
-                X_flat_train0=(X_flat_train0-np.nanmean(X_flat_train0,axis=0))/(np.nanstd(X_flat_train0,axis=0))
-                y_test=y_test-np.mean(y_train0,axis=0)
-                y_train0=y_train0-np.mean(y_train0,axis=0)
-                y_zscore_test=y_test/(np.nanstd(y_train0,axis=0))
-                y_zscore_train0=y_train0/(np.nanstd(y_train0,axis=0))
-
-                model=SVRDecoder(C=C, max_iter=2000)
-                model.fit(X_flat_train0,y_zscore_train0) #Fit model
-                y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
-                y_test_predicted=model.predict(X_flat_test) #Validation set predictions
-
-                print(np.mean(get_R2(y_zscore_test,y_test_predicted)))
-
-                mean_R2_all[i] = np.mean(get_R2(y_zscore_test,y_test_predicted))
-                mean_rho_all[i] = np.mean(get_rho(y_zscore_test,y_test_predicted))
-                y_train_pred_all.append(y_train_predicted)
-                y_test_pred_all.append(y_test_predicted)
+            print(np.mean(get_R2(y_zscore_test,y_test_predicted)))
+            
+            mean_R2 = np.mean(get_R2(y_test,y_test_predicted))
+            mean_rho = np.mean(get_rho(y_test,y_test_predicted))
 
 time_elapsed=time.time()-t1 #How much time has passed
 print("time elapsed: %.3f seconds" % time_elapsed)
 
-with open(folder+pfile,'wb') as p:
-    pickle.dump([y_train_all,y_test_all,y_train_pred_all,y_test_pred_all,mean_R2_all,mean_rho_all,time_elapsed],p)
+
+
+with open(cwd+pfile+'/fold_'+str(outer_fold)+'.pickle','wb') as p:
+    pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed],p)
 
 '''
         # SVR Decoder

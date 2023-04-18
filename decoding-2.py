@@ -259,7 +259,7 @@ for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[outer_fol
     # RNN Decoder
     if m == 5:
         BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
-        BO.maximize(init_points=20, n_iter=20)
+        BO.maximize(init_points=5, n_iter=5)
         params = max(BO.res, key=lambda x:x['target'])
         hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
 

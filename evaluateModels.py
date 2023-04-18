@@ -20,13 +20,17 @@ def wienerFilter(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test):
     return y_train_predicted,y_valid_predicted,y_test_predicted,R2s,rhos,[]
     
 ###################### MODEL 1 - Wiener Cascade Decoder ###########################
-def wienerCascade(X_flat_train,X_flat_valid,X_flat_test,y_train,y_valid,y_test):
+def wienerCascade(X_train,X_test,y_train,y_test,stage):
     from decoders import WienerCascadeDecoder
-    from bayes_opt import BayesianOptimization
-    ### Get hyperparameters using Bayesian optimization based on validation set R2 values###
+    def wc_evaluate(degree):
+        model=WienerCascadeDecoder(degree) #Define model
+        model.fit(X_flat_train,y_train) #Fit model
+        y_valid_predicted=model.predict(X_flat_valid) #Validation set predictions
+        return np.mean(get_R2(y_valid,y_valid_predicted)) #R2 value of validation set (mean over x and y position/velocity)
+    
+    if stage=='train':
+        from bayes_opt import BayesianOptimization
 
-    #Define a function that returns the metric we are trying to optimize (R2 value of the validation set)
-    #as a function of the hyperparameter we are fitting (here, degree)
     def wc_evaluate(degree):
         model=WienerCascadeDecoder(degree) #Define model
         model.fit(X_flat_train,y_train) #Fit model

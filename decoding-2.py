@@ -49,8 +49,8 @@ def xgb_evaluate(max_depth,num_round,eta): #2
     y_valid_predicted=model.predict(X_flat_valid) #Get validation set predictions
     return np.mean(get_R2(y_valid,y_valid_predicted)) #Return mean validation set R2
 
-def svr_evaluate(C): #3
-    model=SVRDecoder(C=C, max_iter=2000)
+def svr_evaluate(C,max_iter): #3
+    model=SVRDecoder(C=int(C), max_iter=int(max_iter))
     model.fit(X_flat_train,y_zscore_train) #Note for SVR that we use z-scored y values
     y_valid_predicted=model.predict(X_flat_valid)
     return np.mean(get_R2(y_zscore_valid,y_valid_predicted))
@@ -193,15 +193,19 @@ for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[outer_fol
 
     # SVR Decoder
     if m == 3:
-        BO = BayesianOptimization(svr_evaluate, {'C': (2, 6.99)}, verbose=1, allow_duplicate_points=True)
+        BO = BayesianOptimization(svr_evaluate, {'C': (2, 6.99),'max_iter': (100,600.99)}, verbose=1, allow_duplicate_points=True)
         BO.maximize(init_points=10, n_iter=10)
         params = max(BO.res, key=lambda x:x['target'])
-        hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['C'],1) for key in range(len(BO.res))]))).T)
+        hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['C']) for key in range(len(BO.res))]), np.array([int(BO.res[key]['params']['max_iter']) for key in range(len(BO.res))]))).T)
 
         if j==fi-1:
-            df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','C'])
-            df_mn = df.groupby(['C']).agg(['count','mean'])
-            C = df_mn['R2']['mean'].idxmax()
+            df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','C','max_iter'])
+            df = df.sort_values(by=['R2'])
+            df_max = df.groupby(['C','max_iter']).mean()
+            df_max = df_max.reset_index()
+            best_params = df_max.iloc[df_max['R2'].idxmax()]
+            C = best_params['C']
+            max_iter = best_params['max_iter']
             
             X_flat_test=(X_flat_test[outer_fold]-np.nanmean(X_flat_train0[outer_fold],axis=0))/(np.nanstd(X_flat_train0[outer_fold],axis=0))
             X_flat_train0=(X_flat_train0[outer_fold]-np.nanmean(X_flat_train0[outer_fold],axis=0))/(np.nanstd(X_flat_train0[outer_fold],axis=0))
@@ -210,7 +214,7 @@ for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[outer_fol
             y_zscore_test=y_test/(np.nanstd(y_train0,axis=0))
             y_zscore_train0=y_train0/(np.nanstd(y_train0,axis=0))
 
-            model=SVRDecoder(C=C, max_iter=2000)
+            model=SVRDecoder(C=C, max_iter=max_iter)
             model.fit(X_flat_train0,y_zscore_train0) #Fit model
             y_train_predicted=model.predict(X_flat_train0) #Validation set predictions
             y_test_predicted=model.predict(X_flat_test) #Validation set predictions

@@ -23,50 +23,49 @@ types        =  {'pure','forward','backward'}; % types of trials
 data = load('-mat',sprintf('Users/kendranoneman/Projects/mayo/data/neural-decoding/raw/combinedMaestroSpkSortMTFEF.%s.mat',session));
 
 [exp_clean,unitnames,snrs] = struct_clean(data.exp);
+
+% if you want to detect microsaccades
+%[msFlag,eye_adjust] = cellfun(@(q,m) detect_msTrials(struct2cell(q),m,50,100,750,50), {exp_clean.dataMaestroPlx.mstEye}.', stimOnsets, 'uni', 0);
+%exp_clean.dataMaestroPlx(logical(cell2mat(msFlag))) = []; eye_adjust = eye_adjust(~logical(cell2mat(msFlag))); 
+%[exp_clean.dataMaestroPlx.mstEye] = eye_adjust{:};
+
+% if you want to pull out particular conditions
+%extract_conditions = {'d145','d235','d325','d415','c012','c100','sp10','sp20'};
+%extract_columns = [2 3 4];
+%define_columns = [2 3 4];
+%[exp_clean,~] = struct_pullConditions(exp_clean,extract_conditions,extract_columns,define_columns);
+
 tagS  =  {exp_clean.dataMaestroPlx.tagSection}.'; tagS = vertcat(tagS{:});
-if sum(cellfun(@(q) isempty(q), {tagS.stTimeMS}.', 'uni', 1))~=length(tagS)
-    stmFlag = 1;
-    stimOnsets = {tagS.stTimeMS}.';
-else
-    stmFlag = 0;
-    stimOnsets = num2cell(repmat(motionStart,length(exp_clean.dataMaestroPlx),1));
-end
+stimOnsets = {tagS.stTimeMS}.';
 
-% clean up struct
-[msFlag,eye_adjust] = cellfun(@(q,m) detect_msTrials(struct2cell(q),m,50,100,750,50), {exp_clean.dataMaestroPlx.mstEye}.', stimOnsets, 'uni', 0);
-exp_clean.dataMaestroPlx(logical(cell2mat(msFlag))) = []; eye_adjust = eye_adjust(~logical(cell2mat(msFlag))); 
-[exp_clean.dataMaestroPlx.mstEye] = eye_adjust{:};
-
-extract_conditions = {'d145','d235','d325','d415','c012','c100','sp10','sp20'};
-extract_columns = [2 3 4];
-define_columns = [2 3 4];
-[exp_clean,~] = struct_pullConditions(exp_clean,extract_conditions,extract_columns,define_columns);
-
-if stmFlag==1
-    tagS  =  {exp_clean.dataMaestroPlx.tagSection}.'; tagS = vertcat(tagS{:});
-    stimOnsets = {tagS.stTimeMS}.';
-else
-    stimOnsets = num2cell(repmat(motionStart,length(exp_clean.dataMaestroPlx),1));
-end
-[pursuitOnsets,rxnTimes] = cellfun(@(q,m) detect_pursuitOnset(struct2cell(q),m,50,300), {exp_clean.dataMaestroPlx.mstEye}.', stimOnsets, 'uni', 0);
-exp_clean.dataMaestroPlx(isnan(cell2mat(rxnTimes))) = []; pursuitOnsets(isnan(cell2mat(rxnTimes))) = []; stimOnsets(isnan(cell2mat(rxnTimes))) = []; rxnTimes(isnan(cell2mat(rxnTimes))) = []; 
+% if you want to detect pursuit onset time
+%[pursuitOnsets,rxnTimes] = cellfun(@(q,m) detect_pursuitOnset(struct2cell(q),m,50,300), {exp_clean.dataMaestroPlx.mstEye}.', stimOnsets, 'uni', 0);
+%exp_clean.dataMaestroPlx(isnan(cell2mat(rxnTimes))) = []; pursuitOnsets(isnan(cell2mat(rxnTimes))) = []; stimOnsets(isnan(cell2mat(rxnTimes))) = []; rxnTimes(isnan(cell2mat(rxnTimes))) = []; 
 motionDirs = cellfun(@(q) str2double(q(strfind(q,'d')+1:strfind(q,'d')+3)), {exp_clean.dataMaestroPlx.trType}.', 'uni', 0);
-[csTypes,ipt,saccProps] = cellfun(@(q,p,d) detect_catchupSaccade(struct2cell(q),p,d,1,200,750,30), {exp_clean.dataMaestroPlx.mstEye}.', pursuitOnsets, motionDirs, 'uni', 0);
-exp_clean.dataMaestroPlx(cell2mat(csTypes)==0) = []; pursuitOnsets(cell2mat(csTypes)==0) = []; stimOnsets(cell2mat(csTypes)==0) = []; rxnTimes(cell2mat(csTypes)==0) = []; motionDirs(cell2mat(csTypes)==0) = []; ipt(cell2mat(csTypes)==0) = []; saccProps(cell2mat(csTypes)==0) = []; csTypes(cell2mat(csTypes)==0) = [];
-new_condition = cellfun(@(x,y)[x,'_',types{y}], {exp_clean.dataMaestroPlx.condition_name}.',csTypes,'uni',0);
-[exp_clean.dataMaestroPlx.condition_name] = new_condition{:};
 
-exp_clean.dataMaestroPlx(cell2mat(csTypes)~=1) = []; pursuitOnsets(cell2mat(csTypes)~=1) = []; stimOnsets(cell2mat(csTypes)~=1) = []; rxnTimes(cell2mat(csTypes)~=1) = []; motionDirs(cell2mat(csTypes)~=1) = [];
+% if you want to detect catch-up saccades
+%[csTypes,ipt,saccProps] = cellfun(@(q,p,d) detect_catchupSaccade(struct2cell(q),p,d,1,200,750,30), {exp_clean.dataMaestroPlx.mstEye}.', pursuitOnsets, motionDirs, 'uni', 0);
+%exp_clean.dataMaestroPlx(cell2mat(csTypes)==0) = []; pursuitOnsets(cell2mat(csTypes)==0) = []; stimOnsets(cell2mat(csTypes)==0) = []; rxnTimes(cell2mat(csTypes)==0) = []; motionDirs(cell2mat(csTypes)==0) = []; ipt(cell2mat(csTypes)==0) = []; saccProps(cell2mat(csTypes)==0) = []; csTypes(cell2mat(csTypes)==0) = [];
+%new_condition = cellfun(@(x,y)[x,'_',types{y}], {exp_clean.dataMaestroPlx.condition_name}.',csTypes,'uni',0);
+%[exp_clean.dataMaestroPlx.condition_name] = new_condition{:};
+
+%exp_clean.dataMaestroPlx(cell2mat(csTypes)~=1) = []; pursuitOnsets(cell2mat(csTypes)~=1) = []; stimOnsets(cell2mat(csTypes)~=1) = []; rxnTimes(cell2mat(csTypes)~=1) = []; motionDirs(cell2mat(csTypes)~=1) = [];
 eyes = {exp_clean.dataMaestroPlx.mstEye}.'; 
+eyes_new = cellfun(@(et,so) trimSmooth_eyeTraces(et,so,preint,postint,20), eyes, stimOnsets, 'uni', 0); 
 
-tt = [{exp_clean.dataMaestroPlx.trName}.' {exp_clean.dataMaestroPlx.trType}.' motionDirs pursuitOnsets stimOnsets rxnTimes eyes];
-trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","PursuitOnset","TargetMotionOnset","RxnTime","EyeTraces"]);
+%tt = [{exp_clean.dataMaestroPlx.trName}.' {exp_clean.dataMaestroPlx.trType}.' motionDirs pursuitOnsets stimOnsets rxnTimes eyes];
+%trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","PursuitOnset","TargetMotionOnset","RxnTime","EyeTraces"]);
+%trialTbl.TrialName = categorical(string(trialTbl.TrialName)); trialTbl.TrialType = categorical(string(trialTbl.TrialType));
+
+tt = [{exp_clean.dataMaestroPlx.trName}.' {exp_clean.dataMaestroPlx.trType}.' motionDirs stimOnsets eyes_new];
+trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","TargetMotionOnset","EyeTraces"]);
 trialTbl.TrialName = categorical(string(trialTbl.TrialName)); trialTbl.TrialType = categorical(string(trialTbl.TrialType));
 
 % Directions in this session (4, corrected by rotation factor)
-dirsdeg  =  sort(unique(trialTbl.Direction)); % direction for each trial
+dirsdeg  =  sort(unique(trialTbl.Direction)); % direction for each trial 
 
 %%%%%%%%%%%%%%% Unit Info %%%%%%%%%%%%%%%%%%%
+% if you want to find each neurons' preferred/anti-preferred direction
 % initialize a cell array to store calculated parameters in
 unitVars  = ["UnitName","BrainArea","SNR","BestDir","MeanFR_BestDir","VarFR_BestDir"];
 
@@ -82,14 +81,10 @@ spkwin      =  [0 250];
 
 % Loop through each motion direction, trial, and unit
 for d = 1:length(dirsdeg) % for each direction
-
     trls   =   trialTbl(trialTbl.Direction==dirsdeg(d),:); 
     units  =   {exp_clean.dataMaestroPlx(trialTbl.Direction==dirsdeg(d)).units}.'; 
-
     for t = 1:size(trls,1) % for each trial
         shift       =  trls.TargetMotionOnset(t);    % time stimulus starts to move
-        tnum = find(ismember(trialTbl.TrialName,trls.TrialName(t))==1);
-
         for u = 1:length(unitnames) % for each unit
             thisunit  =  unitnames{u}; % unit name
 
@@ -101,8 +96,6 @@ for d = 1:length(dirsdeg) % for each direction
                 % Calculate firing rate in Hz (spks/sec)
                 if ~isempty(alignedspks) % if unit fired during specific time window
                     spksHz  =  (sum(alignedspks>=spkwin(1) & alignedspks<spkwin(2))/(abs(spkwin(2)-spkwin(1))))*1000;
-                    spike_times{u}{tnum} = (alignedspks + preint) + ((tnum-1)*(preint+postint));
-                    
                 else % unit did not spike in time window
                     spksHz  =  0;
                 end
@@ -110,7 +103,6 @@ for d = 1:length(dirsdeg) % for each direction
             else % no information about unit in this trial at all
                 spksHz  =  NaN; 
             end
-
             % {unit}{direction}(trial)
             spkcnts{u}{d}(t) = spksHz;
         end
@@ -130,16 +122,36 @@ varFRbestdir           =  varFRbestdir(bestdir);          % var FR in best direc
 unitsTbl  =  [cellstr(categorical(string(unitnames))),cellstr(categorical(string(brainareas))),num2cell(snrs'),num2cell(bestDir,2),num2cell(mnFRbestdir,2),num2cell(varFRbestdir,2)];       
 unitsTbl  =  cell2table(unitsTbl,'VariableNames',unitVars);
 unitsTbl.UnitName   =  categorical(string(unitsTbl.UnitName)); unitsTbl.BrainArea  =  categorical(string(unitsTbl.BrainArea));
+    
+units  =   {exp_clean.dataMaestroPlx.units}.'; 
+for t = 1:size(trialTbl,1) % for each trial
+    shift       =  trialTbl.TargetMotionOnset(t);    % time stimulus starts to move
+    for u = 1:length(unitnames) % for each unit
+        thisunit  =  unitnames{u}; % unit name
+
+        if isfield(units{t}, (thisunit)) % if unit fired at some point in the trial
+            spktimes     =  units{t,1}.(thisunit)-shift; % shift spike times so aligned to 'onset'
+            spkind       =  spktimes >= -preint & spktimes < postint; % only include spikes in time window
+            alignedspks  =  spktimes(spkind);
+
+            % Calculate firing rate in Hz (spks/sec)
+            if ~isempty(alignedspks) % if unit fired during specific time window
+                spike_times{u}{t} = (alignedspks + preint) + ((t-1)*(preint+postint));
+            end
+        end
+    end
+end
+
+spike_times = cellfun(@(z) vertcat(z{:}), spike_times, 'uni', 0);
+
+pos = cellfun(@(q) q{1}, eyes_new, 'uni', 0); pos = vertcat(pos{:});
+vels = cellfun(@(q) q{2}, eyes_new, 'uni', 0); vels = vertcat(vels{:});
+acc = cellfun(@(q) q{3}, eyes_new, 'uni', 0); acc = vertcat(acc{:});
+
+vels_times     =  (1:size(trialTbl,1)*(preint+postint))';
 
 %%%%%%%%%%%%%%% Save to a file %%%%%%%%%%%%%%%%%%
-spike_times = cellfun(@(z) vertcat(z{:}), spike_times, 'uni', 0);
-eyes_trimmed = cellfun(@(y,r) cellfun(@(q) q(r-preint:r+postint-1), struct2cell(y), 'uni', 0), eyes, stimOnsets, 'uni', 0);
-eyes_stacked = cellfun(@(q) vertcat(q{:})',eyes_trimmed,'uni',0);
-
-outputs = vertcat(eyes_stacked{:});
-out_times     =  (1:size(trialTbl,1)*(preint+postint))';
-
-save(sprintf('%s/vars-%s-pre%03d-post%03d.mat',folder,session,preint,postint-800),'spike_times','outputs','out_times','-v7');
+save(sprintf('%s/vars-%s-pre%03d-post%03d.mat',folder,session,preint,postint-800),'spike_times','pos','vels','acc','vels_times','-v7');
 writetable(unitsTbl,sprintf('%s/units-%s-pre%03d-post%03d.csv',folder,session,preint,postint-800))
 
 end

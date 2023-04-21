@@ -35,14 +35,10 @@ def make_directory(jobname):
 
 def get_session(j,t,d):
     sessions = ['pa29dir4A']
-    times = [[500,300],[100,100]]
+    times = [[500,300]]
     return sessions[j]+'-pre'+str(times[t][0])+'-post'+str(times[t][1])+'-dt'+str(d),sessions[j]+'-pre'+str(times[t][0])+'-post'+str(times[t][1])
 
 def get_bins(bn):
-    bins = [[6,1,6],[7,1,7]]
+    bins = [[6,1,6]]
     return bins[bn][0],bins[bn][1],bins[bn][2]
-
-def define_outputs(o):
-    outputs = [[0,1],[2,3]]
-    return outputs[o]
 

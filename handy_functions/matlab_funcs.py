@@ -26,8 +26,10 @@ def mat_to_pickle(filename,dt):
     data         =  io.loadmat(folder+filename+'.mat')
 
     spike_times  =  data['spike_times'] # spike times of all neurons
-    outputs         =  data['outputs'] # x and y eye velocities
-    out_times    =  data['out_times'] # times at which velocities were recorded
+    pos          =  data['pos'] # x and y eye positions
+    vels         =  data['vels'] # x and y eye velocities
+    acc          =  data['acc'] # x and y eye accelerations
+    out_times    =  data['vels_times'] # times at which velocities were recorded
     out_times    =  np.squeeze(out_times)
 
     # Use preprocessing functions to bin the data
@@ -40,10 +42,12 @@ def mat_to_pickle(filename,dt):
         spike_times[i]  =  np.squeeze(spike_times[i])
 
     neural_data  =  bin_spikes(spike_times,dt,t_start,t_end)
-    out_binned  =  bin_output(outputs,out_times,dt,t_start,t_end,downsample_factor)
+    pos_binned  =  bin_output(pos,out_times,dt,t_start,t_end,downsample_factor)
+    vel_binned  =  bin_output(vels,out_times,dt,t_start,t_end,downsample_factor)
+    acc_binned  =  bin_output(acc,out_times,dt,t_start,t_end,downsample_factor)
 
     # Pickle the file
     data_folder='/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets/' #FOLDER YOU WANT TO SAVE THE DATA TO
 
     with open(data_folder+filename+'-dt'+str(dt)+'.pickle','wb') as f:
-        pickle.dump([neural_data,out_binned],f)
+        pickle.dump([neural_data,pos_binned,vel_binned,acc_binned],f)

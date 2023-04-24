@@ -39,6 +39,6 @@ def get_session(j,t,d):
     return sessions[j]+'-pre'+str(times[t][0])+'-post'+str(times[t][1])+'-dt'+str(d),sessions[j]+'-pre'+str(times[t][0])+'-post'+str(times[t][1])
 
 def get_bins(bn):
-    bins = [[6,1,6]]
+    bins = [[6,1,6],[6,1,0]]
     return bins[bn][0],bins[bn][1],bins[bn][2]
 

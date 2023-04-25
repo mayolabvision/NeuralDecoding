@@ -13,6 +13,6 @@ module purge
 module load anaconda3/2022.10
 conda activate neuraldecoding-gpu
 
-python decoding-1.py $1 $2
+python decoding-2.py $1 $2
 #cp files you'd like to move off of scratch
 #mv files that you'd like moved off of scratch

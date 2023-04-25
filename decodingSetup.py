@@ -62,8 +62,14 @@ def get_dataParams(linenum):
         mt_inds = sorted(np.random.choice(units[units['BrainArea'] == 'MT'].index, nm, replace=False))
         fef_inds = sorted(np.random.choice(units[units['BrainArea'] == 'FEF'].index, nf, replace=False))
 
-        neural_data2= neural_data[:,sorted(np.concatenate((np.array((mt_inds)),np.array((fef_inds)))))]
-        
+        if nm==0:
+            neural_data2= neural_data[:,np.array((fef_inds))]
+        elif nf==0:
+            neural_data2= neural_data[:,np.array((mt_inds))]
+        else:
+            neural_data2= neural_data[:,sorted(np.concatenate((np.array((mt_inds)),np.array((fef_inds)))))]
+
+
         X = get_spikes_with_history(neural_data2,bins_before,bins_after,bins_current)
         X = X[range(bins_before,X.shape[0]-bins_after),:,:]
         num_examples=X.shape[0]

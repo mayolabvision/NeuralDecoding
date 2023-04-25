@@ -32,7 +32,7 @@ from sklearn.svm import SVR
 from sklearn.svm import SVC 
 from bayes_opt import BayesianOptimization
 
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 import itertools
 import warnings
 warnings.filterwarnings('ignore', 'Solver terminated early.*')
@@ -100,7 +100,8 @@ y_test_predicted = []
 mean_R2 = np.zeros((10, fi))
 mean_rho = np.zeros((10, fi))
 time_elapsed = np.zeros((10,fi))
-for r in range(10):
+for r in range(1):
+    ######################## inner folds ###########################
     hp_tune = []
     for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[outer_fold][r])):
         print(j)
@@ -173,7 +174,7 @@ for r in range(10):
         # XGBoost Decoder
         if m == 2:
             BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=1)
-            BO.maximize(init_points=10, n_iter=10)
+            BO.maximize(init_points=3, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['max_depth']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_round']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['eta'],2) for key in range(len(BO.res))]))).T)
 
@@ -206,7 +207,7 @@ for r in range(10):
         # SVR Decoder
         if m == 3:
             BO = BayesianOptimization(svr_evaluate, {'C': (2, 6.99)}, verbose=1, allow_duplicate_points=True)
-            BO.maximize(init_points=10, n_iter=10)
+            BO.maximize(init_points=3, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['C'],1) for key in range(len(BO.res))]))).T)
 
@@ -235,7 +236,7 @@ for r in range(10):
         # DNN
         if m == 4:
             BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
-            BO.maximize(init_points=20, n_iter=20)
+            BO.maximize(init_points=3, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
 
@@ -267,7 +268,7 @@ for r in range(10):
         # RNN
         if m == 5:
             BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
-            BO.maximize(init_points=20, n_iter=20)
+            BO.maximize(init_points=3, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
 
@@ -299,7 +300,7 @@ for r in range(10):
         # GRU Decoder
         if m == 6:
             BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
-            BO.maximize(init_points=20, n_iter=20)
+            BO.maximize(init_points=3, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
 
@@ -331,7 +332,7 @@ for r in range(10):
         # LSTM Decoder
         if m == 7:
             BO = BayesianOptimization(lstm_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
-            BO.maximize(init_points=20, n_iter=20)
+            BO.maximize(init_points=3, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
 

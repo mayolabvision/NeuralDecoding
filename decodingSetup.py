@@ -58,7 +58,7 @@ def get_dataParams(linenum):
     X_test = [[] for i in range(fo)]
     X_flat_test = [[] for i in range(fo)]
     y_test = [[] for i in range(fo)]
-    for r in range(10):
+    for r in range(1):
         mt_inds = sorted(np.random.choice(units[units['BrainArea'] == 'MT'].index, nm, replace=False))
         fef_inds = sorted(np.random.choice(units[units['BrainArea'] == 'FEF'].index, nf, replace=False))
 
@@ -70,7 +70,7 @@ def get_dataParams(linenum):
         X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
         y=out_binned
         y = y[range(bins_before,y.shape[0]-bins_after),:]
-        
+       
         outer_cv = KFold(n_splits=fo, random_state=None, shuffle=False)
         
         for q, (train0_index, test_index) in enumerate(outer_cv.split(X)):

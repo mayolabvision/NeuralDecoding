@@ -12,7 +12,7 @@ def checkdir(name):
     return
 
 def get_params(i):
-    line = numpy.loadtxt('params.txt')[i]
+    line = numpy.loadtxt('params_mlproject.txt')[i]
     print(line)
     s = int(line[1])
     t = int(line[2])

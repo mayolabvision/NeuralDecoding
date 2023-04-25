@@ -1,12 +1,12 @@
 #!/bin/bash -l
-#SBATCH -p RM-shared
+#SBATCH -p GPU-shared
 #SBATCH -J neuraldecoding
 #SBATCH -o runs/outfiles/out.o%j
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --mail-type=all
 #SBATCH --mail-user=knoneman@andrew.cmu.edu
-#SBATCH -t 05:00:00
+#SBATCH -t 16:00:00
 #SBATCH --ntasks-per-node=1
 
 module purge

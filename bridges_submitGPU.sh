@@ -6,13 +6,13 @@
 #SBATCH -n 1
 #SBATCH --mail-type=all
 #SBATCH --mail-user=knoneman@andrew.cmu.edu
-#SBATCH -t 03:00:00
+#SBATCH -t 15:00:00
 #SBATCH --gpus=v100-32:4
 
 module purge
 module load anaconda3/2022.10
 conda activate neuraldecoding-gpu
 
-python decoding-1.py $1
+python decoding-1.py $1 $2
 #cp files you'd like to move off of scratch
 #mv files that you'd like moved off of scratch

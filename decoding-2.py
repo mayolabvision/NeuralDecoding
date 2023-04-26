@@ -95,12 +95,9 @@ outer_fold = int(sys.argv[2])
 inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
 
 t1=time.time()
-y_train_predicted = []
-y_test_predicted = []
-mean_R2 = np.zeros((10, fi))
-mean_rho = np.zeros((10, fi))
-time_elapsed = np.zeros((10,fi))
-for r in range(1):
+y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed = [],[],[],[],[]
+num_repeats = 1
+for r in range(num_repeats):
     ######################## inner folds ###########################
     hp_tune = []
     for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[outer_fold][r])):
@@ -139,8 +136,12 @@ for r in range(1):
 
                 print(np.mean(get_R2(y_testf,y_test_predicted[r])))
                 
-                mean_R2[r,j] = np.mean(get_R2(y_testf,y_test_predicted[r]))
-                mean_rho[r,j] = np.mean(get_rho(y_testf,y_test_predicted[r]))
+                #mean_R2[r,j] = np.mean(get_R2(y_testf,y_test_predicted[r]))
+                #mean_rho[r,j] = np.mean(get_rho(y_testf,y_test_predicted[r]))
+
+                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
+                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+                
 
         # Wiener Cascade Decoder
         if m == 1:
@@ -168,8 +169,11 @@ for r in range(1):
 
                 print(np.mean(get_R2(y_testf,y_test_predicted[r])))
                 
-                mean_R2[r,j] = np.mean(get_R2(y_testf,y_test_predicted[r]))
-                mean_rho[r,j] = np.mean(get_rho(y_testf,y_test_predicted[r]))
+                #mean_R2[r,j] = np.mean(get_R2(y_testf,y_test_predicted[r]))
+                #mean_rho[r,j] = np.mean(get_rho(y_testf,y_test_predicted[r]))
+                
+                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
+                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
 
         # XGBoost Decoder
         if m == 2:

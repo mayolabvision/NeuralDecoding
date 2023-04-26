@@ -224,14 +224,14 @@ for r in range(1):
                 y_zscore_train0=y_train0f/(np.nanstd(y_train0f,axis=0))
 
                 model=SVRDecoder(C=C, max_iter=2000)
-                model.fit(X_flat_train0f,y_zscore_train0f) #Fit model
+                model.fit(X_flat_train0f,y_zscore_train0) #Fit model
                 y_train_predicted=model.predict(X_flat_train0f) #Validation set predictions
                 y_test_predicted=model.predict(X_flat_testf) #Validation set predictions
 
-                print(np.mean(get_R2(y_zscore_testf,y_test_predicted)))
+                print(np.mean(get_R2(y_zscore_test,y_test_predicted)))
                 
-                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
-                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+                mean_R2 = np.mean(get_R2(y_zscore_test,y_test_predicted))
+                mean_rho = np.mean(get_rho(y_zscore_test,y_test_predicted))
 
         # DNN
         if m == 4:

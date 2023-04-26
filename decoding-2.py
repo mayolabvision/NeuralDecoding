@@ -139,8 +139,8 @@ for r in range(num_repeats):
                 #mean_R2[r,j] = np.mean(get_R2(y_testf,y_test_predicted[r]))
                 #mean_rho[r,j] = np.mean(get_rho(y_testf,y_test_predicted[r]))
 
-                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
-                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted[r]))
+                mean_rho = np.mean(get_rho(y_testf,y_test_predicted[r]))
                 
 
         # Wiener Cascade Decoder
@@ -172,8 +172,8 @@ for r in range(num_repeats):
                 #mean_R2[r,j] = np.mean(get_R2(y_testf,y_test_predicted[r]))
                 #mean_rho[r,j] = np.mean(get_rho(y_testf,y_test_predicted[r]))
                 
-                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
-                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted[r]))
+                mean_rho = np.mean(get_rho(y_testf,y_test_predicted[r]))
 
         # XGBoost Decoder
         if m == 2:

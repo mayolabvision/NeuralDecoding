@@ -295,7 +295,7 @@ for r in range(1):
                 print(np.mean(get_R2(y_testf,y_test_predicted)))
                 
                 mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
-                mean_rho = np.mean(get_rho(y_test,y_test_predicted))
+                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
 
         # GRU Decoder
         if m == 6:

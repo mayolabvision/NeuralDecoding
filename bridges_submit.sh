@@ -1,13 +1,13 @@
 #!/bin/bash -l
-#SBATCH -p GPU-shared
+#SBATCH -p RM-shared
 #SBATCH -J neuraldecoding
 #SBATCH -o runs/outfiles/out.o%j
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --mail-type=all
 #SBATCH --mail-user=knoneman@andrew.cmu.edu
-#SBATCH -t 16:00:00
-#SBATCH --ntasks-per-node=1
+#SBATCH -t 05:00:00
+#SBATCH --ntasks-per-node=4
 
 module purge
 module load anaconda3/2022.10

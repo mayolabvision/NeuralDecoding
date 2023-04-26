@@ -6,7 +6,7 @@
 #SBATCH -n 1
 #SBATCH --mail-type=all
 #SBATCH --mail-user=knoneman@andrew.cmu.edu
-#SBATCH -t 15:00:00
+#SBATCH -t 05:00:00
 #SBATCH --gpus=v100-32:4
 
 module purge

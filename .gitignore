@@ -7,3 +7,4 @@ handy_functions/__pycache__/decoders.cpython-39.pyc
 runs/outfiles
 datasets/*.mat
 runs/
+.DS_Store

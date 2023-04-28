@@ -6,34 +6,37 @@ import pickle
 import time
 import pandas as pd
 import os.path
+import os
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 #folder = '/jet/home/knoneman/NeuralDecoding/'
 #folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
 
-from preprocessing_funcs import get_spikes_with_history
-from matlab_funcs import mat_to_pickle
+#from preprocessing_funcs import get_spikes_with_history
+#from matlab_funcs import mat_to_pickle
 from metrics import get_R2
 from metrics import get_rho
-from decoders import WienerCascadeDecoder
-from decoders import WienerFilterDecoder
-from decoders import DenseNNDecoder
-from decoders import SimpleRNNDecoder
-from decoders import GRUDecoder
-from decoders import LSTMDecoder
-from decoders import XGBoostDecoder
-from decoders import SVRDecoder
-from sklearn import linear_model 
-from sklearn.svm import SVR 
-from sklearn.svm import SVC 
+#from decoders import WienerCascadeDecoder
+#from decoders import WienerFilterDecoder
+#from decoders import DenseNNDecoder
+#from decoders import SimpleRNNDecoder
+#from decoders import GRUDecoder
+#from decoders import LSTMDecoder
+#from decoders import XGBoostDecoder
+#from decoders import SVRDecoder
+#from sklearn import linear_model 
+#from sklearn.svm import SVR 
+#from sklearn.svm import SVC 
 from bayes_opt import BayesianOptimization
 
-from sklearn.model_selection import KFold, train_test_split
-import itertools
+from sklearn.model_selection import KFold
+#import itertools
+
 import warnings
 warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
@@ -121,6 +124,8 @@ for r in range(num_repeats):
 
         # Wiener Filter Decoder
         if m == 0:
+            from decoders import WienerFilterDecoder
+
             if j==fi-1:
                 X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
                 X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
@@ -142,6 +147,8 @@ for r in range(num_repeats):
 
         # Wiener Cascade Decoder
         if m == 1:
+            from decoders import WienerCascadeDecoder
+
             BO = BayesianOptimization(wc_evaluate, {'degree': (1, 20.99)}, verbose=1,allow_duplicate_points=True)
             BO.maximize(init_points=10, n_iter=10) #Set number of initial runs and subsequent tests, and do the optimization
             params = max(BO.res, key=lambda x:x['target'])
@@ -171,6 +178,8 @@ for r in range(num_repeats):
 
         # XGBoost Decoder
         if m == 2:
+            from decoders import XGBoostDecoder
+    
             BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=1)
             BO.maximize(init_points=3, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
@@ -205,6 +214,8 @@ for r in range(num_repeats):
                 
         # SVR Decoder
         if m == 3:
+            from decoders import SVRDecoder
+
             BO = BayesianOptimization(svr_evaluate, {'C': (0.5, 10)}, verbose=1, allow_duplicate_points=True)
             BO.maximize(init_points=5, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
@@ -236,6 +247,8 @@ for r in range(num_repeats):
                 
         # DNN
         if m == 4:
+            from decoders import DenseNNDecoder
+
             BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
             BO.maximize(init_points=3, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
@@ -269,6 +282,8 @@ for r in range(num_repeats):
                 
         # RNN
         if m == 5:
+            from decoders import SimpleRNNDecoder
+
             BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
             BO.maximize(init_points=3, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
@@ -302,6 +317,8 @@ for r in range(num_repeats):
 
         # GRU Decoder
         if m == 6:
+            from decoders import GRUDecoder
+
             BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
             BO.maximize(init_points=3, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
@@ -335,6 +352,8 @@ for r in range(num_repeats):
 
         # LSTM Decoder
         if m == 7:
+            from decoders import LSTMDecoder
+
             BO = BayesianOptimization(lstm_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
             BO.maximize(init_points=3, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])

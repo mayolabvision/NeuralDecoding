@@ -1,7 +1,7 @@
 import os
-import numpy
-import pickle
-from sklearn.model_selection import KFold
+import numpy as np
+#import pickle
+#from sklearn.model_selection import KFold
 
 def make_name(s,t,d,m,o,nm,nf,bn,fo,fi,r):
     return "s{}-t{}-d{}-m{}-o{}-nm{}-nf{}-bn{}-fo{}-fi{}-r{}".format(s,t,d,m,o,nm,nf,bn,fo,fi,r)
@@ -12,7 +12,7 @@ def checkdir(name):
     return
 
 def get_params(i):
-    line = numpy.loadtxt('params_mlproject.txt')[i]
+    line = np.loadtxt('params_mlproject.txt')[i]
     print(line)
     s = int(line[1])
     t = int(line[2])

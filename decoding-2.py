@@ -12,36 +12,27 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-#folder = '/jet/home/knoneman/NeuralDecoding/'
-#folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
 
-#from preprocessing_funcs import get_spikes_with_history
-#from matlab_funcs import mat_to_pickle
 from metrics import get_R2
 from metrics import get_rho
-#from decoders import WienerCascadeDecoder
-#from decoders import WienerFilterDecoder
-#from decoders import DenseNNDecoder
-#from decoders import SimpleRNNDecoder
-#from decoders import GRUDecoder
-#from decoders import LSTMDecoder
-#from decoders import XGBoostDecoder
-#from decoders import SVRDecoder
-#from sklearn import linear_model 
-#from sklearn.svm import SVR 
-#from sklearn.svm import SVC 
 from bayes_opt import BayesianOptimization
 
 from sklearn.model_selection import KFold
-#import itertools
+from joblib import Parallel, delayed
+import multiprocessing
+from psutil import cpu_count
 
 import warnings
 warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
 import helpers
 import decodingSetup
+
+#######################################
+num_cores = int(os.environ['SLURM_CPUS_PER_TASK']) #if on cluster
+#num_cores = multiprocessing.cpu_count() # if not on cluster
 
 ########### model evaluations #############
 def wc_evaluate(degree): #1
@@ -98,11 +89,13 @@ inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
 
 t1=time.time()
 y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds = [],[],[],[],[],[],[]
-for r in range(num_repeats):
+
+def trainTest_perRepeat(r): 
+#for r in range(num_repeats):
     ######################## inner folds ###########################
     hp_tune = []
     for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[outer_fold][r])):
-        print(j)
+        #print(j)
         X_train = X_train0[outer_fold][r][train_index,:,:]
         X_flat_train = X_flat_train0[outer_fold][r][train_index,:]
         y_train = y_train0[outer_fold][r][train_index,:]
@@ -134,15 +127,15 @@ for r in range(num_repeats):
 
                 model=WienerFilterDecoder() #Define model
                 model.fit(X_flat_train0f,y_train0f) #Fit model
-                max_params.append([0])
+                max_params = 0
 
-                y_train_predicted.append(model.predict(X_flat_train0f)) #Validation set predictions
-                y_test_predicted.append(model.predict(X_flat_testf)) #Validation set predictions
+                y_train_predicted = model.predict(X_flat_train0f) #Validation set predictions
+                y_test_predicted = model.predict(X_flat_testf) #Validation set predictions
 
-                print(np.mean(get_R2(y_testf,y_test_predicted[r])))
+                #print(np.mean(get_R2(y_testf,y_test_predicted[r])))
                 
-                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
-                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
+                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
+                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
                 
 
         # Wiener Cascade Decoder
@@ -384,13 +377,23 @@ for r in range(num_repeats):
                 
                 mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
                 mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
+    
+    neuron_inds = neurons_perRepeat[r]
+    #time_elapsed=time.time()-t1 #How much time has passed
+    #print("time elapsed: %.3f seconds" % time_elapsed)
+
+    return [y_train_predicted, y_test_predicted, mean_R2, mean_rho, max_params, neuron_inds] 
+
+num_cores = multiprocessing.cpu_count()
+results = Parallel(n_jobs=num_cores)(delayed(trainTest_perRepeat)(r) for r in range(num_repeats))
+
+time_elapsed = time.time()-t1
+print("time elapsed: %.3f seconds" % time_elapsed)
+
+print([i[5] for i in results])
 
 
-    neuron_inds.append(neurons_perRepeat[r])
-    time_elapsed=time.time()-t1 #How much time has passed
-    print("time elapsed: %.3f seconds" % time_elapsed)
-
-pfile = helpers.make_directory(jobname)
-with open(cwd+pfile+'/fold_'+str(outer_fold)+'.pickle','wb') as p:
-    pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds],p)
+#pfile = helpers.make_directory(jobname)
+#with open(cwd+pfile+'/fold_'+str(outer_fold)+'.pickle','wb') as p:
+#    pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds],p)
 

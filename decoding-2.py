@@ -6,9 +6,11 @@ import pickle
 import time
 import pandas as pd
 import os.path
+import os
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 #folder = '/jet/home/knoneman/NeuralDecoding/'
 #folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'

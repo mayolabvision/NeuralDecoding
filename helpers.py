@@ -3,8 +3,8 @@ import numpy
 import pickle
 from sklearn.model_selection import KFold
 
-def make_name(s,t,d,m,o,nm,nf,bn,fo,fi):
-    return "s{}-t{}-d{}-m{}-o{}-nm{}-nf{}-bn{}-fo{}-fi{}".format(s,t,d,m,o,nm,nf,bn,fo,fi)
+def make_name(s,t,d,m,o,nm,nf,bn,fo,fi,r):
+    return "s{}-t{}-d{}-m{}-o{}-nm{}-nf{}-bn{}-fo{}-fi{}-r{}".format(s,t,d,m,o,nm,nf,bn,fo,fi,r)
 
 def checkdir(name):
     if not os.path.exists(name):
@@ -24,7 +24,8 @@ def get_params(i):
     bn = int(line[8])
     fo = int(line[9])
     fi = int(line[10]) 
-    return s,t,d,m,o,nm,nf,bn,fo,fi
+    r = int(line[11])
+    return s,t,d,m,o,nm,nf,bn,fo,fi,r
 
 def make_directory(jobname):
     cwd = os.getcwd()

@@ -84,19 +84,17 @@ def lstm_evaluate(num_units,frac_dropout,n_epochs):
     return np.mean(get_R2(y_valid,y_valid_predicted))
 
 ############ training ################
-X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test = decodingSetup.get_dataParams(int(sys.argv[1]))
+X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neurons_perRepeat = decodingSetup.get_dataParams(int(sys.argv[1]))
 
-s,t,d,m,o,nm,nf,bn,fo,fi = helpers.get_params(int(sys.argv[1]))
-jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi)
-pfile = helpers.make_directory(jobname)
+s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
+jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 
 outer_fold = int(sys.argv[2])
 
 inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
 
 t1=time.time()
-y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed = [],[],[],[],[]
-num_repeats = 1
+y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds = [],[],[],[],[],[],[]
 for r in range(num_repeats):
     ######################## inner folds ###########################
     hp_tune = []
@@ -117,8 +115,9 @@ for r in range(num_repeats):
         X_flat_train=(X_flat_train-np.nanmean(X_flat_train,axis=0))/(np.nanstd(X_flat_train,axis=0))
         y_valid=y_valid-np.mean(y_train,axis=0)
         y_train=y_train-np.mean(y_train,axis=0) 
-        y_zscore_valid=y_valid/(np.nanstd(y_train,axis=0)) 
+        y_zscore_valid=y_valid/(np.nanstd(y_train,axis=0))
         y_zscore_train=y_train/(np.nanstd(y_train,axis=0))
+
 
         # Wiener Filter Decoder
         if m == 0:
@@ -130,17 +129,15 @@ for r in range(num_repeats):
 
                 model=WienerFilterDecoder() #Define model
                 model.fit(X_flat_train0f,y_train0f) #Fit model
+                max_params.append([0])
 
                 y_train_predicted.append(model.predict(X_flat_train0f)) #Validation set predictions
                 y_test_predicted.append(model.predict(X_flat_testf)) #Validation set predictions
 
                 print(np.mean(get_R2(y_testf,y_test_predicted[r])))
                 
-                #mean_R2[r,j] = np.mean(get_R2(y_testf,y_test_predicted[r]))
-                #mean_rho[r,j] = np.mean(get_rho(y_testf,y_test_predicted[r]))
-
-                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted[r]))
-                mean_rho = np.mean(get_rho(y_testf,y_test_predicted[r]))
+                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
+                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
                 
 
         # Wiener Cascade Decoder
@@ -154,7 +151,8 @@ for r in range(num_repeats):
                 df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','degree'])
                 df_mn = df.groupby(['degree']).agg(['count','mean'])
                 deg = df_mn['R2']['mean'].idxmax()
-                
+                max_params.append([deg])
+
                 X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
                 X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
                 y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
@@ -163,17 +161,13 @@ for r in range(num_repeats):
                 # Run model w/ above hyperparameters
                 model=WienerCascadeDecoder(deg) #Define model
                 model.fit(X_flat_train0f,y_train0f) #Fit model
-
                 y_train_predicted.append(model.predict(X_flat_train0f)) #Validation set predictions
                 y_test_predicted.append(model.predict(X_flat_testf)) #Validation set predictions
 
                 print(np.mean(get_R2(y_testf,y_test_predicted[r])))
-                
-                #mean_R2[r,j] = np.mean(get_R2(y_testf,y_test_predicted[r]))
-                #mean_rho[r,j] = np.mean(get_rho(y_testf,y_test_predicted[r]))
-                
-                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted[r]))
-                mean_rho = np.mean(get_rho(y_testf,y_test_predicted[r]))
+
+                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
+                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
 
         # XGBoost Decoder
         if m == 2:
@@ -191,6 +185,8 @@ for r in range(num_repeats):
                 max_depth = best_params['max_depth']
                 num_round = best_params['num_round']
                 eta = best_params['eta']
+                
+                max_params.append([max_depth,num_round,eta])
 
                 X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
                 X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
@@ -199,19 +195,18 @@ for r in range(num_repeats):
 
                 model=XGBoostDecoder(max_depth=int(max_depth), num_round=int(num_round), eta=float(eta))
                 model.fit(X_flat_train0f,y_train0f) #Fit model
-                y_train_predicted=model.predict(X_flat_train0f) #Validation set predictions
-                y_test_predicted=model.predict(X_flat_testf) #Validation set predictions
+                y_train_predicted.append(model.predict(X_flat_train0f)) #Validation set predictions
+                y_test_predicted.append(model.predict(X_flat_testf)) #Validation set predictions
 
                 print(np.mean(get_R2(y_testf,y_test_predicted)))
                 
-                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
-                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
-
-
+                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
+                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
+                
         # SVR Decoder
         if m == 3:
-            BO = BayesianOptimization(svr_evaluate, {'C': (2, 6.99)}, verbose=1, allow_duplicate_points=True)
-            BO.maximize(init_points=3, n_iter=5)
+            BO = BayesianOptimization(svr_evaluate, {'C': (0.5, 10)}, verbose=1, allow_duplicate_points=True)
+            BO.maximize(init_points=5, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['C'],1) for key in range(len(BO.res))]))).T)
 
@@ -219,24 +214,26 @@ for r in range(num_repeats):
                 df = pd.DataFrame(np.vstack(np.array(hp_tune)), columns = ['R2','C'])
                 df_mn = df.groupby(['C']).agg(['count','mean'])
                 C = df_mn['R2']['mean'].idxmax()
+                max_params.append([C])
                
                 X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
                 X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
                 y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
                 y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                
                 y_zscore_test=y_testf/(np.nanstd(y_train0f,axis=0))
                 y_zscore_train0=y_train0f/(np.nanstd(y_train0f,axis=0))
 
                 model=SVRDecoder(C=C, max_iter=2000)
                 model.fit(X_flat_train0f,y_zscore_train0) #Fit model
-                y_train_predicted=model.predict(X_flat_train0f) #Validation set predictions
-                y_test_predicted=model.predict(X_flat_testf) #Validation set predictions
+                y_train_predicted.append(model.predict(X_flat_train0f)) #Validation set predictions
+                y_test_predicted.append(model.predict(X_flat_testf)) #Validation set predictions
 
                 print(np.mean(get_R2(y_zscore_test,y_test_predicted)))
                 
-                mean_R2 = np.mean(get_R2(y_zscore_test,y_test_predicted))
-                mean_rho = np.mean(get_rho(y_zscore_test,y_test_predicted))
-
+                mean_R2.append(np.mean(get_R2(y_zscore_test,y_test_predicted[r])))
+                mean_rho.append(np.mean(get_rho(y_zscore_test,y_test_predicted[r])))
+                
         # DNN
         if m == 4:
             BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
@@ -253,6 +250,7 @@ for r in range(num_repeats):
                 num_units = best_params['num_units']
                 n_epochs = best_params['n_epochs']
                 frac_dropout = best_params['frac_dropout']
+                max_params.append([num_units,n_epochs,frac_dropout])
 
                 X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
                 X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
@@ -261,14 +259,14 @@ for r in range(num_repeats):
 
                 model=DenseNNDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
                 model.fit(X_flat_train0f,y_train0f) #Fit model
-                y_train_predicted=model.predict(X_flat_train0f) #Validation set predictions
-                y_test_predicted=model.predict(X_flat_testf) #Validation set predictions
+                y_train_predicted.append(model.predict(X_flat_train0f)) #Validation set predictions
+                y_test_predicted.append(model.predict(X_flat_testf)) #Validation set predictions
 
                 print(np.mean(get_R2(y_testf,y_test_predicted)))
                 
-                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
-                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
-
+                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
+                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
+                
         # RNN
         if m == 5:
             BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
@@ -285,6 +283,7 @@ for r in range(num_repeats):
                 num_units = best_params['num_units']
                 n_epochs = best_params['n_epochs']
                 frac_dropout = best_params['frac_dropout']
+                max_params.append([num_units,n_epochs,frac_dropout])
 
                 X_testf=(X_test[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
                 X_train0f=(X_train0[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
@@ -293,13 +292,13 @@ for r in range(num_repeats):
 
                 model=SimpleRNNDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
                 model.fit(X_train0f,y_train0f) #Fit model
-                y_train_predicted=model.predict(X_train0f) #Validation set predictions
-                y_test_predicted=model.predict(X_testf) #Validation set predictions
+                y_train_predicted.append(model.predict(X_train0f)) #Validation set predictions
+                y_test_predicted.append(model.predict(X_testf)) #Validation set predictions
 
                 print(np.mean(get_R2(y_testf,y_test_predicted)))
                 
-                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
-                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
+                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
 
         # GRU Decoder
         if m == 6:
@@ -317,6 +316,7 @@ for r in range(num_repeats):
                 num_units = best_params['num_units']
                 n_epochs = best_params['n_epochs']
                 frac_dropout = best_params['frac_dropout']
+                max_params.append([num_units,n_epochs,frac_dropout])
 
                 X_testf=(X_test[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
                 X_train0f=(X_train0[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
@@ -325,13 +325,13 @@ for r in range(num_repeats):
 
                 model=GRUDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
                 model.fit(X_train0f,y_train0f) #Fit model
-                y_train_predicted=model.predict(X_train0f) #Validation set predictions
-                y_test_predicted=model.predict(X_testf) #Validation set predictions
+                y_train_predicted.append(model.predict(X_train0f)) #Validation set predictions
+                y_test_predicted.append(model.predict(X_testf)) #Validation set predictions
 
                 print(np.mean(get_R2(y_testf,y_test_predicted)))
                 
-                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
-                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
+                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
 
         # LSTM Decoder
         if m == 7:
@@ -349,6 +349,7 @@ for r in range(num_repeats):
                 num_units = best_params['num_units']
                 n_epochs = best_params['n_epochs']
                 frac_dropout = best_params['frac_dropout']
+                max_params.append([num_units,n_epochs,frac_dropout])
 
                 X_testf=(X_test[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
                 X_train0f=(X_train0[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
@@ -357,18 +358,20 @@ for r in range(num_repeats):
 
                 model=LSTMDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
                 model.fit(X_train0f,y_train0f) #Fit model
-                y_train_predicted=model.predict(X_train0f) #Validation set predictions
-                y_test_predicted=model.predict(X_testf) #Validation set predictions
+                y_train_predicted.append(model.predict(X_train0f)) #Validation set predictions
+                y_test_predicted.append(model.predict(X_testf)) #Validation set predictions
 
                 print(np.mean(get_R2(y_testf,y_test_predicted)))
                 
-                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
-                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
+                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
 
 
+    neuron_inds.append(neurons_perRepeat[r])
     time_elapsed=time.time()-t1 #How much time has passed
     print("time elapsed: %.3f seconds" % time_elapsed)
 
+pfile = helpers.make_directory(jobname)
 with open(cwd+pfile+'/fold_'+str(outer_fold)+'.pickle','wb') as p:
-    pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed],p)
+    pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds],p)
 

@@ -24,10 +24,8 @@ import itertools
 import helpers
 
 def get_dataParams(linenum):
-    s,t,d,m,o,nm,nf,bn,fo,fi = helpers.get_params(int(linenum))
-    jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi)
-    pfile = helpers.make_directory(jobname)
-
+    s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(linenum))
+    jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
     sess,sess_nodt = helpers.get_session(s,t,d)
 
     if not os.path.isfile(cwd+'/datasets/vars-'+sess+'.pickle'):
@@ -58,17 +56,21 @@ def get_dataParams(linenum):
     X_test = [[] for i in range(fo)]
     X_flat_test = [[] for i in range(fo)]
     y_test = [[] for i in range(fo)]
-    for r in range(1):
+    neurons_perRepeat = []
+    for r in range(num_repeats):
         mt_inds = sorted(np.random.choice(units[units['BrainArea'] == 'MT'].index, nm, replace=False))
         fef_inds = sorted(np.random.choice(units[units['BrainArea'] == 'FEF'].index, nf, replace=False))
 
         if nm==0:
-            neural_data2= neural_data[:,np.array((fef_inds))]
+            neuron_inds = np.array((fef_inds))
         elif nf==0:
-            neural_data2= neural_data[:,np.array((mt_inds))]
+            neuron_inds = np.array((mt_inds))
         else:
-            neural_data2= neural_data[:,sorted(np.concatenate((np.array((mt_inds)),np.array((fef_inds)))))]
-
+            neuron_inds = sorted(np.concatenate((np.array((mt_inds)),np.array((fef_inds)))))
+       
+        neurons_perRepeat.append(neuron_inds)
+        neural_data2= neural_data[:,neuron_inds]
+        
 
         X = get_spikes_with_history(neural_data2,bins_before,bins_after,bins_current)
         X = X[range(bins_before,X.shape[0]-bins_after),:,:]
@@ -87,4 +89,4 @@ def get_dataParams(linenum):
             X_flat_test[q].append(X_flat[test_index,:])
             y_test[q].append(y[test_index,:])
 
-    return X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test 
+    return X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neurons_perRepeat 

@@ -6,7 +6,7 @@
 #SBATCH --mail-type=all
 #SBATCH --mail-user=knoneman@andrew.cmu.edu
 #SBATCH -t 00:30:00
-#SBATCH --ntasks-per-node=8
+#SBATCH --ntasks-per-node=64
 
 module purge
 module load anaconda3/2022.10

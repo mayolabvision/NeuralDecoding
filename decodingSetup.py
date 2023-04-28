@@ -1,15 +1,15 @@
 import numpy as np
 import sys
-from scipy import io
-from scipy import stats
+#from scipy import io
+#from scipy import stats
 import pickle
-import time
+#import time
 import pandas as pd
 import os.path
 import os
 
-import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning) 
+#import warnings
+#warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 #folder = '/jet/home/knoneman/NeuralDecoding/'
 #folder = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/'
@@ -17,9 +17,8 @@ cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
 
 from preprocessing_funcs import get_spikes_with_history
-from matlab_funcs import mat_to_pickle
 from sklearn.model_selection import KFold
-import itertools
+#import itertools
 
 import helpers
 
@@ -30,6 +29,7 @@ def get_dataParams(linenum):
 
     if not os.path.isfile(cwd+'/datasets/vars-'+sess+'.pickle'):
         if os.path.isfile(cwd+'/datasets/vars-'+sess_nodt+'.mat'):
+            from matlab_funcs import mat_to_pickle
             mat_to_pickle('vars-'+sess_nodt,d)
             print('preprocessed file has been properly pickled, yay')
         else:

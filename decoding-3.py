@@ -19,10 +19,21 @@ from metrics import get_R2
 from metrics import get_rho
 from bayes_opt import BayesianOptimization
 
+import argparse
+import logging
 from sklearn.model_selection import KFold
 from joblib import Parallel, delayed
 import multiprocessing
 from psutil import cpu_count
+from sklearn.externals.joblib import Parallel, parallel_backend
+from sklearn.externals.joblib import register_parallel_backend
+from sklearn.externals.joblib import delayed
+from sklearn.externals.joblib import cpu_count
+from sklearn.datasets import load_digits
+from sklearn.model_selection import train_test_split
+from ipyparallel import Client
+from ipyparallel.joblib import IPythonParallelBackend
+
 
 import warnings
 warnings.filterwarnings('ignore', 'Solver terminated early.*')
@@ -30,10 +41,38 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 import helpers
 import decodingSetup
 
-#######################################
-#num_cores = int(sys.argv[1]) #if on cluster
-#num_cores = multiprocessing.cpu_count() # if not on cluster
-num_cores = int(os.environ["SLURM_CPUS_PER_TASK"])
+############## if on local computer ################
+#num_cores = multiprocessing.cpu_count() 
+#outer_fold = int(sys.argv[2])
+
+############# if on cluster ########################
+parser = argparse.ArgumentParser()
+parser.add_argument("-p", "--profile", default="ipy_profile",
+                 help="Name of IPython profile to use")
+args = parser.parse_args()
+profile = args.profile
+logging.basicConfig(filename=os.path.join(cwd,profile+'.log'),
+                    filemode='w',
+                    level=logging.DEBUG)
+logging.info("number of CPUs found: {0}".format(cpu_count()))
+logging.info("args.profile: {0}".format(profile))
+
+#prepare the engines
+c = Client(profile=profile)
+#The following command will make sure that each engine is running in
+# the right working directory to access the custom function(s).
+c[:].map(os.chdir, [cwd]*len(c))
+logging.info("c.ids :{0}".format(str(c.ids)))
+bview = c.load_balanced_view()
+register_parallel_backend('ipyparallel',
+                          lambda : IPythonParallelBackend(view=bview))
+
+
+#num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
+#outer_fold = int(os.environ["SLURM_ARRAY_TASK_ID"])
+
+#print('number of cores = {}'.format(num_cores))
+#print('outer fold = {}'.format(outer_fold))
 
 ########### model evaluations #############
 def wc_evaluate(degree): #1
@@ -79,34 +118,27 @@ def lstm_evaluate(num_units,frac_dropout,n_epochs):
     return np.mean(get_R2(y_valid,y_valid_predicted))
 
 ############ training ################
-X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neurons_perRepeat = decodingSetup.get_dataParams(int(sys.argv[1]))
+X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neurons_perRepeat = helpers.get_outerfold(int(sys.argv[1]),outer_fold)
 
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 
-outer_fold = int(os.environ["SLURM_ARRAY_TASK_ID"])
-print(outer_fold)
-
 inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
+print(inner_cv)
 
 t1=time.time()
 y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds = [],[],[],[],[],[],[]
-
 def trainTest_perRepeat(r): 
-#for r in range(num_repeats):
-    ######################## inner folds ###########################
     hp_tune = []
-    for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[outer_fold][r])):
-        #print(j)
-        X_train = X_train0[outer_fold][r][train_index,:,:]
-        X_flat_train = X_flat_train0[outer_fold][r][train_index,:]
-        y_train = y_train0[outer_fold][r][train_index,:]
+    for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[r])):
+        X_train = X_train0[r][train_index,:,:]
+        X_flat_train = X_flat_train0[r][train_index,:]
+        y_train = y_train0[r][train_index,:]
 
-        X_valid = X_train0[outer_fold][r][valid_index,:,:]
-        X_flat_valid = X_flat_train0[outer_fold][r][valid_index,:]
-        y_valid = y_train0[outer_fold][r][valid_index,:]
+        X_valid = X_train0[r][valid_index,:,:]
+        X_flat_valid = X_flat_train0[r][valid_index,:]
+        y_valid = y_train0[r][valid_index,:]
 
-        ##### PREPROCESS DATA #####
         X_valid=(X_valid-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
         X_train=(X_train-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
         X_flat_valid=(X_flat_valid-np.nanmean(X_flat_train,axis=0))/(np.nanstd(X_flat_train,axis=0))
@@ -122,10 +154,10 @@ def trainTest_perRepeat(r):
             from decoders import WienerFilterDecoder
 
             if j==fi-1:
-                X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                X_flat_testf=(X_flat_test[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                X_flat_train0f=(X_flat_train0[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
 
                 model=WienerFilterDecoder() #Define model
                 model.fit(X_flat_train0f,y_train0f) #Fit model
@@ -134,11 +166,9 @@ def trainTest_perRepeat(r):
                 y_train_predicted = model.predict(X_flat_train0f) #Validation set predictions
                 y_test_predicted = model.predict(X_flat_testf) #Validation set predictions
 
-                #print(np.mean(get_R2(y_testf,y_test_predicted[r])))
-                
                 mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
                 mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
-                
+                print(mean_R2)
 
         # Wiener Cascade Decoder
         if m == 1:
@@ -155,21 +185,19 @@ def trainTest_perRepeat(r):
                 deg = df_mn['R2']['mean'].idxmax()
                 max_params.append([deg])
 
-                X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                X_flat_testf=(X_flat_test[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                X_flat_train0f=(X_flat_train0[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
                 
                 # Run model w/ above hyperparameters
                 model=WienerCascadeDecoder(deg) #Define model
                 model.fit(X_flat_train0f,y_train0f) #Fit model
-                y_train_predicted.append(model.predict(X_flat_train0f)) #Validation set predictions
-                y_test_predicted.append(model.predict(X_flat_testf)) #Validation set predictions
+                y_train_predicted = model.predict(X_flat_train0f) #Validation set predictions
+                y_test_predicted = model.predict(X_flat_testf) #Validation set predictions
 
-                print(np.mean(get_R2(y_testf,y_test_predicted[r])))
-
-                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
-                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
+                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
+                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
 
         # XGBoost Decoder
         if m == 2:
@@ -192,21 +220,19 @@ def trainTest_perRepeat(r):
                 
                 max_params.append([max_depth,num_round,eta])
 
-                X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                X_flat_testf=(X_flat_test[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                X_flat_train0f=(X_flat_train0[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
 
                 model=XGBoostDecoder(max_depth=int(max_depth), num_round=int(num_round), eta=float(eta))
                 model.fit(X_flat_train0f,y_train0f) #Fit model
-                y_train_predicted.append(model.predict(X_flat_train0f)) #Validation set predictions
-                y_test_predicted.append(model.predict(X_flat_testf)) #Validation set predictions
+                y_train_predicted = model.predict(X_flat_train0f) #Validation set predictions
+                y_test_predicted = model.predict(X_flat_testf) #Validation set predictions
 
-                print(np.mean(get_R2(y_testf,y_test_predicted)))
-                
-                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
-                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
-                
+                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
+                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+
         # SVR Decoder
         if m == 3:
             from decoders import SVRDecoder
@@ -222,23 +248,21 @@ def trainTest_perRepeat(r):
                 C = df_mn['R2']['mean'].idxmax()
                 max_params.append([C])
                
-                X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                X_flat_testf=(X_flat_test[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                X_flat_train0f=(X_flat_train0[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
                 
                 y_zscore_test=y_testf/(np.nanstd(y_train0f,axis=0))
                 y_zscore_train0=y_train0f/(np.nanstd(y_train0f,axis=0))
 
                 model=SVRDecoder(C=C, max_iter=2000)
                 model.fit(X_flat_train0f,y_zscore_train0) #Fit model
-                y_train_predicted.append(model.predict(X_flat_train0f)) #Validation set predictions
-                y_test_predicted.append(model.predict(X_flat_testf)) #Validation set predictions
+                y_train_predicted = model.predict(X_flat_train0f) #Validation set predictions
+                y_test_predicted = model.predict(X_flat_testf) #Validation set predictions
 
-                print(np.mean(get_R2(y_zscore_test,y_test_predicted)))
-                
-                mean_R2.append(np.mean(get_R2(y_zscore_test,y_test_predicted[r])))
-                mean_rho.append(np.mean(get_rho(y_zscore_test,y_test_predicted[r])))
+                mean_R2 = np.mean(get_R2(y_zscore_test,y_test_predicted))
+                mean_rho = np.mean(get_rho(y_zscore_test,y_test_predicted))
                 
         # DNN
         if m == 4:
@@ -260,21 +284,19 @@ def trainTest_perRepeat(r):
                 frac_dropout = best_params['frac_dropout']
                 max_params.append([num_units,n_epochs,frac_dropout])
 
-                X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                X_flat_testf=(X_flat_test[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                X_flat_train0f=(X_flat_train0[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
 
                 model=DenseNNDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
                 model.fit(X_flat_train0f,y_train0f) #Fit model
-                y_train_predicted.append(model.predict(X_flat_train0f)) #Validation set predictions
-                y_test_predicted.append(model.predict(X_flat_testf)) #Validation set predictions
+                y_train_predicted = model.predict(X_flat_train0f) #Validation set predictions
+                y_test_predicted = model.predict(X_flat_testf) #Validation set predictions
 
-                print(np.mean(get_R2(y_testf,y_test_predicted)))
-                
-                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
-                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
-                
+                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
+                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+
         # RNN
         if m == 5:
             from decoders import SimpleRNNDecoder
@@ -295,20 +317,18 @@ def trainTest_perRepeat(r):
                 frac_dropout = best_params['frac_dropout']
                 max_params.append([num_units,n_epochs,frac_dropout])
 
-                X_testf=(X_test[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
-                X_train0f=(X_train0[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                X_testf=(X_test[r]-np.nanmean(X_train0[r],axis=0))/(np.nanstd(X_train0[r],axis=0))
+                X_train0f=(X_train0[r]-np.nanmean(X_train0[r],axis=0))/(np.nanstd(X_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
 
                 model=SimpleRNNDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
                 model.fit(X_train0f,y_train0f) #Fit model
-                y_train_predicted.append(model.predict(X_train0f)) #Validation set predictions
-                y_test_predicted.append(model.predict(X_testf)) #Validation set predictions
+                y_train_predicted = model.predict(X_train0f) #Validation set predictions
+                y_test_predicted = model.predict(X_testf) #Validation set predictions
 
-                print(np.mean(get_R2(y_testf,y_test_predicted)))
-                
-                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
-                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
+                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
+                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
 
         # GRU Decoder
         if m == 6:
@@ -329,21 +349,19 @@ def trainTest_perRepeat(r):
                 n_epochs = best_params['n_epochs']
                 frac_dropout = best_params['frac_dropout']
                 max_params.append([num_units,n_epochs,frac_dropout])
-
-                X_testf=(X_test[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
-                X_train0f=(X_train0[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                
+                X_testf=(X_test[r]-np.nanmean(X_train0[r],axis=0))/(np.nanstd(X_train0[r],axis=0))
+                X_train0f=(X_train0[r]-np.nanmean(X_train0[r],axis=0))/(np.nanstd(X_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
 
                 model=GRUDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
                 model.fit(X_train0f,y_train0f) #Fit model
-                y_train_predicted.append(model.predict(X_train0f)) #Validation set predictions
-                y_test_predicted.append(model.predict(X_testf)) #Validation set predictions
+                y_train_predicted = model.predict(X_train0f) #Validation set predictions
+                y_test_predicted = model.predict(X_testf) #Validation set predictions
 
-                print(np.mean(get_R2(y_testf,y_test_predicted)))
-                
-                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
-                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
+                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
+                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
 
         # LSTM Decoder
         if m == 7:
@@ -364,37 +382,40 @@ def trainTest_perRepeat(r):
                 n_epochs = best_params['n_epochs']
                 frac_dropout = best_params['frac_dropout']
                 max_params.append([num_units,n_epochs,frac_dropout])
-
-                X_testf=(X_test[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
-                X_train0f=(X_train0[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                
+                X_testf=(X_test[r]-np.nanmean(X_train0[r],axis=0))/(np.nanstd(X_train0[r],axis=0))
+                X_train0f=(X_train0[r]-np.nanmean(X_train0[r],axis=0))/(np.nanstd(X_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
 
                 model=LSTMDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
                 model.fit(X_train0f,y_train0f) #Fit model
-                y_train_predicted.append(model.predict(X_train0f)) #Validation set predictions
-                y_test_predicted.append(model.predict(X_testf)) #Validation set predictions
+                y_train_predicted = model.predict(X_train0f) #Validation set predictions
+                y_test_predicted = model.predict(X_testf) #Validation set predictions
 
-                print(np.mean(get_R2(y_testf,y_test_predicted)))
-                
-                mean_R2.append(np.mean(get_R2(y_testf,y_test_predicted[r])))
-                mean_rho.append(np.mean(get_rho(y_testf,y_test_predicted[r])))
+                mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
+                mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
     
     neuron_inds = neurons_perRepeat[r]
-    #time_elapsed=time.time()-t1 #How much time has passed
-    #print("time elapsed: %.3f seconds" % time_elapsed)
-
     return [y_train_predicted, y_test_predicted, mean_R2, mean_rho, max_params, neuron_inds] 
 
-results = Parallel(n_jobs=num_cores)(delayed(trainTest_perRepeat)(r) for r in range(num_repeats))
+#results = Parallel(n_jobs=num_cores)(delayed(trainTest_perRepeat)(r) for r in range(num_repeats))
+with parallel_backend('ipyparallel'):
+    results = Parallel(n_jobs=len(c))(delayed(trainTest_perRepeat)(r)
+
+
 
 time_elapsed = time.time()-t1
 print("time elapsed: %.3f seconds" % time_elapsed)
 
-print([i[5] for i in results])
+y_train_predicted = [i[0] for i in results]
+y_test_predicted = [i[1] for i in results]
+mean_R2 = [i[2] for i in results]
+mean_rho = [i[3] for i in results]
+max_params = [i[4] for i in results]
+neuron_inds = [i[5] for i in results]
 
-
-#pfile = helpers.make_directory(jobname)
-#with open(cwd+pfile+'/fold_'+str(outer_fold)+'.pickle','wb') as p:
-#    pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds],p)
+pfile = helpers.make_directory(jobname)
+with open(cwd+pfile+'/fold_'+str(outer_fold)+'.pickle','wb') as p:
+    pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds],p)
 

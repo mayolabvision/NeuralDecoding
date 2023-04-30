@@ -45,3 +45,6 @@ def get_bins(bn):
     bins = [[6,1,6],[6,1,0]]
     return bins[bn][0],bins[bn][1],bins[bn][2]
 
+def get_outerfold(i,thisFold):
+    X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neurons_perRepeat = decodingSetup.get_dataParams(i)
+    return X_train0[thisFold],X_flat_train0[thisFold], y_train0[thisFold], X_test[thisFold], X_flat_test[thisFold], y_test[thisFold], neurons_perRepeat[thisFold]

@@ -6,11 +6,10 @@
 #SBATCH --mail-type=all
 #SBATCH --mail-user=knoneman@andrew.cmu.edu
 #SBATCH -t 00:30:00
-#SBATCH --ntasks-per-node=64
+#SBATCH --ntasks-per-node=1
 
 module purge
 module load anaconda3/2022.10
-module load cuda/11.7.1
 conda activate neuraldecoding
 
 python decoding-2.py $1 $2

@@ -1,5 +1,5 @@
-#SET,session,timesPrePost,binwidth,model,output,numMT,numFEF,binsPrePost,outerFolds, innerFolds
-#0      1          1         50      1     0     20    20        1          5            5      
+#SET,session,timesPrePost,binwidth,model,output,numMT,numFEF,binsPrePost,outerFolds, innerFolds, numRepeats
+#0      1          1         50      1     0     20    20        1          5            5          100
 
 #s0:  pa29dir4A      
 

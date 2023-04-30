@@ -37,6 +37,7 @@ import decodingSetup
 ############# if on cluster ########################
 num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
 outer_fold = int(os.environ["SLURM_ARRAY_TASK_ID"])
+bcknd = "multiprocessing"
 
 print('number of cores = {}'.format(num_cores))
 print('outer fold = {}'.format(outer_fold))

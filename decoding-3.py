@@ -31,8 +31,9 @@ import helpers
 import decodingSetup
 
 #######################################
-num_cores = int(sys.argv[1]) #if on cluster
+#num_cores = int(sys.argv[1]) #if on cluster
 #num_cores = multiprocessing.cpu_count() # if not on cluster
+num_cores = int(os.environ["SLURM_CPUS_PER_TASK"])
 
 ########### model evaluations #############
 def wc_evaluate(degree): #1
@@ -83,7 +84,8 @@ X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neurons_perRepea
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 
-outer_fold = int(sys.argv[2])
+outer_fold = int(os.environ["SLURM_ARRAY_TASK_ID"])
+print(outer_fold)
 
 inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
 
@@ -384,7 +386,6 @@ def trainTest_perRepeat(r):
 
     return [y_train_predicted, y_test_predicted, mean_R2, mean_rho, max_params, neuron_inds] 
 
-num_cores = multiprocessing.cpu_count()
 results = Parallel(n_jobs=num_cores)(delayed(trainTest_perRepeat)(r) for r in range(num_repeats))
 
 time_elapsed = time.time()-t1

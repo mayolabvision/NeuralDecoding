@@ -4,7 +4,9 @@ import numpy as np
 #from sklearn.model_selection import KFold
 
 def make_name(s,t,d,m,o,nm,nf,bn,fo,fi,r):
-    return "s{}-t{}-d{}-m{}-o{}-nm{}-nf{}-bn{}-fo{}-fi{}-r{}".format(s,t,d,m,o,nm,nf,bn,fo,fi,r)
+    #SET,session,timesPrePost,binwidth,model,output,numMT,numFEF,binsPrePost,outerFolds, innerFolds, numRepeats
+    #0      1          1         50      1     0     20    20        1          5            5          100
+    return "s{:02d}-t{}-d{:03d}-m{:02d}-o{}-nm{:02d}-nf{:02d}-bn{}-fo{:02d}-fi{:02d}-r{:04d}".format(s,t,d,m,o,nm,nf,bn,fo,fi,r)
 
 def checkdir(name):
     if not os.path.exists(name):

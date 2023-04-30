@@ -136,6 +136,7 @@ def trainTest_perRepeat(r):
 
                 mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
                 mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+                print(mean_R2)
 
         # Wiener Cascade Decoder
         if m == 1:

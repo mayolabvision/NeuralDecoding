@@ -31,12 +31,12 @@ import helpers
 import decodingSetup
 
 ############## if on local computer ################
-num_cores = multiprocessing.cpu_count() 
-outer_fold = int(sys.argv[2])
+#num_cores = multiprocessing.cpu_count() 
+#outer_fold = int(sys.argv[2])
 
 ############# if on cluster ########################
-#num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
-#outer_fold = int(os.environ["SLURM_ARRAY_TASK_ID"])
+num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
+outer_fold = int(os.environ["SLURM_ARRAY_TASK_ID"])
 
 print('number of cores = {}'.format(num_cores))
 print('outer fold = {}'.format(outer_fold))
@@ -90,9 +90,8 @@ X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neurons_perRepea
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 
-outer_fold = int(sys.argv[2])
-
 inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
+print(inner_cv)
 
 t1=time.time()
 y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds = [],[],[],[],[],[],[]
@@ -137,7 +136,6 @@ def trainTest_perRepeat(r):
 
                 mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
                 mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
-                
 
         # Wiener Cascade Decoder
         if m == 1:

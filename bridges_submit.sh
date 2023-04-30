@@ -9,17 +9,23 @@
 #SBATCH --ntasks-per-node=4
 #SBATCH --array=0-10
 
-echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."
-echo "My SLURM_ARRAY_TASK_ID is $SLURM_ARRAY_TASK_ID"
-echo "Executing on the machine:" $(hostname)
-
 module purge
 module load anaconda3/2022.10
 conda activate neuraldecoding
 
-echo "num cpus is $SLURM_CPUS_PER_TASK" # Size of multiprocessing pool
+find ~/.ipython/profile_job* -maxdepth 0 -type d -ctime +1 | xargs rm -r
+profile=job_${SLURM_JOB_ID}
+echo "Creating profile_${profile}"
+$HOME/conda/bin/ipython profile create ${profile}
 
-python decoding-2.py $1
+$HOME/conda/bin/ipcontroller --ip="*" --profile=${profile} &
+sleep 10
+
+srun $HOME/conda/bin/ipengine --profile=${profile} --location=$(hostname) &
+sleep 25
+
+echo "Launching job for line $1"
+python decoding-2.py $1 -p ${profile}
 
 #cp files you'd like to move off of scratch
 #mv files that you'd like moved off of scratch

@@ -86,7 +86,7 @@ def lstm_evaluate(num_units,frac_dropout,n_epochs):
     return np.mean(get_R2(y_valid,y_valid_predicted))
 
 ############ training ################
-X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neurons_perRepeat = decodingSetup.get_dataParams(int(sys.argv[1]))
+X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neurons_perRepeat = helpers.get_outerfold(int(sys.argv[1]),outer_fold)
 
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
@@ -96,17 +96,16 @@ print(inner_cv)
 
 t1=time.time()
 y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds = [],[],[],[],[],[],[]
-
 def trainTest_perRepeat(r): 
     hp_tune = []
-    for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[outer_fold][r])):
-        X_train = X_train0[outer_fold][r][train_index,:,:]
-        X_flat_train = X_flat_train0[outer_fold][r][train_index,:]
-        y_train = y_train0[outer_fold][r][train_index,:]
+    for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[r])):
+        X_train = X_train0[r][train_index,:,:]
+        X_flat_train = X_flat_train0[r][train_index,:]
+        y_train = y_train0[r][train_index,:]
 
-        X_valid = X_train0[outer_fold][r][valid_index,:,:]
-        X_flat_valid = X_flat_train0[outer_fold][r][valid_index,:]
-        y_valid = y_train0[outer_fold][r][valid_index,:]
+        X_valid = X_train0[r][valid_index,:,:]
+        X_flat_valid = X_flat_train0[r][valid_index,:]
+        y_valid = y_train0[r][valid_index,:]
 
         X_valid=(X_valid-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
         X_train=(X_train-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
@@ -123,10 +122,10 @@ def trainTest_perRepeat(r):
             from decoders import WienerFilterDecoder
 
             if j==fi-1:
-                X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                X_flat_testf=(X_flat_test[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                X_flat_train0f=(X_flat_train0[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
 
                 model=WienerFilterDecoder() #Define model
                 model.fit(X_flat_train0f,y_train0f) #Fit model
@@ -154,10 +153,10 @@ def trainTest_perRepeat(r):
                 deg = df_mn['R2']['mean'].idxmax()
                 max_params.append([deg])
 
-                X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                X_flat_testf=(X_flat_test[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                X_flat_train0f=(X_flat_train0[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
                 
                 # Run model w/ above hyperparameters
                 model=WienerCascadeDecoder(deg) #Define model
@@ -189,10 +188,10 @@ def trainTest_perRepeat(r):
                 
                 max_params.append([max_depth,num_round,eta])
 
-                X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                X_flat_testf=(X_flat_test[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                X_flat_train0f=(X_flat_train0[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
 
                 model=XGBoostDecoder(max_depth=int(max_depth), num_round=int(num_round), eta=float(eta))
                 model.fit(X_flat_train0f,y_train0f) #Fit model
@@ -217,10 +216,10 @@ def trainTest_perRepeat(r):
                 C = df_mn['R2']['mean'].idxmax()
                 max_params.append([C])
                
-                X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                X_flat_testf=(X_flat_test[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                X_flat_train0f=(X_flat_train0[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
                 
                 y_zscore_test=y_testf/(np.nanstd(y_train0f,axis=0))
                 y_zscore_train0=y_train0f/(np.nanstd(y_train0f,axis=0))
@@ -253,10 +252,10 @@ def trainTest_perRepeat(r):
                 frac_dropout = best_params['frac_dropout']
                 max_params.append([num_units,n_epochs,frac_dropout])
 
-                X_flat_testf=(X_flat_test[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                X_flat_train0f=(X_flat_train0[outer_fold][r]-np.nanmean(X_flat_train0[outer_fold][r],axis=0))/(np.nanstd(X_flat_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                X_flat_testf=(X_flat_test[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                X_flat_train0f=(X_flat_train0[r]-np.nanmean(X_flat_train0[r],axis=0))/(np.nanstd(X_flat_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
 
                 model=DenseNNDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
                 model.fit(X_flat_train0f,y_train0f) #Fit model
@@ -286,10 +285,10 @@ def trainTest_perRepeat(r):
                 frac_dropout = best_params['frac_dropout']
                 max_params.append([num_units,n_epochs,frac_dropout])
 
-                X_testf=(X_test[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
-                X_train0f=(X_train0[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                X_testf=(X_test[r]-np.nanmean(X_train0[r],axis=0))/(np.nanstd(X_train0[r],axis=0))
+                X_train0f=(X_train0[r]-np.nanmean(X_train0[r],axis=0))/(np.nanstd(X_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
 
                 model=SimpleRNNDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
                 model.fit(X_train0f,y_train0f) #Fit model
@@ -318,11 +317,11 @@ def trainTest_perRepeat(r):
                 n_epochs = best_params['n_epochs']
                 frac_dropout = best_params['frac_dropout']
                 max_params.append([num_units,n_epochs,frac_dropout])
-
-                X_testf=(X_test[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
-                X_train0f=(X_train0[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                
+                X_testf=(X_test[r]-np.nanmean(X_train0[r],axis=0))/(np.nanstd(X_train0[r],axis=0))
+                X_train0f=(X_train0[r]-np.nanmean(X_train0[r],axis=0))/(np.nanstd(X_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
 
                 model=GRUDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
                 model.fit(X_train0f,y_train0f) #Fit model
@@ -351,11 +350,11 @@ def trainTest_perRepeat(r):
                 n_epochs = best_params['n_epochs']
                 frac_dropout = best_params['frac_dropout']
                 max_params.append([num_units,n_epochs,frac_dropout])
-
-                X_testf=(X_test[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
-                X_train0f=(X_train0[outer_fold][r]-np.nanmean(X_train0[outer_fold][r],axis=0))/(np.nanstd(X_train0[outer_fold][r],axis=0))
-                y_testf=y_test[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0)
-                y_train0f=y_train0[outer_fold][r]-np.mean(y_train0[outer_fold][r],axis=0) 
+                
+                X_testf=(X_test[r]-np.nanmean(X_train0[r],axis=0))/(np.nanstd(X_train0[r],axis=0))
+                X_train0f=(X_train0[r]-np.nanmean(X_train0[r],axis=0))/(np.nanstd(X_train0[r],axis=0))
+                y_testf=y_test[r]-np.mean(y_train0[r],axis=0)
+                y_train0f=y_train0[r]-np.mean(y_train0[r],axis=0) 
 
                 model=LSTMDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),num_epochs=int(n_epochs))
                 model.fit(X_train0f,y_train0f) #Fit model

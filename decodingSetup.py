@@ -24,11 +24,8 @@ import helpers
 
 def get_dataParams(linenum):
     s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(linenum))
-    jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
+    jobname,dsname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
     sess,sess_nodt = helpers.get_session(s,t,d)
-
-	print(jobname)
-	print(blah)
 
     if not os.path.isfile(cwd+'/datasets/vars-'+sess+'.pickle'):
         if os.path.isfile(cwd+'/datasets/vars-'+sess_nodt+'.mat'):
@@ -38,7 +35,7 @@ def get_dataParams(linenum):
         else:
             print('you need to go run data_formatting.m within MATLAB, then come right back (:')
 
-    if not os.path.isfile(cwd+'/datasets/datasplit-'+sess+'.pickle'):
+    if not os.path.isfile(cwd+'/datasets/datasplit-'+dsname+'.pickle'):
         with open(cwd+'/datasets/vars-'+sess+'.pickle','rb') as f:
             neural_data,pos_binned,vel_binned,acc_binned=pickle.load(f,encoding='latin1')
 
@@ -93,10 +90,10 @@ def get_dataParams(linenum):
                 X_flat_test[q].append(X_flat[test_index,:])
                 y_test[q].append(y[test_index,:])
     
-        with open(cwd+'/datasets/datasplit-'+sess+'.pickle','wb') as f:
+        with open(cwd+'/datasets/datasplit-'+dsname+'.pickle','wb') as f:
             pickle.dump([X_train0,X_flat_train0,y_train0,X_test,X_flat_test,y_test,neurons_perRepeat],f)
     else:
-        with open(cwd+'/datasets/datasplit-'+sess+'.pickle','rb') as f:
+        with open(cwd+'/datasets/datasplit-'+dsname+'.pickle','rb') as f:
             X_train0,X_flat_train0,y_train0,X_test,X_flat_test,y_test,neurons_perRepeat=pickle.load(f,encoding='latin1')
 
     return X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neurons_perRepeat 

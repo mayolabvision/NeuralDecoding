@@ -32,11 +32,11 @@ import decodingSetup
 
 ############## if on local computer ################
 #num_cores = multiprocessing.cpu_count() 
-#outer_fold = int(sys.argv[2])
+outer_fold = int(sys.argv[2])
 
 ############# if on cluster ########################
 #num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
-outer_fold = int(os.environ["SLURM_ARRAY_TASK_ID"])
+#outer_fold = int(os.environ["SLURM_ARRAY_TASK_ID"])
 
 #print('number of cores = {}'.format(num_cores))
 print('outer fold = {}'.format(outer_fold))
@@ -88,10 +88,9 @@ def lstm_evaluate(num_units,frac_dropout,n_epochs):
 X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neurons_perRepeat = helpers.get_outerfold(int(sys.argv[1]),outer_fold)
 
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
-jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
+jobname,dsname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 
 inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
-print(inner_cv)
 
 t1=time.time()
 y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds = [],[],[],[],[],[],[]

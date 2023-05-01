@@ -35,11 +35,10 @@ import decodingSetup
 #outer_fold = int(sys.argv[2])
 
 ############# if on cluster ########################
-num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
+#num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
 outer_fold = int(os.environ["SLURM_ARRAY_TASK_ID"])
-bcknd = "multiprocessing"
 
-print('number of cores = {}'.format(num_cores))
+#print('number of cores = {}'.format(num_cores))
 print('outer fold = {}'.format(outer_fold))
 
 ########### model evaluations #############
@@ -367,7 +366,8 @@ def trainTest_perRepeat(r):
     neuron_inds = neurons_perRepeat[r]
     return [y_train_predicted, y_test_predicted, mean_R2, mean_rho, max_params, neuron_inds] 
 
-results = Parallel(n_jobs=num_cores)(delayed(trainTest_perRepeat)(r) for r in range(num_repeats))
+#results = Parallel(n_jobs=cpu_count(logical=False),backend='loky')(delayed(trainTest_perRepeat)(r) for r in range(num_repeats))
+results = [trainTest_perRepeat(r) for r in range(num_repeats)]
 
 time_elapsed = time.time()-t1
 print("time elapsed: %.3f seconds" % time_elapsed)

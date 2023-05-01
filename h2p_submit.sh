@@ -1,14 +1,13 @@
 #!/bin/bash -l
 #SBATCH --cluster=smp
-#SBATCH --partition=high-mem
+#SBATCH --partition=smp
 #SBATCH --job-name=neuraldecoding
 #SBATCH -o runs/outfiles/out.o%j
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mail-type=all
 #SBATCH --mail-user=knoneman@pitt.edu
-#SBATCH --time=0-01:00:00
-#SBATCH --cpus-per-task=2
+#SBATCH --time=0-00:20:00
 #SBATCH --array=0-10
 
 echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."

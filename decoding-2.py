@@ -94,7 +94,6 @@ s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 foldneuron = helpers.get_foldneuronPairs(int(sys.argv[1]))
 
-repeat = 0
 X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neuron_inds = helpers.get_data(int(sys.argv[1]),repeat,outer_fold)
 
 inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)

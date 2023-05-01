@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import decodingSetup
 #import pickle
 #from sklearn.model_selection import KFold
 

@@ -32,11 +32,11 @@ import decodingSetup
 
 ############## if on local computer ################
 #num_cores = multiprocessing.cpu_count() 
-outer_fold = int(sys.argv[2])
+#outer_fold = int(sys.argv[2])
 
 ############# if on cluster ########################
 #num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
-#outer_fold = int(os.environ["SLURM_ARRAY_TASK_ID"])
+outer_fold = int(os.environ["SLURM_ARRAY_TASK_ID"])
 
 #print('number of cores = {}'.format(num_cores))
 print('outer fold = {}'.format(outer_fold))

@@ -94,7 +94,8 @@ inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
 
 t1=time.time()
 y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds = [],[],[],[],[],[],[]
-def trainTest_perRepeat(r): 
+def trainTest_perRepeat(r):
+    print("\n")
     hp_tune = []
     for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0[r])):
         X_train = X_train0[r][train_index,:,:]
@@ -164,13 +165,14 @@ def trainTest_perRepeat(r):
 
                 mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
                 mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+                print(mean_R2)
 
         # XGBoost Decoder
         if m == 2:
             from decoders import XGBoostDecoder
     
             BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=1)
-            BO.maximize(init_points=3, n_iter=5)
+            BO.maximize(init_points=10, n_iter=10)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['max_depth']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_round']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['eta'],2) for key in range(len(BO.res))]))).T)
 
@@ -198,13 +200,14 @@ def trainTest_perRepeat(r):
 
                 mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
                 mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+                print(mean_R2)
 
         # SVR Decoder
         if m == 3:
             from decoders import SVRDecoder
 
             BO = BayesianOptimization(svr_evaluate, {'C': (0.5, 10)}, verbose=1, allow_duplicate_points=True)
-            BO.maximize(init_points=5, n_iter=5)
+            BO.maximize(init_points=10, n_iter=10)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['C'],1) for key in range(len(BO.res))]))).T)
 
@@ -229,13 +232,14 @@ def trainTest_perRepeat(r):
 
                 mean_R2 = np.mean(get_R2(y_zscore_test,y_test_predicted))
                 mean_rho = np.mean(get_rho(y_zscore_test,y_test_predicted))
+                print(mean_R2)
                 
         # DNN
         if m == 4:
             from decoders import DenseNNDecoder
 
             BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
-            BO.maximize(init_points=3, n_iter=5)
+            BO.maximize(init_points=10, n_iter=10)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
 
@@ -268,7 +272,7 @@ def trainTest_perRepeat(r):
             from decoders import SimpleRNNDecoder
 
             BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
-            BO.maximize(init_points=3, n_iter=5)
+            BO.maximize(init_points=5, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
 
@@ -301,7 +305,7 @@ def trainTest_perRepeat(r):
             from decoders import GRUDecoder
 
             BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
-            BO.maximize(init_points=3, n_iter=5)
+            BO.maximize(init_points=5, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
 
@@ -328,13 +332,14 @@ def trainTest_perRepeat(r):
 
                 mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
                 mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+                print(mean_R2)
 
         # LSTM Decoder
         if m == 7:
             from decoders import LSTMDecoder
 
             BO = BayesianOptimization(lstm_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
-            BO.maximize(init_points=3, n_iter=5)
+            BO.maximize(init_points=5, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
 
@@ -361,6 +366,7 @@ def trainTest_perRepeat(r):
 
                 mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
                 mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
+                print(mean_R2)
     
     neuron_inds = neurons_perRepeat[r]
     return [y_train_predicted, y_test_predicted, mean_R2, mean_rho, max_params, neuron_inds] 

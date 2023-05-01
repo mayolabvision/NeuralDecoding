@@ -7,7 +7,7 @@
 #SBATCH --mail-type=all
 #SBATCH --mail-user=knoneman@andrew.cmu.edu
 #SBATCH -t 00:30:00
-#SBATCH --array=0-10
+#SBATCH --array=0-99
 
 module purge
 module load anaconda3/2022.10

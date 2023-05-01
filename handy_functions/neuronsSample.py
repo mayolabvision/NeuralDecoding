@@ -49,7 +49,7 @@ def get_neuronRepeats(linenum):
             pickle.dump(neurons_perRepeat,f)
         print('successfully sampled the neurons')
     else:
-        with open(cwd+'/datasets/datasplit-nm'+str(nm)+'-nf'+str(nf)+'.pickle','wb') as f:
+        with open(cwd+'/datasets/datasplit-nm'+str(nm)+'-nf'+str(nf)+'.pickle','rb') as f:
             neurons_perRepeat = pickle.load(f,encoding='latin1')
         print('already sampled this many neurons before')
 

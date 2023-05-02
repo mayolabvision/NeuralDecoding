@@ -37,11 +37,11 @@ foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))
 
 ############## if on local computer ################
 #num_cores = multiprocessing.cpu_count() 
-#neuron_fold = foldneuron_pairs[int(sys.argv[2])]
+neuron_fold = foldneuron_pairs[int(sys.argv[2])]
 
 ############# if on cluster ########################
 #num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
-neuron_fold = foldneuron_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
+#neuron_fold = foldneuron_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
 
 outer_fold = neuron_fold[0]
 repeat = neuron_fold[1]
@@ -159,7 +159,7 @@ for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0)):
         from decoders import XGBoostDecoder
 
         BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=1)
-        BO.maximize(init_points=10, n_iter=10)
+        BO.maximize(init_points=2, n_iter=2)
         params = max(BO.res, key=lambda x:x['target'])
         hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['max_depth']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_round']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['eta'],2) for key in range(len(BO.res))]))).T)
         if j==fi-1:

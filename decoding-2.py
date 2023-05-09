@@ -14,6 +14,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
+params = 'params_ff.txt'
 
 from metrics import get_R2
 from metrics import get_rho
@@ -29,7 +30,7 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
 import helpers
 
-line = np.loadtxt('params_mlproject.txt')[int(sys.argv[1])]
+line = np.loadtxt(params)[int(sys.argv[1])]
 print(line)
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
@@ -37,11 +38,11 @@ foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))
 
 ############## if on local computer ################
 #num_cores = multiprocessing.cpu_count() 
-#neuron_fold = foldneuron_pairs[int(sys.argv[2])]
+neuron_fold = foldneuron_pairs[int(sys.argv[2])]
 
 ############# if on cluster ########################
 #num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
-neuron_fold = foldneuron_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
+#neuron_fold = foldneuron_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
 
 outer_fold = neuron_fold[0]
 repeat = neuron_fold[1]
@@ -101,6 +102,7 @@ inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
 t1=time.time()
 hp_tune = []
 for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0)):
+    print('\n')
     X_train = X_train0[train_index,:,:]
     X_flat_train = X_flat_train0[train_index,:]
     y_train = y_train0[train_index,:]
@@ -159,7 +161,7 @@ for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0)):
         from decoders import XGBoostDecoder
 
         BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=1)
-        BO.maximize(init_points=5, n_iter=5)
+        BO.maximize(init_points=2, n_iter=3)
         params = max(BO.res, key=lambda x:x['target'])
         hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['max_depth']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_round']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['eta'],2) for key in range(len(BO.res))]))).T)
         if j==fi-1:

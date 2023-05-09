@@ -15,6 +15,7 @@ import helpers
 def get_neuronRepeats(linenum):
     s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(linenum))
     sess,sess_nodt = helpers.get_session(s,t,d)
+    #session = 'pa'+str(j)+'dir4A'
 
     if not os.path.isfile(cwd+'/datasets/vars-'+sess+'.pickle'):
         if os.path.isfile(cwd+'/datasets/vars-'+sess_nodt+'.mat'):
@@ -24,7 +25,7 @@ def get_neuronRepeats(linenum):
         else:
             print('you need to go run data_formatting.m within MATLAB, then come right back (:')
 
-    if not os.path.isfile(cwd+'/datasets/datasplit-nm'+str(nm)+'-nf'+str(nf)+'.pickle'):
+    if not os.path.isfile(cwd+'/datasets/datasplit-'+str(sess)+'-nm'+str(nm)+'-nf'+str(nf)+'.pickle'):
         with open(cwd+'/datasets/vars-'+sess+'.pickle','rb') as f:
             neural_data,pos_binned,vel_binned,acc_binned=pickle.load(f,encoding='latin1')
 
@@ -45,11 +46,11 @@ def get_neuronRepeats(linenum):
            
             neurons_perRepeat.append(neuron_inds)
     
-        with open(cwd+'/datasets/datasplit-nm'+str(nm)+'-nf'+str(nf)+'.pickle','wb') as f:
+        with open(cwd+'/datasets/datasplit-'+str(sess)+'-nm'+str(nm)+'-nf'+str(nf)+'.pickle','wb') as f:
             pickle.dump(neurons_perRepeat,f)
         print('successfully sampled the neurons')
     else:
-        with open(cwd+'/datasets/datasplit-nm'+str(nm)+'-nf'+str(nf)+'.pickle','wb') as f:
+        with open(cwd+'/datasets/datasplit-'+str(sess)+'-nm'+str(nm)+'-nf'+str(nf)+'.pickle','wb') as f:
             neurons_perRepeat = pickle.load(f,encoding='latin1')
         print('already sampled this many neurons before')
 

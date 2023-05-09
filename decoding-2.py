@@ -14,6 +14,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
+params = 'params_ff.txt'
 
 from metrics import get_R2
 from metrics import get_rho
@@ -29,7 +30,7 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
 import helpers
 
-line = np.loadtxt('params_mlproject.txt')[int(sys.argv[1])]
+line = np.loadtxt(params)[int(sys.argv[1])]
 print(line)
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
@@ -101,6 +102,7 @@ inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
 t1=time.time()
 hp_tune = []
 for j, (train_index, valid_index) in enumerate(inner_cv.split(X_train0)):
+    print('\n')
     X_train = X_train0[train_index,:,:]
     X_flat_train = X_flat_train0[train_index,:]
     y_train = y_train0[train_index,:]

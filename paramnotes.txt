@@ -1,7 +1,7 @@
 #SET,session,timesPrePost,binwidth,model,output,numMT,numFEF,binsPrePost,outerFolds, innerFolds, numRepeats
 #0      1          1         50      1     0     20    20        1          5            5          100
 
-#s0:  pa29dir4A      
+#s0:  pa18,pa20,pa22,pa24,pa29
 
 #t0:  pre=600ms,post=600ms
 
@@ -24,12 +24,12 @@
 #nm1: 1 MT neuron
 #nm2: 2 MT neurons
 #...
-#nmM: M MT neurons
+#nmM: M MT neurons (24,24,24,25,25,24)
 
 #nf1: 1 FEF neuron
 #nf2: 2 FEF neurons
 #...
-#nfF: M FEF neurons
+#nfF: M FEF neurons (23,32,28,27,24,41)
 
 #[bins of neural data before, bins of neural data after] to the output are used for decoding
 #bn0: [0 1 0]

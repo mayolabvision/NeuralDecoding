@@ -8,6 +8,7 @@ from itertools import product
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
+params = 'params_ff.txt'
 
 import neuronsSample
 from preprocessing_funcs import get_spikes_with_history
@@ -24,7 +25,7 @@ def checkdir(name):
     return
 
 def get_params(i):
-    line = np.loadtxt('params_mlproject.txt')[i]
+    line = np.loadtxt(params)[i]
     s = int(line[1])
     t = int(line[2])
     d = int(line[3])
@@ -46,9 +47,9 @@ def make_directory(jobname):
     return f
 
 def get_session(j,t,d):
-    sessions = ['pa29dir4A']
+    session = 'pa'+str(j)+'dir4A'
     times = [[500,300]]
-    return sessions[j]+'-pre'+str(times[t][0])+'-post'+str(times[t][1])+'-dt'+str(d),sessions[j]+'-pre'+str(times[t][0])+'-post'+str(times[t][1])
+    return session+'-pre'+str(times[t][0])+'-post'+str(times[t][1])+'-dt'+str(d),session+'-pre'+str(times[t][0])+'-post'+str(times[t][1])
 
 def get_bins(bn):
     bins = [[6,1,6],[6,1,0]]

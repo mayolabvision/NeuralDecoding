@@ -38,11 +38,11 @@ foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))
 
 ############## if on local computer ################
 #num_cores = multiprocessing.cpu_count() 
-neuron_fold = foldneuron_pairs[int(sys.argv[2])]
+#neuron_fold = foldneuron_pairs[int(sys.argv[2])]
 
 ############# if on cluster ########################
 #num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
-#neuron_fold = foldneuron_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
+neuron_fold = foldneuron_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
 
 outer_fold = neuron_fold[0]
 repeat = neuron_fold[1]

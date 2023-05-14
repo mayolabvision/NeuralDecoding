@@ -353,5 +353,6 @@ print("time elapsed: %.3f seconds" % time_elapsed)
 
 pfile = helpers.make_directory(jobname)
 with open(cwd+pfile+'/fo'+str(outer_fold)+'_re'+str(repeat)+'.pickle','wb') as p:
-    pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds],p)
+	pickle.dump([y_test,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds],p)
+#    pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds],p)
 

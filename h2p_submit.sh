@@ -6,8 +6,7 @@
 #SBATCH --nodes=1
 #SBATCH --mail-type=all
 #SBATCH --mail-user=knoneman@pitt.edu
-#SBATCH --mem-per-cpu=8G
-#SBATCH --time=0-05:00:00
+#SBATCH --time=0-00:10:00
 #SBATCH --array=0-499
 
 echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."

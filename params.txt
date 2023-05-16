@@ -1,0 +1,6 @@
+0 18 0 50 0 0 24 23 0 10 3 50 #lineID,session,timesPrePost,binwidth,model,output,numMT,numFEF,binsPrePost,outerFolds,innerFolds,numRepeats   143
+1 20 0 50 0 0 24 32 0 10 3 50 #191
+2 22 0 50 0 0 24 28 0 10 3 50 #167
+3 24 0 50 0 0 25 24 0 10 3 50 #155
+4 28 0 50 0 0 25 24 0 10 3 50 #155
+5 29 0 50 0 0 24 41 0 10 3 50 #251

@@ -38,8 +38,8 @@ mtfef_pairs = helpers.get_neuronCombos(int(sys.argv[1]))
 mtfef_pairs.remove((0,0))
 
 print(len(mtfef_pairs))
-mtfef = mtfef_pairs[int(sys.argv[2])] # if local
-#mtfef = mtfef_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
+#mtfef = mtfef_pairs[int(sys.argv[2])] # if local
+mtfef = mtfef_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
 
 ############ training ################
 results,params_all,neurons_all,times_all = [],[],[],[]

@@ -7,5 +7,6 @@ handy_functions/__pycache__/metrics.cpython-39.pyc
 *.pyc
 runs/outfiles
 datasets/*.mat
+datasets/dsplt-*
 runs/
 .DS_Store

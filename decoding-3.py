@@ -39,7 +39,7 @@ mtfef_pairs.remove((0,0))
 
 print(mtfef_pairs.index((10,18)))
 print(len(mtfef_pairs))
-print(blah)
+
 mtfef = mtfef_pairs[int(sys.argv[2])] # if local
 #mtfef = mtfef_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
 

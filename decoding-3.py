@@ -41,8 +41,6 @@ print(len(mtfef_pairs))
 mtfef = mtfef_pairs[int(sys.argv[2])] # if local
 #mtfef = mtfef_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
 
-print(blah)
-
 ############ training ################
 results,params_all,neurons_all,times_all = [],[],[],[]
 
@@ -51,6 +49,7 @@ new_line[6] = mtfef[0]
 new_line[7] = mtfef[1]
 print(new_line)
 for i in foldneuron_pairs:
+    print(i)
     X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neuron_inds = helpers.get_data(new_line,i[1],i[0])
     inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
 
@@ -83,7 +82,7 @@ for i in foldneuron_pairs:
 
                 mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
                 mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
-                #print(mean_R2)
+                print(mean_R2)
 
         # Wiener Cascade Decoder
         if m == 1:

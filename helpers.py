@@ -118,7 +118,7 @@ def get_neuronCombos(i):
     s,t,d,m,o,nm,nf,bn,fo,fi,r = get_params(i)
     unique_combinations = []
 
-    pairs = list(product(range(nm), range(nf)))
+    pairs = list(product(range(0,nm,2), range(0,nf,2)))
     return pairs
 
 

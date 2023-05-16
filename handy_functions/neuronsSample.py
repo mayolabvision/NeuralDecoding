@@ -57,7 +57,6 @@ def get_neuronRepeats(line):
     
         with open(cwd+'/datasets/dsplt-'+sess+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle','wb') as f:
             pickle.dump(neurons_perRepeat,f)
-        print('successfully sampled the neurons')
     else:
         with open(cwd+'/datasets/dsplt-'+sess+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle','rb') as f:
             neurons_perRepeat = pickle.load(f,encoding='latin1')

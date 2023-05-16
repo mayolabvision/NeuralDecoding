@@ -8,7 +8,7 @@ from itertools import product
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
-params = 'params_ff.txt'
+params = 'params.txt'
 
 import neuronsSample
 from preprocessing_funcs import get_spikes_with_history
@@ -55,9 +55,20 @@ def get_bins(bn):
     bins = [[6,1,6],[6,1,0]]
     return bins[bn][0],bins[bn][1],bins[bn][2]
 
-def get_data(i,repeat,outer_fold):
-    neurons_perRepeat = neuronsSample.get_neuronRepeats(i)
-    s,t,d,m,o,nm,nf,bn,fo,fi,r = get_params(i)
+def get_data(line,repeat,outer_fold):
+    neurons_perRepeat = neuronsSample.get_neuronRepeats(line)
+    s = int(line[1])
+    t = int(line[2])
+    d = int(line[3])
+    m = int(line[4])
+    o = int(line[5])
+    nm = int(line[6])
+    nf = int(line[7])
+    bn = int(line[8])
+    fo = int(line[9])
+    fi = int(line[10]) 
+    r = int(line[11])
+    
     sess,sess_nodt = get_session(s,t,d)
     [bins_before,bins_current,bins_after] = get_bins(bn)
 
@@ -101,6 +112,15 @@ def get_foldneuronPairs(i):
 
     pairs = list(product(range(fo), range(r)))
     return pairs
+
+def get_neuronCombos(i):
+    # initialize lists
+    s,t,d,m,o,nm,nf,bn,fo,fi,r = get_params(i)
+    unique_combinations = []
+
+    pairs = list(product(range(nm), range(nf)))
+    return pairs
+
 
 def normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,y_train,y_test):
     X_test=(X_test-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
@@ -152,24 +172,4 @@ def get_dataX(i,repeat,outer_fold):
     y_test = y[trainTest_index[1],:]
 
     return X_train0,X_flat_train0,y_train0,X_test,X_flat_test,y_test,neurons_perRepeat[repeat]
-
-def get_foldneuronPairs(i):
-    # initialize lists
-    s,t,d,m,o,nm,nf,bn,fo,fi,r = get_params(i)
-    unique_combinations = []
-
-    pairs = list(product(range(fo), range(r)))
-    return pairs
-
-def normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,y_train,y_test):
-    X_test=(X_test-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
-    X_train=(X_train-np.nanmean(X_train,axis=0))/(np.nanstd(X_train,axis=0))
-    X_flat_test=(X_flat_test-np.nanmean(X_flat_train,axis=0))/(np.nanstd(X_flat_train,axis=0))
-    X_flat_train=(X_flat_train-np.nanmean(X_flat_train,axis=0))/(np.nanstd(X_flat_train,axis=0))
-    y_test=y_test-np.mean(y_train,axis=0)
-    y_train=y_train-np.mean(y_train,axis=0)
-    y_zscore_test=y_test/(np.nanstd(y_train,axis=0))
-    y_zscore_train=y_train/(np.nanstd(y_train,axis=0))
-
-    return X_train,X_flat_train,X_test,X_flat_test,y_train,y_test,y_zscore_train,y_zscore_test
 

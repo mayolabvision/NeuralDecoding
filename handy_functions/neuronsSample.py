@@ -12,8 +12,18 @@ from preprocessing_funcs import get_spikes_with_history
 from sklearn.model_selection import KFold
 import helpers
 
-def get_neuronRepeats(linenum):
-    s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(linenum))
+def get_neuronRepeats(line):
+    s = int(line[1])
+    t = int(line[2])
+    d = int(line[3])
+    m = int(line[4])
+    o = int(line[5])
+    nm = int(line[6])
+    nf = int(line[7])
+    bn = int(line[8])
+    fo = int(line[9])
+    fi = int(line[10]) 
+    num_repeats = int(line[11])
     sess,sess_nodt = helpers.get_session(s,t,d)
 
     if not os.path.isfile(cwd+'/datasets/vars-'+sess+'.pickle'):
@@ -51,7 +61,6 @@ def get_neuronRepeats(linenum):
     else:
         with open(cwd+'/datasets/dsplt-'+sess+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle','rb') as f:
             neurons_perRepeat = pickle.load(f,encoding='latin1')
-        print('already sampled this many neurons before')
 
     return neurons_perRepeat
 

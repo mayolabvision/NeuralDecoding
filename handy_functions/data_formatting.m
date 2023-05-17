@@ -53,13 +53,18 @@ motionDirs = cellfun(@(q) str2double(q(strfind(q,'d')+1:strfind(q,'d')+3)), {exp
 eyes = {exp_clean.dataMaestroPlx.mstEye}.'; 
 eyes_new = cellfun(@(et,so) trimSmooth_eyeTraces(et,so,preint,postint,20), eyes, stimOnsets, 'uni', 0); 
 
+exp_clean.dataMaestroPlx(isnan(cellfun(@(q) q{1}(1), eyes_new,'uni', 1))) = []; 
+motionDirs(isnan(cellfun(@(q) q{1}(1), eyes_new,'uni', 1))) = []; stimOnsets(isnan(cellfun(@(q) q{1}(1), eyes_new,'uni', 1))) = []; eyes_new(isnan(cellfun(@(q) q{1}(1), eyes_new,'uni', 1))) = [];
 %tt = [{exp_clean.dataMaestroPlx.trName}.' {exp_clean.dataMaestroPlx.trType}.' motionDirs pursuitOnsets stimOnsets rxnTimes eyes];
 %trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","PursuitOnset","TargetMotionOnset","RxnTime","EyeTraces"]);
 %trialTbl.TrialName = categorical(string(trialTbl.TrialName)); trialTbl.TrialType = categorical(string(trialTbl.TrialType));
 
+%trls = {exp_clean.dataMaestroPlx.trType}.';
+%cellfun(@(q) str2double(q(9:11)), trls(:,2), 'uni', 0)  cellfun(@(q) str2double(q(15:16)), trls(:,2), 'uni', 0)
 tt = [{exp_clean.dataMaestroPlx.trName}.' {exp_clean.dataMaestroPlx.trType}.' motionDirs stimOnsets eyes_new];
 trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","TargetMotionOnset","EyeTraces"]);
 trialTbl.TrialName = categorical(string(trialTbl.TrialName)); trialTbl.TrialType = categorical(string(trialTbl.TrialType));
+
 
 % Directions in this session (4, corrected by rotation factor)
 dirsdeg  =  sort(unique(trialTbl.Direction)); % direction for each trial 

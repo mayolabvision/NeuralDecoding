@@ -10,3 +10,4 @@ datasets/*.mat
 datasets/dsplt-*
 runs/
 .DS_Store
+figures/

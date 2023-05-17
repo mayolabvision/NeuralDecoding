@@ -30,6 +30,7 @@ import helpers
 import model_evals
 
 line = np.loadtxt(params)[int(sys.argv[1])]
+print(line)
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))

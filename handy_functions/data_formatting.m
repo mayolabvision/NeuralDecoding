@@ -70,64 +70,19 @@ trialTbl.TrialName = categorical(string(trialTbl.TrialName)); trialTbl.TrialType
 dirsdeg  =  sort(unique(trialTbl.Direction)); % direction for each trial 
 
 %%%%%%%%%%%%%%% Unit Info %%%%%%%%%%%%%%%%%%%
-% if you want to find each neurons' preferred/anti-preferred direction
-% initialize a cell array to store calculated parameters in
-unitVars  = ["UnitName","BrainArea","SNR","BestDir","MeanFR_BestDir","VarFR_BestDir"];
-
-% What brain area were these units from? 
-% If > 24 then MT, <= 24 then FEF
-unitNum     =  cellfun(@(y) sscanf(y,'unit%d')>24, unitnames,'uni',1);
-brainareas  =  cell(length(unitNum),1);
-brainareas(unitNum==1,1)  =  {'MT'};
-brainareas(unitNum==0,1)  =  {'FEF'};
-
-[spkcnts,spike_times]  =  deal(cell(length(unitnames),1));
-spkwin      =  [0 250];           
-
-% Loop through each motion direction, trial, and unit
-for d = 1:length(dirsdeg) % for each direction
-    trls   =   trialTbl(trialTbl.Direction==dirsdeg(d),:); 
-    units  =   {exp_clean.dataMaestroPlx(trialTbl.Direction==dirsdeg(d)).units}.'; 
-    for t = 1:size(trls,1) % for each trial
-        shift       =  trls.TargetMotionOnset(t);    % time stimulus starts to move
-        for u = 1:length(unitnames) % for each unit
-            thisunit  =  unitnames{u}; % unit name
-
-            if isfield(units{t}, (thisunit)) % if unit fired at some point in the trial
-                spktimes     =  units{t,1}.(thisunit)-shift; % shift spike times so aligned to 'onset'
-                spkind       =  spktimes >= -preint & spktimes < postint; % only include spikes in time window
-                alignedspks  =  spktimes(spkind);
-
-                % Calculate firing rate in Hz (spks/sec)
-                if ~isempty(alignedspks) % if unit fired during specific time window
-                    spksHz  =  (sum(alignedspks>=spkwin(1) & alignedspks<spkwin(2))/(abs(spkwin(2)-spkwin(1))))*1000;
-                else % unit did not spike in time window
-                    spksHz  =  0;
-                end
-
-            else % no information about unit in this trial at all
-                spksHz  =  NaN; 
-            end
-            % {unit}{direction}(trial)
-            spkcnts{u}{d}(t) = spksHz;
-        end
-    end
+ut = makeUnitsTable_fromStruct(exp_clean,trialTbl,250);
+if isequal(session(2),'a')
+    monk = 'aristotle';
+elseif isequal(session(2),'b')
+    monk = 'batman';
 end
+ut = [cellstr(repmat(categorical(string(monk)),length(unitnames),1)) cellstr(repmat(categorical(string(session)),length(unitnames),1)) ut];
+varNames   =  ["Monkey","Session","UnitName","Sess_Unit","BrainArea","SNR","BestDir","NullDir","PrefDirFit","DepthMod","SelDir","DI","SI","signiffl","SpikeTimes"];
+unitsTbl   =  cell2table(ut,"VariableNames",varNames); 
+unitsTbl.Monkey = categorical(string(unitsTbl.Monkey)); unitsTbl.Session = categorical(string(unitsTbl.Session));
+unitsTbl.UnitName = categorical(string(unitsTbl.UnitName)); unitsTbl.Sess_Unit = categorical(string(unitsTbl.Sess_Unit)); unitsTbl.BrainArea = categorical(string(unitsTbl.BrainArea));
+unitsTbl.SpikeTimes = [];
 
-% For each unit, determine its "best direction" from the trial-averaged firing rates
-mnFRByDir   =  cellfun(@(q) cellfun(@nanmean, q), spkcnts, 'uni', 0);  % mean FR in each direction
-varFRByDir  =  cellfun(@(q) cellfun(@nanvar, q), spkcnts, 'uni', 0);   % var FR in each direction
-
-% best direction = direction in which individual neuron fired on average the most
-[mnFRbestdir,bestdir]  =  max(cell2mat(mnFRByDir),[],2);  % mean FR in best direction 
-bestDir                =  dirsdeg(bestdir);               % best direction
-varFRbestdir           =  cell2mat(varFRByDir);           
-varFRbestdir           =  varFRbestdir(bestdir);          % var FR in best direction
-
-unitsTbl  =  [cellstr(categorical(string(unitnames))),cellstr(categorical(string(brainareas))),num2cell(snrs'),num2cell(bestDir,2),num2cell(mnFRbestdir,2),num2cell(varFRbestdir,2)];       
-unitsTbl  =  cell2table(unitsTbl,'VariableNames',unitVars);
-unitsTbl.UnitName   =  categorical(string(unitsTbl.UnitName)); unitsTbl.BrainArea  =  categorical(string(unitsTbl.BrainArea));
-    
 units  =   {exp_clean.dataMaestroPlx.units}.'; 
 for t = 1:size(trialTbl,1) % for each trial
     shift       =  trialTbl.TargetMotionOnset(t);    % time stimulus starts to move

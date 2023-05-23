@@ -18,6 +18,8 @@ module load gcc/8.2.0
 module load python/anaconda3.9-2021.11
 conda activate neuraldecoding
 
+
+
 python decoding-3.py $1
 #cp files you'd like to move off of scratch
 #mv files that you'd like moved off of scratch

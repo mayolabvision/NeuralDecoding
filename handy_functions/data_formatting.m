@@ -77,7 +77,7 @@ elseif isequal(session(2),'b')
     monk = 'batman';
 end
 ut = [cellstr(repmat(categorical(string(monk)),length(unitnames),1)) cellstr(repmat(categorical(string(session)),length(unitnames),1)) ut];
-varNames   =  ["Monkey","Session","UnitName","Sess_Unit","BrainArea","SNR","BestDir","NullDir","PrefDirFit","DepthMod","SelDir","DI","SI","signiffl","SpikeTimes"];
+varNames   =  ["Monkey","Session","UnitName","Sess_Unit","BrainArea","SNR","BestDir","NullDir","PrefDirFit","mnFR_bestDir","varFR_bestDir","DepthMod","SelDir","DI","SI","signiffl","SpikeTimes"];
 unitsTbl   =  cell2table(ut,"VariableNames",varNames); 
 unitsTbl.Monkey = categorical(string(unitsTbl.Monkey)); unitsTbl.Session = categorical(string(unitsTbl.Session));
 unitsTbl.UnitName = categorical(string(unitsTbl.UnitName)); unitsTbl.Sess_Unit = categorical(string(unitsTbl.Sess_Unit)); unitsTbl.BrainArea = categorical(string(unitsTbl.BrainArea));

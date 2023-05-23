@@ -7,7 +7,8 @@ import time
 import pandas as pd
 import os.path
 import os
-
+import random
+from sklearn.utils import shuffle
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 warnings.filterwarnings('ignore', 'Solver terminated early.*')
@@ -55,6 +56,30 @@ for i in foldneuron_pairs:
     print(i)
     X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neuron_inds = helpers.get_data(new_line,i[1],i[0])
     inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
+
+    ## ground truth ##
+    if m<5:
+        print("X_flat_test")
+        print(X_flat_test)
+        print("y_test")
+        print(y_test)
+        # input/label shuffled together
+        X_shuf1, y_shuf1 = shuffle(np.array(X_flat_test), np.array(y_test))
+        #X_shuf1, y_shuf1 = list(X_shuf1), list(y_shuf1)
+        print("together shuffle")
+        print(X_shuf1)
+        print(y_shuf1)
+        
+        # input/label shuffled separately
+        X_shuf2 = X_flat_test
+        y_shuf2 = y_test
+        random.shuffle(X_shuf2)
+        random.shuffle(y_shuf2)
+        print("separate shuffle")
+        print(X_shuf2)
+        print(y_shuf2)
+
+        print(blah)
 
     t1=time.time()
     hp_tune = []

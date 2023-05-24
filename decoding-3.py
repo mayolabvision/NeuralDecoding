@@ -54,32 +54,9 @@ new_line[7] = mtfef[1]
 print(new_line)
 for i in foldneuron_pairs:
     print(i)
-    X_train0, X_flat_train0, y_train0, X_test, X_flat_test, y_test, neuron_inds = helpers.get_data(new_line,i[1],i[0])
+    X_train0,X_flat_train0,y_train0,X_test,X_flat_test,y_test,X_shuf,X_flat_shuf,y_shuf,X_null,X_flat_null,y_null,neuron_inds = helpers.get_data(new_line,i[1],i[0])
+
     inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
-
-    ## ground truth ##
-    if m<5:
-        print("X_flat_test")
-        print(X_flat_test)
-        print("y_test")
-        print(y_test)
-        # input/label shuffled together
-        X_shuf1, y_shuf1 = shuffle(np.array(X_flat_test), np.array(y_test))
-        #X_shuf1, y_shuf1 = list(X_shuf1), list(y_shuf1)
-        print("together shuffle")
-        print(X_shuf1)
-        print(y_shuf1)
-        
-        # input/label shuffled separately
-        X_shuf2 = X_flat_test
-        y_shuf2 = y_test
-        random.shuffle(X_shuf2)
-        random.shuffle(y_shuf2)
-        print("separate shuffle")
-        print(X_shuf2)
-        print(y_shuf2)
-
-        print(blah)
 
     t1=time.time()
     hp_tune = []
@@ -100,17 +77,28 @@ for i in foldneuron_pairs:
             from decoders import WienerFilterDecoder
             if j==fi-1:
                 _,X_flat_train0f,_,X_flat_testf,y_train0f,y_testf,_,_=helpers.normalize_trainTest(X_train0,X_flat_train0,X_test,X_flat_test,y_train0,y_test)
-
+                _,_,_,X_flat_shuff,_,y_shuff,_,_=helpers.normalize_trainTest(X_train0,X_flat_train0,X_shuf,X_flat_shuf,y_train0,y_shuf)
+                _,_,_,X_flat_nullf,_,y_nullf,_,_=helpers.normalize_trainTest(X_train0,X_flat_train0,X_null,X_flat_null,y_train0,y_null)
+                
                 model=WienerFilterDecoder() #Define model
                 model.fit(X_flat_train0f,y_train0f) #Fit model
                 max_params = 0
 
-                y_train_predicted = model.predict(X_flat_train0f) #Validation set predictions
                 y_test_predicted = model.predict(X_flat_testf) #Validation set predictions
+                y_shuf_predicted = model.predict(X_flat_shuff)
+                y_null_predicted = model.predict(X_flat_nullf)
 
                 mean_R2 = np.mean(get_R2(y_testf,y_test_predicted))
                 mean_rho = np.mean(get_rho(y_testf,y_test_predicted))
-                print(mean_R2)
+                mean_R2_shuf = np.mean(get_R2(y_shuff,y_shuf_predicted))
+                mean_rho_shuf = np.mean(get_rho(y_shuff,y_shuf_predicted))
+                mean_R2_null = np.mean(get_R2(y_nullf,y_null_predicted))
+                mean_rho_null = np.mean(get_rho(y_nullf,y_null_predicted))
+                
+                print("R2 = {}".format(mean_R2))
+                print("R2 (shuffled) = {}".format(mean_R2_shuf))
+                print("R2 (null) = {}".format(mean_R2_null))
+                print(blah)
 
         # Wiener Cascade Decoder
         if m == 1:

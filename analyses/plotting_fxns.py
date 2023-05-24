@@ -9,7 +9,7 @@ from sklearn.metrics import f1_score
 import numpy as np
 
 def svm_cloud(features,label,axes,colors,title):
-    test_size = int(np.round(label.shape[0] * 0.2, 0))
+    test_size = int(np.round(label.shape[0] * 0.4, 0))
     x_train = features[:-test_size].values
     y_train = label[:-test_size].values
     x_test = features[-test_size:].values
@@ -34,6 +34,6 @@ def svm_cloud(features,label,axes,colors,title):
     plot_decision_regions(x_test, y_test.ravel(), ax=axes,clf=poly, legend=2, colors='{},{},{}'.format(colors[0],colors[1],colors[2]))
     axes.set_xlim(np.min(np.array(x_test)-0.1, axis=0)[0],np.max(np.array(x_test), axis=0)[0]+0.1)
     axes.set_ylim(np.min(np.array(x_test), axis=0)[1]-0.01,np.max(np.array(x_test), axis=0)[1]+0.01)
-    axes.set_title('{} (accuracy:{:.2f}%)'.format(title,poly_accuracy*100))
+    axes.set_title('s{} (accuracy: {:.2f}%)'.format(title,poly_accuracy*100))
 
     return poly_accuracy

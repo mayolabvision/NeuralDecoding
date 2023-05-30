@@ -14,16 +14,19 @@ import pickle
 from scipy import io
 from scipy import stats
 import sys
+import os
+import glob
 
 from preprocessing_funcs import bin_spikes
 from preprocessing_funcs import bin_output
+
+data_folder     = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets/'
 
 def mat_to_pickle(filename,dt):
     dt = int(dt)
 
     # Load in variables from datafile
-    folder       = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets/'
-    data         =  io.loadmat(folder+filename+'.mat')
+    data         =  io.loadmat(filename)
 
     spike_times  =  data['spike_times'] # spike times of all neurons
     pos          =  data['pos'] # x and y eye positions
@@ -46,8 +49,15 @@ def mat_to_pickle(filename,dt):
     vel_binned  =  bin_output(vels,out_times,dt,t_start,t_end,downsample_factor)
     acc_binned  =  bin_output(acc,out_times,dt,t_start,t_end,downsample_factor)
 
-    # Pickle the file
-    data_folder='/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets/' #FOLDER YOU WANT TO SAVE THE DATA TO
-
-    with open(data_folder+filename+'-dt'+str(dt)+'.pickle','wb') as f:
+    with open(filename[:-4]+'-dt'+str(dt)+'.pickle','wb') as f:
         pickle.dump([neural_data,pos_binned,vel_binned,acc_binned],f)
+
+def pickle_allFiles(dt):
+    vars_list = glob.glob(data_folder+'vars-*-c*.mat') + glob.glob(data_folder+'vars-*-d*.mat') + glob.glob(data_folder+'vars-*-sp*.mat')
+    for i in range(len(vars_list)):
+        print('{}/{}'.format(i,len(vars_list)))
+        if os.path.isfile(vars_list[i][:-4]+'-dt'+str(dt)+'.pickle'):
+            print('bitch it already exists')
+        else:
+            mat_to_pickle(vars_list[i],dt)
+

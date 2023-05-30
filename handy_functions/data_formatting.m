@@ -55,19 +55,24 @@ eyes_new = cellfun(@(et,so) trimSmooth_eyeTraces(et,so,preint,postint,20), eyes,
 
 exp_clean.dataMaestroPlx(isnan(cellfun(@(q) q{1}(1), eyes_new,'uni', 1))) = []; 
 motionDirs(isnan(cellfun(@(q) q{1}(1), eyes_new,'uni', 1))) = []; stimOnsets(isnan(cellfun(@(q) q{1}(1), eyes_new,'uni', 1))) = []; eyes_new(isnan(cellfun(@(q) q{1}(1), eyes_new,'uni', 1))) = [];
+
+stimContrasts = cellfun(@(q) str2double(q(strfind(q,'c')+1:strfind(q,'c')+3)), {exp_clean.dataMaestroPlx.trType}.', 'uni', 0);
+motionSpeeds = cellfun(@(q) str2double(q(strfind(q,'s')+2:strfind(q,'s')+3)), {exp_clean.dataMaestroPlx.trType}.', 'uni', 0);
 %tt = [{exp_clean.dataMaestroPlx.trName}.' {exp_clean.dataMaestroPlx.trType}.' motionDirs pursuitOnsets stimOnsets rxnTimes eyes];
 %trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","PursuitOnset","TargetMotionOnset","RxnTime","EyeTraces"]);
 %trialTbl.TrialName = categorical(string(trialTbl.TrialName)); trialTbl.TrialType = categorical(string(trialTbl.TrialType));
 
 %trls = {exp_clean.dataMaestroPlx.trType}.';
 %cellfun(@(q) str2double(q(9:11)), trls(:,2), 'uni', 0)  cellfun(@(q) str2double(q(15:16)), trls(:,2), 'uni', 0)
-tt = [{exp_clean.dataMaestroPlx.trName}.' {exp_clean.dataMaestroPlx.trType}.' motionDirs stimOnsets eyes_new];
-trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","TargetMotionOnset","EyeTraces"]);
+tt = [{exp_clean.dataMaestroPlx.trName}.' {exp_clean.dataMaestroPlx.trType}.' motionDirs stimContrasts motionSpeeds stimOnsets eyes_new];
+trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","Contrast","Speed","TargetMotionOnset","EyeTraces"]);
 trialTbl.TrialName = categorical(string(trialTbl.TrialName)); trialTbl.TrialType = categorical(string(trialTbl.TrialType));
 
 
 % Directions in this session (4, corrected by rotation factor)
 dirsdeg  =  sort(unique(trialTbl.Direction)); % direction for each trial 
+contrasts  =  sort(unique(trialTbl.Contrast)); % direction for each trial
+speeds  =  sort(unique(trialTbl.Speed)); % direction for each trial 
 
 %%%%%%%%%%%%%%% Unit Info %%%%%%%%%%%%%%%%%%%
 ut = makeUnitsTable_fromStruct(exp_clean,trialTbl,250);

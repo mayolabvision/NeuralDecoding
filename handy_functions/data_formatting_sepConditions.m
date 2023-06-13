@@ -1,6 +1,6 @@
 function data_formatting_sepConditions(session,folder,preint,postint)
 addpath(genpath('/Users/kendranoneman/Projects/mayo/HelperFxns'))
-types        =  {'pure','forward','backward'}; % types of trials 
+%types        =  {'pure','forward','backward'}; % types of trials 
 % Purpose: takes in raw struct with recording data and converts it into a
 % usable form for the Neural Decoding project
 
@@ -22,7 +22,7 @@ types        =  {'pure','forward','backward'}; % types of trials
 %%%%%%%%%%%%%%%%% load session data %%%%%%%%%%%%%%%%%%%%
 data = load('-mat',sprintf('Users/kendranoneman/Projects/mayo/data/neural-decoding/raw/combinedMaestroSpkSortMTFEF.%s.mat',session));
 
-[exp_clean,unitnames,snrs] = struct_clean(data.exp);
+[exp_clean,unitnames,~] = struct_clean(data.exp);
 
 % if you want to detect microsaccades
 %[msFlag,eye_adjust] = cellfun(@(q,m) detect_msTrials(struct2cell(q),m,50,100,750,50), {exp_clean.dataMaestroPlx.mstEye}.', stimOnsets, 'uni', 0);
@@ -68,7 +68,6 @@ tt = [{exp_clean.dataMaestroPlx.trName}.' {exp_clean.dataMaestroPlx.trType}.' mo
 trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","Contrast","Speed","TargetMotionOnset","EyeTraces"]);
 trialTbl.TrialName = categorical(string(trialTbl.TrialName)); trialTbl.TrialType = categorical(string(trialTbl.TrialType));
 
-
 % Directions in this session (4, corrected by rotation factor)
 dirsdeg  =  sort(unique(trialTbl.Direction)); % direction for each trial 
 contrasts  =  sort(unique(trialTbl.Contrast)); % direction for each trial
@@ -76,13 +75,14 @@ speeds  =  sort(unique(trialTbl.Speed)); % direction for each trial
 
 %%%%%%%%%%%%%%% Unit Info %%%%%%%%%%%%%%%%%%%
 for c = 1:length(contrasts)
-    eyes_new_c1 = eyes_new(trialTbl.Contrast==contrasts(c));
+    trial_inds = trialTbl.Contrast==contrasts(c);
+    eyes_new_c1 = eyes_new(trial_inds);
     pos = cellfun(@(q) q{1}, eyes_new_c1, 'uni', 0); pos = vertcat(pos{:});
     vels = cellfun(@(q) q{2}, eyes_new_c1, 'uni', 0); vels = vertcat(vels{:});
     acc = cellfun(@(q) q{3}, eyes_new_c1, 'uni', 0); acc = vertcat(acc{:});
-    vels_times     =  (1:size(eyes_new_c1,1)*(preint+postint))';
+    vels_times = (1:size(eyes_new_c1,1)*(preint+postint))';
 
-    trialTbl_c1 = trialTbl(trialTbl.Contrast==contrasts(c),:);
+    trialTbl_c1 = trialTbl(trial_inds,:);
     ut = makeUnitsTable_fromStruct(exp_clean,trialTbl_c1,250);
     if isequal(session(2),'a')
         monk = 'aristotle';
@@ -118,18 +118,21 @@ for c = 1:length(contrasts)
 
     spike_times = cellfun(@(z) vertcat(z{:}), spike_times, 'uni', 0);
     save(sprintf('%s/vars-%s-pre%03d-post%03d-c%03d.mat',folder,session,preint,postint-800,contrasts(c)),'spike_times','pos','vels','acc','vels_times','-v7');
-    writetable(unitsTbl,sprintf('%s/units-%s-pre%03d-post%03d-c%03d.csv',folder,session,preint,postint-800,contrasts(c)))
+    if c==1
+        writetable(unitsTbl,sprintf('%s/units-%s-pre%03d-post%03d.csv',folder,session,preint,postint-800))
+    end
 end
 
 % speeds
 for p = 1:length(speeds)
-    eyes_new_c1 = eyes_new(trialTbl.Speed==speeds(p));
+    trial_inds = trialTbl.Speed==speeds(p);
+    eyes_new_c1 = eyes_new(trial_inds);
     pos = cellfun(@(q) q{1}, eyes_new_c1, 'uni', 0); pos = vertcat(pos{:});
     vels = cellfun(@(q) q{2}, eyes_new_c1, 'uni', 0); vels = vertcat(vels{:});
     acc = cellfun(@(q) q{3}, eyes_new_c1, 'uni', 0); acc = vertcat(acc{:});
-    vels_times     =  (1:size(eyes_new_c1,1)*(preint+postint))';
+    vels_times = (1:size(eyes_new_c1,1)*(preint+postint))';
 
-    trialTbl_c1 = trialTbl(trialTbl.Speed==speeds(p),:);
+    trialTbl_c1 = trialTbl(trial_inds,:);
     ut = makeUnitsTable_fromStruct(exp_clean,trialTbl_c1,250);
     if isequal(session(2),'a')
         monk = 'aristotle';
@@ -165,18 +168,18 @@ for p = 1:length(speeds)
     
     spike_times = cellfun(@(z) vertcat(z{:}), spike_times, 'uni', 0);
     save(sprintf('%s/vars-%s-pre%03d-post%03d-sp%02d.mat',folder,session,preint,postint-800,speeds(p)),'spike_times','pos','vels','acc','vels_times','-v7');
-    writetable(unitsTbl,sprintf('%s/units-%s-pre%03d-post%03d-sp%02d.csv',folder,session,preint,postint-800,speeds(p)))
 end
 
 % directions
 for d = 1:length(dirsdeg)
-    eyes_new_c1 = eyes_new(trialTbl.Direction==dirsdeg(d));
+    trial_inds = trialTbl.Direction==dirsdeg(d);
+    eyes_new_c1 = eyes_new(trial_inds);
     pos = cellfun(@(q) q{1}, eyes_new_c1, 'uni', 0); pos = vertcat(pos{:});
     vels = cellfun(@(q) q{2}, eyes_new_c1, 'uni', 0); vels = vertcat(vels{:});
     acc = cellfun(@(q) q{3}, eyes_new_c1, 'uni', 0); acc = vertcat(acc{:});
-    vels_times     =  (1:size(eyes_new_c1,1)*(preint+postint))';
+    vels_times = (1:size(eyes_new_c1,1)*(preint+postint))';
 
-    trialTbl_c1 = trialTbl(trialTbl.Direction==dirsdeg(d),:);
+    trialTbl_c1 = trialTbl(trial_inds,:);
     ut = makeUnitsTable_fromStruct(exp_clean,trialTbl,250);
     if isequal(session(2),'a')
         monk = 'aristotle';
@@ -211,7 +214,6 @@ for d = 1:length(dirsdeg)
     end
     spike_times = cellfun(@(z) vertcat(z{:}), spike_times, 'uni', 0);
     save(sprintf('%s/vars-%s-pre%03d-post%03d-d%03d.mat',folder,session,preint,postint-800,dirsdeg(d)),'spike_times','pos','vels','acc','vels_times','-v7');
-    writetable(unitsTbl,sprintf('%s/units-%s-pre%03d-post%03d-d%03d.csv',folder,session,preint,postint-800,dirsdeg(d)))
 end
 
 end

@@ -26,19 +26,16 @@ def get_neuronRepeats(line):
     num_repeats = int(line[11])
     sess,sess_nodt = helpers.get_session(s,t,d)
 
+    '''
     if not os.path.isfile(cwd+'/datasets/vars-'+sess+'.pickle'):
         if os.path.isfile(cwd+'/datasets/vars-'+sess_nodt+'.mat'):
             from matlab_funcs import mat_to_pickle
             mat_to_pickle('vars-'+sess_nodt,d)
             print('preprocessed file has been properly pickled, yay')
         else:
-            print('you need to go run data_formatting.m within MATLAB, then come right back (:')
-
+            print('you need to go run data_formatting.m within matlab, then come right back (:')
+    '''
     if not os.path.isfile(cwd+'/datasets/dsplt-'+sess+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle'):
-        with open(cwd+'/datasets/vars-'+sess+'.pickle','rb') as f:
-            neural_data,pos_binned,vel_binned,acc_binned=pickle.load(f,encoding='latin1')
-
-        ############ getting all possible combinations of neurons #############
         units = pd.read_csv(cwd+'/datasets/units-'+sess_nodt+'.csv')
 
         neurons_perRepeat = []
@@ -62,41 +59,4 @@ def get_neuronRepeats(line):
             neurons_perRepeat = pickle.load(f,encoding='latin1')
 
     return neurons_perRepeat
-
-def get_neuronRepeatsX(linenum):
-    s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(linenum))
-    sess,sess_nodt = helpers.get_session(s,t,d)
-
-    if not os.path.isfile(cwd+'/datasets/vars-'+sess+'.pickle'):
-        if os.path.isfile(cwd+'/datasets/vars-'+sess_nodt+'.mat'):
-            from matlab_funcs import mat_to_pickle
-            mat_to_pickle('vars-'+sess_nodt,d)
-            print('preprocessed file has been properly pickled, yay')
-        else:
-            print('you need to go run data_formatting.m within MATLAB, then come right back (:')
-
-    if not os.path.isfile(cwd+'/datasets/dspltX-'+sess+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle'):
-        with open(cwd+'/datasets/vars-'+sess+'.pickle','rb') as f:
-            neural_data,pos_binned,vel_binned,acc_binned=pickle.load(f,encoding='latin1')
-
-        ############ getting all possible combinations of neurons #############
-        units = pd.read_csv(cwd+'/datasets/units-'+sess_nodt+'.csv')
-
-        mt_perRepeat,fef_perRepeat = [],[]
-        for r in range(num_repeats):
-            mt_inds = sorted(np.random.choice(units[units['BrainArea'] == 'MT'].index, nm, replace=False))
-            fef_inds = sorted(np.random.choice(units[units['BrainArea'] == 'FEF'].index, nf, replace=False))
-            
-            mt_perRepeat.append(mt_inds)
-            fef_perRepeat.append(fef_inds)
-    
-        with open(cwd+'/datasets/dspltX-'+sess+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle','wb') as f:
-            pickle.dump([mt_perRepeat,fef_perRepeat],f)
-        print('successfully sampled the neurons')
-    else:
-        with open(cwd+'/datasets/dspltX-'+sess+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle','rb') as f:
-            mt_perRepeat,fef_perRepeat = pickle.load(f,encoding='latin1')
-        print('already sampled this many neurons before')
-
-    return mt_perRepeat,fef_perRepeat
 

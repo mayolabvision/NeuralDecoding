@@ -31,22 +31,17 @@ print(line)
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))
-pfile = helpers.make_directory('all_decoders/'+(jobname[:-6]))
 
 ############## if on local computer ################
 #num_cores = multiprocessing.cpu_count() 
-neuron_fold = foldneuron_pairs[int(sys.argv[2])]
+#neuron_fold = foldneuron_pairs[int(sys.argv[2])]
 
 ############# if on cluster ########################
 #num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
-#neuron_fold = foldneuron_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
+neuron_fold = foldneuron_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
 
 outer_fold = neuron_fold[0]
 repeat = neuron_fold[1]
-
-print(pfile)
-print(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle')
-print(blah)
 
 ########### model evaluations #############
 def wc_evaluate(degree): #1
@@ -422,8 +417,8 @@ for m in range(8):
     #neurons_all.append(neuron_inds)
     times_all.append(time_elapsed)
 
-pfile = helpers.make_directory('all_decoders/'+(jobname[:-6]))
-with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
-    pickle.dump([results,params_all,times_all,trainTest_index],p)
-#    pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds],p)
+	pfile = helpers.make_directory('all_decoders/'+(jobname[:-6]))
+	with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
+		pickle.dump([results,params_all,times_all,trainTest_index],p)
+	#    pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds],p)
 

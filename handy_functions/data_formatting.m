@@ -1,6 +1,5 @@
 function data_formatting(session,folder,preint,postint)
 addpath(genpath('/Users/kendranoneman/Projects/mayo/HelperFxns'))
-types        =  {'pure','forward','backward'}; % types of trials 
 % Purpose: takes in raw struct with recording data and converts it into a
 % usable form for the Neural Decoding project
 
@@ -22,7 +21,7 @@ types        =  {'pure','forward','backward'}; % types of trials
 %%%%%%%%%%%%%%%%% load session data %%%%%%%%%%%%%%%%%%%%
 data = load('-mat',sprintf('Users/kendranoneman/Projects/mayo/data/neural-decoding/raw/combinedMaestroSpkSortMTFEF.%s.mat',session));
 
-[exp_clean,unitnames,snrs] = struct_clean(data.exp);
+[exp_clean,unitnames,~] = struct_clean(data.exp);
 
 % if you want to detect microsaccades
 %[msFlag,eye_adjust] = cellfun(@(q,m) detect_msTrials(struct2cell(q),m,50,100,750,50), {exp_clean.dataMaestroPlx.mstEye}.', stimOnsets, 'uni', 0);

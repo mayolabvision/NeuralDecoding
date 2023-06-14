@@ -83,7 +83,12 @@ def get_data(line,repeat,outer_fold):
     X = X[range(bins_before,X.shape[0]-bins_after),:,:]
     num_examples=X.shape[0]
     X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
-    
+
+    # spike covariance matrix
+    #S = np.corrcoef(neural_data2.T)
+    #r,c = np.triu_indices(S.shape[0],1)
+    #S_new = S[r,c]
+
     if o==0:
         y=pos_binned
     elif o==1:
@@ -96,6 +101,8 @@ def get_data(line,repeat,outer_fold):
     outer_folds = outer_cv.split(X)
 
     trainTest_index = next(itertools.islice(outer_cv.split(X), outer_fold, None))
+    print(trainTest_index)
+    print(blah)
 
     X_train0 = X[trainTest_index[0],:,:]
     X_flat_train0 = X_flat[trainTest_index[0],:]

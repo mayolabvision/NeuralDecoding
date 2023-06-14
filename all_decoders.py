@@ -417,8 +417,8 @@ for m in range(8):
     #neurons_all.append(neuron_inds)
     times_all.append(time_elapsed)
 
-	pfile = helpers.make_directory('all_decoders/'+(jobname[:-6]))
-	with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
-		pickle.dump([results,params_all,times_all,trainTest_index],p)
+    pfile = helpers.make_directory('all_decoders/'+(jobname[:-6]))
+    with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
+	    pickle.dump([results,params_all,times_all,trainTest_index],p)
 	#    pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds],p)
 

@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=knoneman@pitt.edu
-#SBATCH --time=0-24:00:00
+#SBATCH --time=0-00:10:00
 #SBATCH --array=0-9
 
 echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."

@@ -91,7 +91,7 @@ results,params_all,times_all = [],[],[]
 X_train0,X_flat_train0,y_train0,X_test,X_flat_test,y_test,X_shuf,X_flat_shuf,y_shuf,X_null,X_flat_null,y_null,_,trainTest_index = helpers.get_data(line,repeat,outer_fold)
 
 inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
-for m in range(8):
+for m in range(1):
     print(m)
     t1=time.time()
     hp_tune = []
@@ -419,6 +419,5 @@ for m in range(8):
 
     pfile = helpers.make_directory('all_decoders/'+(jobname[:-6]))
     with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
-	    pickle.dump([results,params_all,times_all,trainTest_index],p)
-	#    pickle.dump([y_train0,y_test,y_train_predicted,y_test_predicted,mean_R2,mean_rho,time_elapsed,max_params,neuron_inds],p)
+        pickle.dump([results,params_all,times_all,trainTest_index],p)
 

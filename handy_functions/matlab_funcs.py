@@ -53,7 +53,7 @@ def mat_to_pickle(filename,dt):
         pickle.dump([neural_data,pos_binned,vel_binned,acc_binned],f)
 
 def pickle_allFiles(dt):
-    vars_list = glob.glob(data_folder+'vars-*-c*.mat') + glob.glob(data_folder+'vars-*-sp*.mat')
+    vars_list = glob.glob(data_folder+'vars-*-post300.mat')
     for i in range(len(vars_list)):
         print('{}/{}'.format(i,len(vars_list)))
         if os.path.isfile(vars_list[i][:-4]+'-dt'+str(dt)+'.pickle'):

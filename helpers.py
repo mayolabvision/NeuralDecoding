@@ -101,8 +101,6 @@ def get_data(line,repeat,outer_fold):
     outer_folds = outer_cv.split(X)
 
     trainTest_index = next(itertools.islice(outer_cv.split(X), outer_fold, None))
-    print(trainTest_index)
-    print(blah)
 
     X_train0 = X[trainTest_index[0],:,:]
     X_flat_train0 = X_flat[trainTest_index[0],:]
@@ -133,7 +131,7 @@ def get_data(line,repeat,outer_fold):
     X_flat_null = np.array(X_flat_null).reshape(X_flat_test.shape)
     y_null = np.array(y_null).reshape(y_test.shape)
     
-    return X_train0,X_flat_train0,y_train0,X_test,X_flat_test,y_test,X_shuf,X_flat_shuf,y_shuf,X_null,X_flat_null,y_null,neurons_perRepeat[repeat]
+    return X_train0,X_flat_train0,y_train0,X_test,X_flat_test,y_test,X_shuf,X_flat_shuf,y_shuf,X_null,X_flat_null,y_null,neurons_perRepeat[repeat],trainTest_index
 
 def get_dataX(line,repeat,outer_fold,condPair,condType):
     neurons_perRepeat = neuronsSample.get_neuronRepeats(line)

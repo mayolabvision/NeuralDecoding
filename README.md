@@ -112,30 +112,34 @@ pip3
 ```buildoutcfg
 # I called my environment **neuraldecoding**
 # The latest versions of Python don't work with TensorFlow yet, so you have to use 3.6  
-conda create --name neuraldecoding python=3.6
+conda create -n "neuraldecoding" python=3.9.11 numpy pandas scipy scikit-learn xgboost statsmodels
 ```
-4b. Activate that conda environment
+4b. Activate conda environment and check your version of Python
 ```buildoutcfg
 conda activate neuraldecoding
+python --version # you should see 3.9.11 appear
 ```
 4c. Install required packages in this new environment (including the **Neural_Decoding** package from the Kording lab)
 ```buildoutcfg
 pip install Neural-Decoding
 pip install jupyter
 pip install notebook
-conda install -c conda-forge matplotlib
-pip install scipy==1.7 
-conda install -c conda-forge statsmodels
-pip install -U scikit-learn
-pip install xgboost # if this one fails because of numpy, change version of numpy with $pip install --ignore-installed numpy==1.24.2
-pip install keras
-conda install -c conda-forge tensorflow
 pip install bayesian-optimization
+ipython kernel install --name "neuraldecoding" --user
 ```
 
-4d. Make a new kernel for this conda environment
+4d. Check that you have all of the packages you need by opening up a python window (type "python" into the command line)
 ```buildoutcfg
-ipython kernel install --name "neuraldecoding" --user
+import tensorflow as tf
+print(tf.__version__) # should see ~version 2.12.0 
+import keras
+print(keras.__version__) # should see ~version 2.12.0 
+pip install bayesian-optimization
+```
+If you don't have tensorflow or keras...
+```buildoutcfg
+conda install -c conda-forge tensorflow
+conda install keras
 ```
 
 #### For Windows  

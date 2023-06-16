@@ -8,7 +8,7 @@ from itertools import product
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
-params = 'params.txt'
+params = 'params_allNeurons.txt'
 data_folder     = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets/'
 
 import neuronsSample
@@ -46,7 +46,7 @@ def make_directory(jobname):
     cwd = os.getcwd()
     f="/runs/"+jobname
     if not os.path.isdir(cwd+f):
-       os.makedirs(cwd+f)
+       os.makedirs(cwd+f,exist_ok=True)
     return f
 
 def get_session(j,t,d):

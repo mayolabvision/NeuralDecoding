@@ -91,7 +91,8 @@ results,params_all,times_all = [],[],[]
 X_train0,X_flat_train0,y_train0,X_test,X_flat_test,y_test,X_shuf,X_flat_shuf,y_shuf,X_null,X_flat_null,y_null,_,trainTest_index = helpers.get_data(line,repeat,outer_fold)
 
 inner_cv = KFold(n_splits=fi, random_state=None, shuffle=False)
-for m in range(1):
+models = [5,6,7]
+for m in models:
     print(m)
     t1=time.time()
     hp_tune = []
@@ -173,7 +174,7 @@ for m in range(1):
         if m == 2:
             from decoders import XGBoostDecoder
 
-            BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=1)
+            BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=0)
             BO.maximize(init_points=2, n_iter=3)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['max_depth']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_round']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['eta'],2) for key in range(len(BO.res))]))).T)
@@ -214,7 +215,7 @@ for m in range(1):
         if m == 3:
             from decoders import SVRDecoder
 
-            BO = BayesianOptimization(svr_evaluate, {'C': (0.5, 10)}, verbose=1, allow_duplicate_points=True)
+            BO = BayesianOptimization(svr_evaluate, {'C': (0.5, 10)}, verbose=0, allow_duplicate_points=True)
             BO.maximize(init_points=10, n_iter=10)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['C'],1) for key in range(len(BO.res))]))).T)
@@ -251,7 +252,7 @@ for m in range(1):
         if m == 4:
             from decoders import DenseNNDecoder
 
-            BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
+            BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)},verbose=0)
             BO.maximize(init_points=10, n_iter=10)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
@@ -292,7 +293,7 @@ for m in range(1):
         if m == 5:
             from decoders import SimpleRNNDecoder
 
-            BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
+            BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)},verbose=0)
             BO.maximize(init_points=5, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
@@ -333,7 +334,7 @@ for m in range(1):
         if m == 6:
             from decoders import GRUDecoder
 
-            BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
+            BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)},verbose=0)
             BO.maximize(init_points=5, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
@@ -374,7 +375,7 @@ for m in range(1):
         if m == 7:
             from decoders import LSTMDecoder
 
-            BO = BayesianOptimization(lstm_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
+            BO = BayesianOptimization(lstm_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)},verbose=0)
             BO.maximize(init_points=5, n_iter=5)
             params = max(BO.res, key=lambda x:x['target'])
             hp_tune.append(np.vstack((np.array([BO.res[key]['target'] for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['num_units']) for key in range(len(BO.res))]),np.array([int(BO.res[key]['params']['n_epochs']) for key in range(len(BO.res))]),np.array([round(BO.res[key]['params']['frac_dropout'],2) for key in range(len(BO.res))]))).T)
@@ -411,13 +412,16 @@ for m in range(1):
                 print("R2 (shuffled) = {}".format(mean_R2_shuf))
                 print("R2 (null) = {}".format(mean_R2_null))
 
-    time_elapsed = time.time()-t1     
+    time_elapsed = time.time()-t1
+    result = [s,repeat,outer_fold,nm,nf,m,mean_R2,mean_rho,mean_R2_shuf,mean_R2_null,mean_rho_null]     
     results.append([s,repeat,outer_fold,nm,nf,m,mean_R2,mean_rho,mean_R2_shuf,mean_R2_null,mean_rho_null])
     params_all.append(max_params)
     #neurons_all.append(neuron_inds)
     times_all.append(time_elapsed)
 
     pfile = helpers.make_directory('all_decoders/'+(jobname[:-6]))
-    with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
-        pickle.dump([results,params_all,times_all,trainTest_index],p)
+    #with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
+    #    pickle.dump([results,params_all,times_all,trainTest_index],p)
+    with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:
+        pickle.dump([result,max_params,time_elapsed,trainTest_index],p)
 

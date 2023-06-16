@@ -46,7 +46,9 @@ import xgboost as xgb #For xgboost
 #But if you want to modify the decoders with other functions (e.g. regularization), import them here
 #try:
 import keras
+#import tensorflow
 #keras_v1=int(keras.__version__[0])<=1
+#from tensorflow.keras import Sequential, Dense, LSTM, SimpleRNN, GRU, Activation, Dropout, np_utils
 from keras.models import Sequential
 from keras.layers import Dense, LSTM, SimpleRNN, GRU, Activation, Dropout
 from keras.utils import np_utils

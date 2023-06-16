@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=knoneman@pitt.edu
-#SBATCH --time=0-00:10:00
+#SBATCH --time=0-23:00:00
 #SBATCH --array=0-9
 
 echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."
@@ -17,7 +17,7 @@ echo "Executing on the machine:" $(hostname)
 module purge
 module load gcc/8.2.0
 module load python/anaconda3.9-2021.11
-conda activate neuraldecoding
+conda activate decoding
 
 python all_decoders.py $1
 #cp files you'd like to move off of scratch

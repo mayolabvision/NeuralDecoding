@@ -5,10 +5,12 @@
 #SBATCH --output=runs/outfiles/out_%A_%a.out
 #SBATCH --error=runs/outfiles/error_%A_%a.err
 #SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=knoneman@pitt.edu
 #SBATCH --time=0-23:00:00
-#SBATCH --array=0-9
+#SBATCH --array=1,2,3,4,5,6,9
 
 echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."
 echo "My SLURM_ARRAY_TASK_ID is $SLURM_ARRAY_TASK_ID"

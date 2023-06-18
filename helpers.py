@@ -91,8 +91,10 @@ def get_data(line,repeat,outer_fold,shuffle):
     y = y[range(bins_before,y.shape[0]-bins_after),:]
 
     if shuffle==1:
-        idx = np.random.rand(*y.shape).argsort(axis=0)
-        y = np.take_along_axis(y,idx,axis=0)
+        y2 = y.T
+        idx = np.random.rand(*y2.shape).argsort(axis=1)
+        y2 = np.take_along_axis(y2,idx,axis=1)
+        y = y2.T
 
     valid_range_all=[[0,.1],[.1,.2],[.2,.3],[.3,.4],[.4,.5],
                  [.5,.6],[.6,.7],[.7,.8],[.8,.9],[.9,1]]

@@ -33,11 +33,12 @@ jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))
 
 ############## if on local computer ################
-workers = multiprocessing.cpu_count() 
-neuron_fold = foldneuron_pairs[int(sys.argv[2])]
+#workers = multiprocessing.cpu_count() 
+#neuron_fold = foldneuron_pairs[int(sys.argv[2])]
 
-#num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
-#neuron_fold = foldneuron_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
+############## if on hpc cluster ###################
+workers = int(os.environ['SLURM_CPUS_PER_TASK'])
+neuron_fold = foldneuron_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
 
 outer_fold = neuron_fold[0]
 repeat = neuron_fold[1]
@@ -46,9 +47,9 @@ repeat = neuron_fold[1]
 X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = helpers.get_data(line,repeat,outer_fold,0)
 X_trainN,X_testN,X_validN,X_flat_trainN,X_flat_testN,X_flat_validN,y_trainN,y_testN,y_validN,y_zscore_trainN,y_zscore_testN,y_zscore_validN = helpers.get_data(line,repeat,outer_fold,1)
 
-models = [6]
 #models = [0,1,2,3,4]
 #models = [5,6,7]
+models = [6]
 init_points = 10
 n_iter = 10
 
@@ -83,7 +84,7 @@ for m in models:
             y_valid_predicted_wc=model_wc.predict(X_flat_valid) 
             return np.mean(get_R2(y_valid,y_valid_predicted_wc))
         BO = BayesianOptimization(wc_evaluate, {'degree': (1, 5.01)}, verbose=0, allow_duplicate_points=True)    
-        BO.maximize(init_points=init_points, n_iter=n_iter) 
+        BO.maximize(init_points=10, n_iter=10) 
         params = max(BO.res, key=lambda x:x['target'])
         degree = params['params']['degree']
         
@@ -102,7 +103,7 @@ for m in models:
             y_valid_predicted_wc=model_wc.predict(X_flat_validN) 
             return np.mean(get_R2(y_validN,y_valid_predicted_wc))
         BO = BayesianOptimization(wc_evaluateN, {'degree': (1, 5.01)}, verbose=0, allow_duplicate_points=True)    
-        BO.maximize(init_points=init_points, n_iter=n_iter) 
+        BO.maximize(init_points=10, n_iter=10) 
         params = max(BO.res, key=lambda x:x['target'])
         degree = params['params']['degree']
         
@@ -126,7 +127,7 @@ for m in models:
             y_valid_predicted_xgb=model_xgb.predict(X_flat_valid) 
             return np.mean(get_R2(y_valid,y_valid_predicted_xgb)) 
         BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=0, allow_duplicate_points=True) 
-        BO.maximize(init_points=init_points, n_iter=n_iter) 
+        BO.maximize(init_points=5, n_iter=5) 
         params = max(BO.res, key=lambda x:x['target'])
         num_round = int(params['params']['num_round'])
         max_depth = int(params['params']['max_depth'])
@@ -150,7 +151,7 @@ for m in models:
             y_valid_predicted_xgb=model_xgb.predict(X_flat_validN) 
             return np.mean(get_R2(y_validN,y_valid_predicted_xgb)) 
         BO = BayesianOptimization(xgb_evaluateN, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=0, allow_duplicate_points=True) 
-        BO.maximize(init_points=init_points, n_iter=n_iter)  
+        BO.maximize(init_points=5, n_iter=5)  
         params = max(BO.res, key=lambda x:x['target'])
         num_round = int(params['params']['num_round'])
         max_depth = int(params['params']['max_depth'])
@@ -174,7 +175,7 @@ for m in models:
             y_valid_predicted_svr=model_svr.predict(X_flat_valid)
             return np.mean(get_R2(y_zscore_valid,y_valid_predicted_svr))
         BO = BayesianOptimization(svr_evaluate, {'C': (.5, 10)}, verbose=1, allow_duplicate_points=True)    
-        BO.maximize(init_points=init_points, n_iter=n_iter)
+        BO.maximize(init_points=5, n_iter=5)
         params = max(BO.res, key=lambda x:x['target'])
         C = params['params']['C']
     
@@ -193,7 +194,7 @@ for m in models:
             y_valid_predicted_svr=model_svr.predict(X_flat_validN)
             return np.mean(get_R2(y_zscore_validN,y_valid_predicted_svr))
         BO = BayesianOptimization(svr_evaluateN, {'C': (.5, 10)}, verbose=1, allow_duplicate_points=True)    
-        BO.maximize(init_points=init_points, n_iter=n_iter)
+        BO.maximize(init_points=5, n_iter=5)
         params = max(BO.res, key=lambda x:x['target'])
         C = params['params']['C']
     
@@ -366,8 +367,8 @@ for m in models:
             model_lstm.fit(X_train,y_train)
             y_valid_predicted_lstm=model_lstm.predict(X_valid)
             return np.mean(get_R2(y_valid,y_valid_predicted_lstm))
-        BO = BayesianOptimization(lstm_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,11)}, allow_duplicate_points=True)
-        BO.maximize(init_points=3, n_iter=3)
+        BO = BayesianOptimization(lstm_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
+        BO.maximize(init_points=10, n_iter=10)
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
         n_epochs=int(params['params']['n_epochs'])
@@ -381,7 +382,7 @@ for m in models:
         
         print("R2 = {}".format(mean_r2))
 
-        def lstm_evaluateN(num_units,frac_dropout,n_epochs,workers):
+        def lstm_evaluateN(num_units,frac_dropout,n_epochs):
             num_units=int(num_units)
             frac_dropout=float(frac_dropout)
             n_epochs=int(n_epochs)
@@ -389,8 +390,8 @@ for m in models:
             model_lstm.fit(X_trainN,y_trainN)
             y_valid_predicted_lstm=model_lstm.predict(X_validN)
             return np.mean(get_R2(y_validN,y_valid_predicted_lstm))
-        BO = BayesianOptimization(lstm_evaluateN, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,11)}, allow_duplicate_points=True)
-        BO.maximize(init_points=3, n_iter=3)
+        BO = BayesianOptimization(lstm_evaluateN, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
+        BO.maximize(init_points=5, n_iter=5)
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
         n_epochs=int(params['params']['n_epochs'])
@@ -406,6 +407,7 @@ for m in models:
 
     #######################################################################################################################################
     time_elapsed = time.time()-t1
+    print("time elapsed = {} mins".format(time_elapsed/60))
     result = [s,repeat,outer_fold,nm,nf,m,mean_r2,mean_rho,mean_r2N,mean_rhoN]     
 
     pfile = helpers.make_directory('all_decoders/'+(jobname[:-6]))

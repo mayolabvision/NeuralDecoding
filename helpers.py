@@ -8,7 +8,7 @@ from itertools import product
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
-params = 'params_allNeurons.txt'
+params = 'params.txt'
 data_folder     = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets/'
 
 import neuronsSample

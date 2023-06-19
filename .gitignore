@@ -1,5 +1,5 @@
 .ipynb_checkpoints/
-example/results/*
+starter_notebooks/example/results/*
 *.swp
 *Untitled*
 handy_functions/__pycache__/decoders.cpython-39.pyc

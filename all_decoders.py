@@ -32,13 +32,12 @@ s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))
 
-############## if on local computer ################
-#workers = multiprocessing.cpu_count() 
-#neuron_fold = foldneuron_pairs[int(sys.argv[2])]
-
-############## if on hpc cluster ###################
-workers = int(os.environ['SLURM_CPUS_PER_TASK'])
-neuron_fold = foldneuron_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
+if int(sys.argv[2])==0: # local computer
+    workers = multiprocessing.cpu_count() 
+    neuron_fold = foldneuron_pairs[int(sys.argv[3])]
+else: # hpc cluster
+    workers = int(os.environ['SLURM_CPUS_PER_TASK'])
+    neuron_fold = foldneuron_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
 
 outer_fold = neuron_fold[0]
 repeat = neuron_fold[1]
@@ -332,7 +331,7 @@ for m in models:
         mean_rho = np.mean(get_rho(y_test,y_test_predicted))
         
         print("R2 = {}".format(mean_r2))
-
+        '''
         def gru_evaluateN(num_units,frac_dropout,n_epochs):
             num_units=int(num_units)
             frac_dropout=float(frac_dropout)
@@ -355,7 +354,7 @@ for m in models:
         mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
 
         print("R2 (null) = {}".format(mean_r2N))
-
+        '''
     ######################### LSTM Decoder ############################
     if m == 7:
         from decoders import LSTMDecoder
@@ -411,6 +410,9 @@ for m in models:
     result = [s,repeat,outer_fold,nm,nf,m,mean_r2,mean_rho,mean_r2N,mean_rhoN]     
 
     pfile = helpers.make_directory('all_decoders/'+(jobname[:-6]))
-    with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:
-        pickle.dump([result,time_elapsed],p)
+    #with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:
+    #    pickle.dump([result,time_elapsed],p)
+     
+    with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}-eyetrace'.format(outer_fold,m)+'.pickle','wb') as p:
+        pickle.dump([y_test,y_test_predicted],p)
 

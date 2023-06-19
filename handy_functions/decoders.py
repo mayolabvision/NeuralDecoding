@@ -613,11 +613,13 @@ class LSTMRegression(object):
         Whether to show progress of the fit after each epoch
     """
 
-    def __init__(self,units=400,dropout=0,num_epochs=10,verbose=0):
+    def __init__(self,units=400,dropout=0,batch_size=128,num_epochs=10,verbose=0,workers=1):
          self.units=units
          self.dropout=dropout
+         self.batch_size=batch_size
          self.num_epochs=num_epochs
          self.verbose=verbose
+         self.workers=workers
 
 
     def fit(self,X_train,y_train):
@@ -651,7 +653,7 @@ class LSTMRegression(object):
         #if keras_v1:
         #    model.fit(X_train,y_train,nb_epoch=self.num_epochs,verbose=self.verbose) #Fit the model
         #else:
-        model.fit(X_train,y_train,epochs=self.num_epochs,verbose=self.verbose) #Fit the model
+        model.fit(X_train,y_train,batch_size=self.batch_size,epochs=self.num_epochs,verbose=self.verbose,workers=self.workers,use_multiprocessing=True) #Fit the model
         self.model=model
 
 

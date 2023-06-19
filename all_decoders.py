@@ -33,9 +33,12 @@ jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))
 
 ############## if on local computer ################
+workers = multiprocessing.cpu_count() 
 neuron_fold = foldneuron_pairs[int(sys.argv[2])]
 
+print(workers)
 ############# if on cluster ########################
+#num_cores = int(os.environ['SLURM_CPUS_PER_TASK'])
 #neuron_fold = foldneuron_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
 
 outer_fold = neuron_fold[0]
@@ -45,7 +48,8 @@ repeat = neuron_fold[1]
 X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = helpers.get_data(line,repeat,outer_fold,0)
 X_trainN,X_testN,X_validN,X_flat_trainN,X_flat_testN,X_flat_validN,y_trainN,y_testN,y_validN,y_zscore_trainN,y_zscore_testN,y_zscore_validN = helpers.get_data(line,repeat,outer_fold,1)
 
-models = [0,1,2,3,4]
+models = [7]
+#models = [0,1,2,3,4]
 #models = [5,6,7]
 init_points = 10
 n_iter = 10
@@ -361,18 +365,18 @@ for m in models:
             num_units=int(num_units)
             frac_dropout=float(frac_dropout)
             n_epochs=int(n_epochs)
-            model_lstm=LSTMDecoder(units=num_units,dropout=frac_dropout,num_epochs=n_epochs)
+            model_lstm=LSTMDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
             model_lstm.fit(X_train,y_train)
             y_valid_predicted_lstm=model_lstm.predict(X_valid)
             return np.mean(get_R2(y_valid,y_valid_predicted_lstm))
-        BO = BayesianOptimization(lstm_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)})
-        BO.maximize(init_points=init_points, n_iter=n_iter, kappa=kappa)
+        BO = BayesianOptimization(lstm_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,11)})
+        BO.maximize(init_points=3, n_iter=5)
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
         n_epochs=int(params['params']['n_epochs'])
         num_units=int(params['params']['num_units'])
 
-        model=LSTMDecoder(units=num_units,dropout=frac_dropout,num_epochs=n_epochs)
+        model=LSTMDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
         model.fit(X_train,y_train)
         y_test_predicted=model.predict(X_test)
         mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
@@ -380,11 +384,11 @@ for m in models:
         
         print("R2 = {}".format(mean_r2))
 
-        def lstm_evaluateN(num_units,frac_dropout,n_epochs):
+        def lstm_evaluateN(num_units,frac_dropout,n_epochs,workers):
             num_units=int(num_units)
             frac_dropout=float(frac_dropout)
             n_epochs=int(n_epochs)
-            model_lstm=LSTMDecoder(units=num_units,dropout=frac_dropout,num_epochs=n_epochs)
+            model_lstm=LSTMDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
             model_lstm.fit(X_trainN,y_trainN)
             y_valid_predicted_lstm=model_lstm.predict(X_validN)
             return np.mean(get_R2(y_validN,y_valid_predicted_lstm))
@@ -395,7 +399,7 @@ for m in models:
         n_epochs=int(params['params']['n_epochs'])
         num_units=int(params['params']['num_units'])
 
-        modelN=LSTMDecoder(units=num_units,dropout=frac_dropout,num_epochs=n_epochs)
+        modelN=LSTMDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
         modelN.fit(X_trainN,y_trainN)
         y_test_predictedN=modelN.predict(X_testN)
         mean_r2N = np.mean(get_R2(y_testN,y_test_predictedN))

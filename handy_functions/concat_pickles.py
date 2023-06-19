@@ -5,10 +5,25 @@ import os
 import pickle
 from scipy.stats import circstd
 
-data_folder = '/Users/kendranoneman/Projects/mayo/data/neural-decoding/outpickles/'
-cwd = os.getcwd()
+def get_outputs(data_folder,verbose):
+    results_all,times_all = [],[]
+    for direc in sorted(os.listdir(data_folder)):
+        if direc.endswith('fi03'):
+            if verbose==1:
+                print(direc)
+            for file in sorted(os.listdir(data_folder+'/'+direc)):
+                if file.endswith('.pickle'):
+                    with open(data_folder+'/'+direc+'/'+file, 'rb') as f:
+                        results,times = pickle.load(f) 
+                        results_all.append(results)
+                        times_all.append(times)
+    df = pd.DataFrame(results_all,columns=['sess','repeat','outer_fold','nMT','nFEF','model','mean_R2','mean_rho','mean_R2_null','mean_rho_null'])
+    #df2 = df1.loc[(df1['mean_R2'] < 1) & (df1['mean_R2'] > -1)]
+    #df = pd.concat([df,df1],ignore_index=False)
+    
+    return df
 
-def get_outputs(result_dir,load_folder,units):
+def get_outputs_wUnits(result_dir,load_folder,units):
     df = pd.DataFrame() # Creates an empty list
     cnt = 0
     print('yay')

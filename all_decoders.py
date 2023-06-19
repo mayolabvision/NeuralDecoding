@@ -15,7 +15,7 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
-params = 'params_allNeurons.txt'
+params = 'params.txt'
 
 from metrics import get_R2
 from metrics import get_rho

@@ -20,6 +20,7 @@ module load gcc/8.2.0
 module load python/anaconda3.9-2021.11
 conda activate decoding
 
-python all_decoders.py $1 1
+#python all_decoders.py $1 1
+python neuron_sweep.py $1 1
 
 echo "DONE"

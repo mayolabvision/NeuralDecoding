@@ -72,7 +72,6 @@ def get_data(line,repeat,outer_fold,shuffle):
     
     sess,sess_nodt = get_session(s,t,d)
     [bins_before,bins_current,bins_after] = get_bins(bn)
-
     with open(cwd+'/datasets/vars-'+sess+'.pickle','rb') as f:
         neural_data,pos_binned,vel_binned,acc_binned=pickle.load(f,encoding='latin1')
     

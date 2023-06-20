@@ -53,7 +53,7 @@ def get_session(j,t,d):
     return session+'-pre'+str(times[t][0])+'-post'+str(times[t][1])+'-dt'+str(d),session+'-pre'+str(times[t][0])+'-post'+str(times[t][1])
 
 def get_bins(bn):
-    bins = [[6,1,6],[6,1,0],[0,1,0],[2,0,0]]
+    bins = [[6,1,6],[6,1,0],[0,1,6],[1,1,0],[2,1,0],[3,1,0],[1,0,0],[2,0,0],[3,0,0]]
     return bins[bn][0],bins[bn][1],bins[bn][2]
 
 def get_data(line,repeat,outer_fold,shuffle):
@@ -72,7 +72,7 @@ def get_data(line,repeat,outer_fold,shuffle):
     
     sess,sess_nodt = get_session(s,t,d)
     [bins_before,bins_current,bins_after] = get_bins(bn)
-    with open(cwd+'/datasets/vars-'+sess+'.pickle','rb') as f:
+    with open(cwd+'/datasets/vars/vars-'+sess+'.pickle','rb') as f:
         neural_data,pos_binned,vel_binned,acc_binned=pickle.load(f,encoding='latin1')
     
     neural_data2 = neural_data[:,neurons_perRepeat[repeat]]
@@ -128,7 +128,7 @@ def get_data(line,repeat,outer_fold,shuffle):
 
     X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid)
 
-    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid  
+    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,neurons_perRepeat[repeat] 
 
 def get_foldneuronPairs(i):
     s,t,d,m,o,nm,nf,bn,fo,fi,r = get_params(i)
@@ -142,11 +142,11 @@ def get_neuronCombos(i):
 
 def get_sessConditions(s):
     contrasts,speeds,directions = [],[],[]
-    for idx, x in enumerate(glob.glob(data_folder+'vars-pa{:0>2d}dir4A-*-c*.mat'.format(s))):
+    for idx, x in enumerate(glob.glob(data_folder+'vars/vars-pa{:0>2d}dir4A-*-c*.mat'.format(s))):
         contrasts.append(int(x[-7:-4]))
-    for idx, x in enumerate(glob.glob(data_folder+'vars-pa{:0>2d}dir4A-*-sp*.mat'.format(s))):
+    for idx, x in enumerate(glob.glob(data_folder+'vars/vars-pa{:0>2d}dir4A-*-sp*.mat'.format(s))):
         speeds.append(int(x[-6:-4]))
-    for idx, x in enumerate(glob.glob(data_folder+'vars-pa{:0>2d}dir4A-*-d*.mat'.format(s))):
+    for idx, x in enumerate(glob.glob(data_folder+'vars/vars-pa{:0>2d}dir4A-*-d*.mat'.format(s))):
         directions.append(int(x[-7:-4]))
 
     return sorted(contrasts), sorted(speeds), sorted(directions)

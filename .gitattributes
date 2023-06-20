@@ -35,3 +35,5 @@ datasets/vars/vars-pa21dir4A-pre500-post300-dt50.pickle filter=lfs diff=lfs merg
 datasets/vars/vars-pa25dir4A-pre500-post300-dt50.pickle filter=lfs diff=lfs merge=lfs -text
 datasets/vars/vars-pa28dir4A-pre500-post300-dt50.pickle filter=lfs diff=lfs merge=lfs -text
 datasets/vars/vars-pa18dir4A-pre500-post300-dt50.pickle filter=lfs diff=lfs merge=lfs -text
+datasets/vars/vars-*.pickle filter=lfs diff=lfs merge=lfs -text
+datasets/units/units-*.csv filter=lfs diff=lfs merge=lfs -text

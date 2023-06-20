@@ -331,7 +331,6 @@ for m in models:
         mean_rho = np.mean(get_rho(y_test,y_test_predicted))
         
         print("R2 = {}".format(mean_r2))
-        '''
         def gru_evaluateN(num_units,frac_dropout,n_epochs):
             num_units=int(num_units)
             frac_dropout=float(frac_dropout)
@@ -354,7 +353,6 @@ for m in models:
         mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
 
         print("R2 (null) = {}".format(mean_r2N))
-        '''
     ######################### LSTM Decoder ############################
     if m == 7:
         from decoders import LSTMDecoder
@@ -410,9 +408,9 @@ for m in models:
     result = [s,repeat,outer_fold,nm,nf,m,mean_r2,mean_rho,mean_r2N,mean_rhoN]     
 
     pfile = helpers.make_directory('all_decoders/'+(jobname[:-6]))
-    #with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:
-    #    pickle.dump([result,time_elapsed],p)
+    with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:
+        pickle.dump([result,time_elapsed],p)
      
-    with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}-eyetrace'.format(outer_fold,m)+'.pickle','wb') as p:
-        pickle.dump([y_test,y_test_predicted],p)
+    #with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}-eyetrace'.format(outer_fold,m)+'.pickle','wb') as p:
+    #    pickle.dump([y_test,y_test_predicted],p)
 

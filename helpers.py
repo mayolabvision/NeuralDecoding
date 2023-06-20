@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import decodingSetup
+#import decodingSetup
 import sys
 import pickle
 import itertools

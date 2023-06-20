@@ -5,18 +5,17 @@ import os
 import pickle
 from scipy.stats import circstd
 
-def get_outputs(data_folder,verbose):
+def get_outputs(data_folder,conditions):
     results_all,times_all = [],[]
-    for direc in sorted(os.listdir(data_folder)):
-        if direc.endswith('fi03'):
-            if verbose==1:
-                print(direc)
-            for file in sorted(os.listdir(data_folder+'/'+direc)):
-                if file.endswith('.pickle'):
-                    with open(data_folder+'/'+direc+'/'+file, 'rb') as f:
-                        results,times = pickle.load(f) 
-                        results_all.append(results)
-                        times_all.append(times)
+    direcs = sorted(os.listdir(data_folder))
+    current_direcs = [d for d in direcs if all(c in d for c in conditions)]
+    for direc in current_direcs:
+        for file in sorted(os.listdir(data_folder+'/'+direc)):
+            if file.endswith('.pickle'):
+                with open(data_folder+'/'+direc+'/'+file, 'rb') as f:
+                    results,times = pickle.load(f) 
+                    results_all.append(results)
+                    times_all.append(times)
     df = pd.DataFrame(results_all,columns=['sess','repeat','outer_fold','nMT','nFEF','model','mean_R2','mean_rho','mean_R2_null','mean_rho_null'])
     #df2 = df1.loc[(df1['mean_R2'] < 1) & (df1['mean_R2'] > -1)]
     #df = pd.concat([df,df1],ignore_index=False)

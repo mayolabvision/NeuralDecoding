@@ -117,9 +117,9 @@ for c = 1:length(contrasts)
     end
 
     spike_times = cellfun(@(z) vertcat(z{:}), spike_times, 'uni', 0);
-    save(sprintf('%s/vars-%s-pre%03d-post%03d-c%03d.mat',folder,session,preint,postint-800,contrasts(c)),'spike_times','pos','vels','acc','vels_times','-v7');
+    save(sprintf('%s/vars/vars-%s-pre%03d-post%03d-c%03d.mat',folder,session,preint,postint-800,contrasts(c)),'spike_times','pos','vels','acc','vels_times','-v7');
     if c==1
-        writetable(unitsTbl,sprintf('%s/units-%s-pre%03d-post%03d.csv',folder,session,preint,postint-800))
+        writetable(unitsTbl,sprintf('%s/units/units-%s-pre%03d-post%03d.csv',folder,session,preint,postint-800))
     end
 end
 
@@ -167,7 +167,7 @@ for p = 1:length(speeds)
     end
     
     spike_times = cellfun(@(z) vertcat(z{:}), spike_times, 'uni', 0);
-    save(sprintf('%s/vars-%s-pre%03d-post%03d-sp%02d.mat',folder,session,preint,postint-800,speeds(p)),'spike_times','pos','vels','acc','vels_times','-v7');
+    save(sprintf('%s/vars/vars-%s-pre%03d-post%03d-sp%02d.mat',folder,session,preint,postint-800,speeds(p)),'spike_times','pos','vels','acc','vels_times','-v7');
 end
 
 % directions
@@ -213,7 +213,7 @@ for d = 1:length(dirsdeg)
         end
     end
     spike_times = cellfun(@(z) vertcat(z{:}), spike_times, 'uni', 0);
-    save(sprintf('%s/vars-%s-pre%03d-post%03d-d%03d.mat',folder,session,preint,postint-800,dirsdeg(d)),'spike_times','pos','vels','acc','vels_times','-v7');
+    save(sprintf('%s/vars/vars-%s-pre%03d-post%03d-d%03d.mat',folder,session,preint,postint-800,dirsdeg(d)),'spike_times','pos','vels','acc','vels_times','-v7');
 end
 
 end

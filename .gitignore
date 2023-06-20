@@ -7,8 +7,9 @@ handy_functions/__pycache__/decoders.cpython-39.pyc
 handy_functions/__pycache__/metrics.cpython-39.pyc
 *.pyc
 runs/outfiles
-datasets/*.mat
-datasets/dsplt-*
+datasets/units/*.mat
+datasets/vars/*.mat
+datasets/dsplt/
 analyses/out.csv
 runs/
 .DS_Store

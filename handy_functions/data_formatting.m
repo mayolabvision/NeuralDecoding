@@ -115,7 +115,7 @@ acc = cellfun(@(q) q{3}, eyes_new, 'uni', 0); acc = vertcat(acc{:});
 vels_times     =  (1:size(trialTbl,1)*(preint+postint))';
 
 %%%%%%%%%%%%%%% Save to a file %%%%%%%%%%%%%%%%%%
-save(sprintf('%s/vars-%s-pre%03d-post%03d.mat',folder,session,preint,postint-800),'spike_times','pos','vels','acc','vels_times','-v7');
-writetable(unitsTbl,sprintf('%s/units-%s-pre%03d-post%03d.csv',folder,session,preint,postint-800))
+save(sprintf('%s/vars/vars-%s-pre%03d-post%03d.mat',folder,session,preint,postint-800),'spike_times','pos','vels','acc','vels_times','-v7');
+writetable(unitsTbl,sprintf('%s/units/units-%s-pre%03d-post%03d.csv',folder,session,preint,postint-800))
 
 end

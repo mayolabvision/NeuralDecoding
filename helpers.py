@@ -57,7 +57,7 @@ def get_bins(bn):
     bins = [[6,1,6],[6,1,0],[0,1,6],[1,1,0],[2,1,0],[3,1,0],[1,0,0],[2,0,0],[3,0,0]]
     return bins[bn][0],bins[bn][1],bins[bn][2]
 
-def get_data(line,repeat,outer_fold,shuffle):
+def get_data(line,repeat,outer_fold,shuffle,dropOnly):
     s = int(line[1])
     t = int(line[2])
     d = int(line[3])
@@ -74,8 +74,12 @@ def get_data(line,repeat,outer_fold,shuffle):
         neurons_perRepeat = neuronsSample.get_neuronRepeats(line)
         these_neurons = neurons_perRepeat[repeat]
     else:
-        neurons_all = np.arange(0,nm+nf)
-        these_neurons = np.delete(neurons_all, repeat)
+        if dropOnly==0:
+            neurons_all = np.arange(0,nm+nf)
+            these_neurons = np.delete(neurons_all, repeat)
+        else:
+            neurons_all = np.arange(0,nm+nf)
+            these_neurons = neurons_all[repeat]
 
     sess,sess_nodt = get_session(s,t,d)
     [bins_before,bins_current,bins_after] = get_bins(bn)
@@ -83,6 +87,9 @@ def get_data(line,repeat,outer_fold,shuffle):
         neural_data,pos_binned,vel_binned,acc_binned=pickle.load(f,encoding='latin1')
     
     neural_data2 = neural_data[:,these_neurons]
+    if dropOnly==1:
+        neural_data2 = np.expand_dims(neural_data2, axis=1)
+    
     X = get_spikes_with_history(neural_data2,bins_before,bins_after,bins_current)
     X = X[range(bins_before,X.shape[0]-bins_after),:,:]
     num_examples=X.shape[0]

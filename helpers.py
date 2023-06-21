@@ -40,11 +40,12 @@ def get_params(i):
     r = int(line[11])
     return s,t,d,m,o,nm,nf,bn,fo,fi,r
 
-def make_directory(jobname):
+def make_directory(jobname,nameOnly):
     cwd = os.getcwd()
     f="/runs/"+jobname
-    if not os.path.isdir(cwd+f):
-       os.makedirs(cwd+f,exist_ok=True)
+    if nameOnly==0:
+        if not os.path.isdir(cwd+f):
+           os.makedirs(cwd+f,exist_ok=True)
     return f
 
 def get_session(j,t,d):
@@ -57,7 +58,6 @@ def get_bins(bn):
     return bins[bn][0],bins[bn][1],bins[bn][2]
 
 def get_data(line,repeat,outer_fold,shuffle):
-    neurons_perRepeat = neuronsSample.get_neuronRepeats(line)
     s = int(line[1])
     t = int(line[2])
     d = int(line[3])
@@ -69,13 +69,20 @@ def get_data(line,repeat,outer_fold,shuffle):
     fo = int(line[9])
     fi = int(line[10]) 
     r = int(line[11])
-    
+
+    if r>0:
+        neurons_perRepeat = neuronsSample.get_neuronRepeats(line)
+        these_neurons = neurons_perRepeat[repeat]
+    else:
+        neurons_all = np.arange(0,nm+nf)
+        these_neurons = np.delete(neurons_all, repeat)
+
     sess,sess_nodt = get_session(s,t,d)
     [bins_before,bins_current,bins_after] = get_bins(bn)
     with open(cwd+'/datasets/vars/vars-'+sess+'.pickle','rb') as f:
         neural_data,pos_binned,vel_binned,acc_binned=pickle.load(f,encoding='latin1')
     
-    neural_data2 = neural_data[:,neurons_perRepeat[repeat]]
+    neural_data2 = neural_data[:,these_neurons]
     X = get_spikes_with_history(neural_data2,bins_before,bins_after,bins_current)
     X = X[range(bins_before,X.shape[0]-bins_after),:,:]
     num_examples=X.shape[0]
@@ -128,7 +135,7 @@ def get_data(line,repeat,outer_fold,shuffle):
 
     X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid)
 
-    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,neurons_perRepeat[repeat] 
+    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,these_neurons 
 
 def get_foldneuronPairs(i):
     s,t,d,m,o,nm,nf,bn,fo,fi,r = get_params(i)

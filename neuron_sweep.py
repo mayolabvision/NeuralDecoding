@@ -67,12 +67,13 @@ for q in mtfef_pairs:
             mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
             mean_rho = np.mean(get_rho(y_test,y_test_predicted))
 
+            '''
             modelN=WienerFilterDecoder()
             modelN.fit(X_flat_trainN,y_trainN)
             y_test_predictedN=model.predict(X_flat_testN)   
             mean_r2N = np.mean(get_R2(y_testN,y_test_predictedN))
             mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
-
+            '''
             #print("R2 = {}".format(mean_r2))
             #print("R2 (null) = {}".format(mean_r2N))
 
@@ -421,7 +422,7 @@ for q in mtfef_pairs:
 #print(results)
 #df = pd.DataFrame(results,columns=['sess','repeat','outer_fold','nMT','nFEF','model','mean_R2','mean_rho','mean_R2_null','mean_rho_null','time_elapsed','neurons'])
 
-pfile = helpers.make_directory('neuron_sweep/'+(jobname))
+pfile = helpers.make_directory('neuron_sweep/'+(jobname),1)
 with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:
     pickle.dump(results,p)
  

@@ -434,7 +434,7 @@ for q in num_neurons:
         nf2 = nf-1
 
     pfile = helpers.make_directory('all_decoders/'+(jobname[:-6]),1)
-    print(pfile)
+    pfile = pfile.replace("-m0{}".format(m), "-m00")
     with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','rb') as f:
         results_full,_ = pickle.load(f,encoding='latin1')
         #s,repeat,outer_fold,nm,nf,m,mean_r2,mean_rho,mean_r2N,mean_rhoN

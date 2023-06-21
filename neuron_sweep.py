@@ -95,7 +95,7 @@ for q in mtfef_pairs:
             mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
             mean_rho = np.mean(get_rho(y_test,y_test_predicted))
             
-            print("R2 = {}".format(mean_r2))
+           # print("R2 = {}".format(mean_r2))
 
             # null hypothesis
             def wc_evaluateN(degree):
@@ -114,7 +114,7 @@ for q in mtfef_pairs:
             mean_r2N = np.mean(get_R2(y_testN,y_test_predictedN))
             mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
 
-            print("R2 (null) = {}".format(mean_r2N))
+            #print("R2 (null) = {}".format(mean_r2N))
         
         ##################### XGBoost Decoder #########################
         if m == 2:
@@ -319,7 +319,7 @@ for q in mtfef_pairs:
                 model_gru.fit(X_train,y_train)
                 y_valid_predicted_gru=model_gru.predict(X_valid)
                 return np.mean(get_R2(y_valid,y_valid_predicted_gru))
-            BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
+            BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True, verbose=0)
             BO.maximize(init_points=3, n_iter=3)
             params = max(BO.res, key=lambda x:x['target'])
             frac_dropout=float(params['params']['frac_dropout'])
@@ -332,16 +332,17 @@ for q in mtfef_pairs:
             mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
             mean_rho = np.mean(get_rho(y_test,y_test_predicted))
             
-            print("R2 = {}".format(mean_r2))
+            #print("R2 = {}".format(mean_r2))
+            '''
             def gru_evaluateN(num_units,frac_dropout,n_epochs):
-                num_units=int(num_units)
-                frac_dropout=float(frac_dropout)
-                n_epochs=int(n_epochs)
+                #num_units=int(num_units)
+                #frac_dropout=float(frac_dropout)
+                #n_epochs=int(n_epochs)
                 model_gru=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
                 model_gru.fit(X_trainN,y_trainN)
                 y_valid_predicted_gru=model_gru.predict(X_validN)
                 return np.mean(get_R2(y_validN,y_valid_predicted_gru))
-            BO = BayesianOptimization(gru_evaluateN, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
+            BO = BayesianOptimization(gru_evaluateN, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True, verbose=0)
             BO.maximize(init_points=3, n_iter=3)
             params = max(BO.res, key=lambda x:x['target'])
             frac_dropout=float(params['params']['frac_dropout'])
@@ -354,7 +355,11 @@ for q in mtfef_pairs:
             mean_r2N = np.mean(get_R2(y_testN,y_test_predictedN))
             mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
 
-            print("R2 (null) = {}".format(mean_r2N))
+            #print("R2 (null) = {}".format(mean_r2N))
+            '''
+            mean_r2N = 0
+            mean_rhoN = 0
+
         ######################### LSTM Decoder ############################
         if m == 7:
             from decoders import LSTMDecoder

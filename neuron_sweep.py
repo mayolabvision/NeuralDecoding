@@ -27,6 +27,7 @@ from psutil import cpu_count
 import helpers
 
 line = np.loadtxt(params)[int(sys.argv[1])]
+print(line)
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 
@@ -76,7 +77,8 @@ for q in mtfef_pairs:
             '''
             #print("R2 = {}".format(mean_r2))
             #print("R2 (null) = {}".format(mean_r2N))
-
+            mean_r2N = 0
+            mean_rhoN = 0
         ##################### Wiener Cascade Decoder ###########################
         if m == 1:
             from decoders import WienerCascadeDecoder
@@ -422,7 +424,7 @@ for q in mtfef_pairs:
 #print(results)
 #df = pd.DataFrame(results,columns=['sess','repeat','outer_fold','nMT','nFEF','model','mean_R2','mean_rho','mean_R2_null','mean_rho_null','time_elapsed','neurons'])
 
-pfile = helpers.make_directory('neuron_sweep/'+(jobname),1)
+pfile = helpers.make_directory('neuron_sweep/'+(jobname),0)
 with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:
     pickle.dump(results,p)
  

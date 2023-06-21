@@ -27,11 +27,11 @@ from psutil import cpu_count
 import helpers
 
 line = np.loadtxt(params)[int(sys.argv[1])]
+print(line)
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 
 num_neurons = np.arange(0,nm+nf)
-num_neurons = np.arange(0,3)
 
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
@@ -88,8 +88,8 @@ for q in num_neurons:
         mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
         mean_rho = np.mean(get_rho(y_test,y_test_predicted))
         
-       # print("R2 = {}".format(mean_r2))
-
+        #print("R2 = {}".format(mean_r2))
+        '''
         # null hypothesis
         def wc_evaluateN(degree):
             model_wc=WienerCascadeDecoder(degree) 
@@ -108,7 +108,10 @@ for q in num_neurons:
         mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
 
         #print("R2 (null) = {}".format(mean_r2N))
-    
+        '''
+        mean_r2N = 0
+        mean_rhoN = 0
+
     ##################### XGBoost Decoder #########################
     if m == 2:
         from decoders import XGBoostDecoder
@@ -133,8 +136,8 @@ for q in num_neurons:
         mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
         mean_rho = np.mean(get_rho(y_test,y_test_predicted))
         
-        print("R2 = {}".format(mean_r2))
-
+        #print("R2 = {}".format(mean_r2))
+        '''
         # null hypothesis
         def xgb_evaluateN(max_depth,num_round,eta):
             max_depth=int(max_depth) 
@@ -158,6 +161,9 @@ for q in num_neurons:
         mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
 
         print("R2 (null) = {}".format(mean_r2N))
+        '''
+        mean_r2N = 0
+        mean_rhoN = 0
 
     ######################### SVR Decoder #########################
     if m == 3:
@@ -179,8 +185,8 @@ for q in num_neurons:
         mean_r2 = np.mean(get_R2(y_zscore_test,y_test_predicted))
         mean_rho = np.mean(get_rho(y_zscore_test,y_test_predicted))
         
-        print("R2 = {}".format(mean_r2))
-
+        #print("R2 = {}".format(mean_r2))
+        '''
         # null hypothesis
         def svr_evaluateN(C):
             model_svr=SVRDecoder(C=C, max_iter=max_iter)
@@ -199,6 +205,10 @@ for q in num_neurons:
         mean_rhoN = np.mean(get_rho(y_zscore_testN,y_test_predictedN))
         
         print("R2 (null) = {}".format(mean_r2N))
+        '''
+        mean_r2N = 0
+        mean_rhoN = 0
+
 
     ####################### DNN #######################
     if m == 4:
@@ -224,8 +234,8 @@ for q in num_neurons:
         mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
         mean_rho = np.mean(get_rho(y_test,y_test_predicted))
 
-        print("R2 = {}".format(mean_r2))
-
+        #print("R2 = {}".format(mean_r2))
+        '''
         # null hypothesis
         def dnn_evaluateN(num_units,frac_dropout,n_epochs):
             num_units=int(num_units)
@@ -249,6 +259,10 @@ for q in num_neurons:
         mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
 
         print("R2 (null) = {}".format(mean_r2N))
+        '''
+        mean_r2N = 0
+        mean_rhoN = 0
+
 
     ########################## RNN ##############################3
     if m == 5:
@@ -274,8 +288,8 @@ for q in num_neurons:
         mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
         mean_rho = np.mean(get_rho(y_test,y_test_predicted))
         
-        print("R2 = {}".format(mean_r2))
-
+        #print("R2 = {}".format(mean_r2))
+        '''
         # null hypothesis
         def rnn_evaluateN(num_units,frac_dropout,n_epochs):
             num_units=int(num_units)
@@ -299,6 +313,9 @@ for q in num_neurons:
         mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
 
         print("R2 (null) = {}".format(mean_r2N))
+        '''
+        mean_r2N = 0
+        mean_rhoN = 0
 
 
     ######################### GRU Decoder ################################
@@ -308,7 +325,7 @@ for q in num_neurons:
             num_units=int(num_units)
             frac_dropout=float(frac_dropout)
             n_epochs=int(n_epochs)
-            model_gru=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
+            model_gru=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,verbose=0,workers=workers)
             model_gru.fit(X_train,y_train)
             y_valid_predicted_gru=model_gru.predict(X_valid)
             return np.mean(get_R2(y_valid,y_valid_predicted_gru))
@@ -319,7 +336,7 @@ for q in num_neurons:
         n_epochs=int(params['params']['n_epochs'])
         num_units=int(params['params']['num_units'])
         
-        model=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
+        model=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,verbose=0,workers=workers)
         model.fit(X_train,y_train)
         y_test_predicted=model.predict(X_test)
         mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
@@ -377,8 +394,8 @@ for q in num_neurons:
         mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
         mean_rho = np.mean(get_rho(y_test,y_test_predicted))
         
-        print("R2 = {}".format(mean_r2))
-
+        #print("R2 = {}".format(mean_r2))
+        '''
         def lstm_evaluateN(num_units,frac_dropout,n_epochs):
             num_units=int(num_units)
             frac_dropout=float(frac_dropout)
@@ -401,6 +418,9 @@ for q in num_neurons:
         mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
 
         print("R2 (null) = {}".format(mean_r2N))
+        '''
+        mean_r2N = 0
+        mean_rhoN = 0
 
     ###########################################################################
     time_elapsed = time.time()-t1
@@ -414,6 +434,7 @@ for q in num_neurons:
         nf2 = nf-1
 
     pfile = helpers.make_directory('all_decoders/'+(jobname[:-6]),1)
+    print(pfile)
     with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','rb') as f:
         results_full,_ = pickle.load(f,encoding='latin1')
         #s,repeat,outer_fold,nm,nf,m,mean_r2,mean_rho,mean_r2N,mean_rhoN

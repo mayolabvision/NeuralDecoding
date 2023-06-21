@@ -51,6 +51,8 @@ for q in num_neurons:
     X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,neuron_inds = helpers.get_data(new_line,q,outer_fold,0,1)
     X_trainN,X_testN,X_validN,X_flat_trainN,X_flat_testN,X_flat_validN,y_trainN,y_testN,y_validN,y_zscore_trainN,y_zscore_testN,y_zscore_validN,_ = helpers.get_data(new_line,q,outer_fold,1,1)
 
+    #print(X_train)
+
     ##################### Wiener Filter Decoder ############################
     if m == 0:
         from decoders import WienerFilterDecoder
@@ -66,7 +68,7 @@ for q in num_neurons:
         mean_r2N = np.mean(get_R2(y_testN,y_test_predictedN))
         mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
 
-        #print("R2 = {}".format(mean_r2))
+        print("R2 = {}".format(mean_r2))
         #print("R2 (null) = {}".format(mean_r2N))
 
     ##################### Wiener Cascade Decoder ###########################
@@ -447,7 +449,8 @@ for q in num_neurons:
 
 #print(results)
 df = pd.DataFrame(results,columns=['sess','outer_fold','nMT','nFEF','model','mean_R2','mean_rho','mean_R2_null','mean_rho_null','time_elapsed','neuron_dropped','mean_R2_FULL','mean_rho_FULL','mean_R2_null_FULL','mean_rho_null_FULL'])
-print(df)
+#print(df)
+print(df[['mean_R2']].to_string(index=False))
 
 pfile = helpers.make_directory('neuron_single/'+(jobname[:-6]),0)
 with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:

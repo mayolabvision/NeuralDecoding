@@ -42,7 +42,6 @@ def get_neuronRepeats(line):
                 neuron_inds = sorted(np.concatenate((np.array((mt_inds)),np.array((fef_inds)))))
            
             neurons_perRepeat.append(neuron_inds)
-        print(neurons_perRepeat)    
         with open(cwd+'/datasets/dsplt/dsplt-'+sess+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle','wb') as f:
             pickle.dump(neurons_perRepeat,f)
     else:

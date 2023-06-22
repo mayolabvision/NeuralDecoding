@@ -31,8 +31,20 @@ print(line)
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 
-mtfef_pairs = helpers.get_neuronCombos(int(sys.argv[1]))
-mtfef_pairs.remove((0,0))
+mtfef_pairs0 = helpers.get_neuronCombos(int(sys.argv[1]))
+mtfef_pairs0.remove((0,0))
+
+rnd = 0
+if rnd==0:
+    mtfef_pairs = mtfef_pairs0[0:2] #50]
+elif rnd==1:
+    mtfef_pairs = mtfef_pairs0[50:100]
+elif rnd==2:
+    mtfef_pairs = mtfef_pairs0[100:150]
+elif rnd==3:
+    mtfef_pairs = mtfef_pairs0[150:200]
+elif rnd==4:
+    mtfef_pairs = mtfef_pairs0[200:251]
 
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
@@ -56,8 +68,8 @@ for q in mtfef_pairs:
     
     for repeat in range(num_repeats):
         ############ training ################
-        X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,neuron_inds = helpers.get_data(new_line,repeat,outer_fold,0)
-        X_trainN,X_testN,X_validN,X_flat_trainN,X_flat_testN,X_flat_validN,y_trainN,y_testN,y_validN,y_zscore_trainN,y_zscore_testN,y_zscore_validN,_ = helpers.get_data(new_line,repeat,outer_fold,1)
+        X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,neuron_inds = helpers.get_data(new_line,repeat,outer_fold,0,0)
+        X_trainN,X_testN,X_validN,X_flat_trainN,X_flat_testN,X_flat_validN,y_trainN,y_testN,y_validN,y_zscore_trainN,y_zscore_testN,y_zscore_validN,_ = helpers.get_data(new_line,repeat,outer_fold,1,0)
 
         ##################### Wiener Filter Decoder ############################
         if m == 0:
@@ -425,6 +437,6 @@ for q in mtfef_pairs:
 #df = pd.DataFrame(results,columns=['sess','repeat','outer_fold','nMT','nFEF','model','mean_R2','mean_rho','mean_R2_null','mean_rho_null','time_elapsed','neurons'])
 
 pfile = helpers.make_directory('neuron_sweep/'+(jobname),0)
-with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:
+with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}-rnd{}'.format(outer_fold,m,rnd)+'.pickle','wb') as p:
     pickle.dump(results,p)
  

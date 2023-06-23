@@ -34,9 +34,9 @@ jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 mtfef_pairs0 = helpers.get_neuronCombos(int(sys.argv[1]))
 mtfef_pairs0.remove((0,0))
 
-rnd = 0
+rnd = 4
 if rnd==0:
-    mtfef_pairs = mtfef_pairs0[0:2] #50]
+    mtfef_pairs = mtfef_pairs0[0:50]
 elif rnd==1:
     mtfef_pairs = mtfef_pairs0[50:100]
 elif rnd==2:

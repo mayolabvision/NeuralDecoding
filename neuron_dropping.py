@@ -52,8 +52,8 @@ for q in num_neurons:
     new_line = line
 
     ############ training ################
-    X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,neuron_inds = helpers.get_data(new_line,q,outer_fold,0)
-    X_trainN,X_testN,X_validN,X_flat_trainN,X_flat_testN,X_flat_validN,y_trainN,y_testN,y_validN,y_zscore_trainN,y_zscore_testN,y_zscore_validN,_ = helpers.get_data(new_line,q,outer_fold,1)
+    X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,neuron_inds = helpers.get_data(new_line,q,outer_fold,0,1)
+    X_trainN,X_testN,X_validN,X_flat_trainN,X_flat_testN,X_flat_validN,y_trainN,y_testN,y_validN,y_zscore_trainN,y_zscore_testN,y_zscore_validN,_ = helpers.get_data(new_line,q,outer_fold,1,1)
 
     ##################### Wiener Filter Decoder ############################
     if m == 0:

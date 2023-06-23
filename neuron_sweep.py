@@ -34,7 +34,10 @@ jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 mtfef_pairs0 = helpers.get_neuronCombos(int(sys.argv[1]))
 mtfef_pairs0.remove((0,0))
 
-rnd = 4
+mtfef_pairs = mtfef_pairs0
+'''
+rnd = 0
+>>>>>>> 8688211f81790142a115badc7ddff54d64b65df0
 if rnd==0:
     mtfef_pairs = mtfef_pairs0[0:50]
 elif rnd==1:
@@ -45,6 +48,7 @@ elif rnd==3:
     mtfef_pairs = mtfef_pairs0[150:200]
 elif rnd==4:
     mtfef_pairs = mtfef_pairs0[200:251]
+'''
 
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
@@ -437,6 +441,7 @@ for q in mtfef_pairs:
 #df = pd.DataFrame(results,columns=['sess','repeat','outer_fold','nMT','nFEF','model','mean_R2','mean_rho','mean_R2_null','mean_rho_null','time_elapsed','neurons'])
 
 pfile = helpers.make_directory('neuron_sweep/'+(jobname),0)
-with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}-rnd{}'.format(outer_fold,m,rnd)+'.pickle','wb') as p:
+#with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}-rnd{}'.format(outer_fold,m,rnd)+'.pickle','wb') as p:
+with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:
     pickle.dump(results,p)
  

@@ -151,7 +151,12 @@ def get_foldneuronPairs(i):
 
 def get_neuronCombos(i):
     s,t,d,m,o,nm,nf,bn,fo,fi,r = get_params(i)
-    pairs = list(product(range(0,nm,2), range(0,nf,2)))
+    if nm>0 & nf>0:
+        pairs = list(product(range(0,nm,2), range(0,nf,2)))
+    elif nm==0:
+        pairs = list(product([0],range(0,nf,2))) 
+    elif nf==0:
+        pairs = list(product(range(0,nm,2), [0])) 
     return pairs
 
 def get_sessConditions(s):

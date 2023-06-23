@@ -31,7 +31,14 @@ print(line)
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 
-num_neurons = np.arange(0,nm+nf)
+num_neurons0 = np.arange(0,nm+nf)
+n_split = np.array_split(num_neurons0, 5)
+
+rnd=0
+num_neurons = n_split[0]
+
+print(num_neurons)
+print(blah)
 
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
@@ -450,6 +457,6 @@ for q in num_neurons:
 #print(df)
 
 pfile = helpers.make_directory('neuron_dropping/'+(jobname[:-6]),0)
-with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:
+with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}-rnd{}'.format(outer_fold,m,rnd)+'.pickle','wb') as p:
     pickle.dump(results,p)
  

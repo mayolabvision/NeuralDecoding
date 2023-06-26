@@ -441,7 +441,7 @@ for q in mtfef_pairs:
 #df = pd.DataFrame(results,columns=['sess','repeat','outer_fold','nMT','nFEF','model','mean_R2','mean_rho','mean_R2_null','mean_rho_null','time_elapsed','neurons'])
 
 pfile = helpers.make_directory('neuron_sweep/'+(jobname),0)
-#with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}-rnd{}'.format(outer_fold,m,rnd)+'.pickle','wb') as p:
-with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:
+with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}-rnd{}'.format(outer_fold,m,rnd)+'.pickle','wb') as p:
+#with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:
     pickle.dump(results,p)
  

@@ -34,8 +34,9 @@ jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 num_neurons0 = np.arange(0,nm+nf)
 n_split = np.array_split(num_neurons0, 5)
 
-rnd=4
-num_neurons = n_split[0]
+rnd=0
+num_neurons = n_split[rnd]
+print(num_neurons)
 
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
@@ -46,7 +47,7 @@ else: # hpc cluster
 
 results = []
 for q in num_neurons:
-    print('{}/{}'.format(q,len(num_neurons)-1))
+    print('{}/{}'.format(q,len(num_neurons0)-1))
     t1=time.time()
     
     new_line = line

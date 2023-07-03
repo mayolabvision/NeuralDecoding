@@ -67,6 +67,14 @@ tt = [{exp_clean.dataMaestroPlx.trName}.' {exp_clean.dataMaestroPlx.trType}.' mo
 trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","Contrast","Speed","TargetMotionOnset","EyeTraces"]);
 trialTbl.TrialName = categorical(string(trialTbl.TrialName)); trialTbl.TrialType = categorical(string(trialTbl.TrialType));
 
+contConditions = cell(size(trialTbl,1),3);
+for i=1:length(trialTbl.Contrast)
+    contConditions{i,1} = repmat(trialTbl.Contrast(i),preint+postint,1);
+    contConditions{i,2} = repmat(trialTbl.Speed(i),preint+postint,1);
+    contConditions{i,3} = repmat(trialTbl.Direction(i),preint+postint,1);
+end
+
+contConditions = [vertcat(contConditions{:,1}) vertcat(contConditions{:,2}) vertcat(contConditions{:,3})];
 
 % Directions in this session (4, corrected by rotation factor)
 dirsdeg  =  sort(unique(trialTbl.Direction)); % direction for each trial 
@@ -90,6 +98,7 @@ unitsTbl.SpikeTimes = [];
 units  =   {exp_clean.dataMaestroPlx.units}.'; 
 for t = 1:size(trialTbl,1) % for each trial
     shift       =  trialTbl.TargetMotionOnset(t);    % time stimulus starts to move
+
     for u = 1:length(unitnames) % for each unit
         thisunit  =  unitnames{u}; % unit name
 
@@ -115,7 +124,7 @@ acc = cellfun(@(q) q{3}, eyes_new, 'uni', 0); acc = vertcat(acc{:});
 vels_times     =  (1:size(trialTbl,1)*(preint+postint))';
 
 %%%%%%%%%%%%%%% Save to a file %%%%%%%%%%%%%%%%%%
-save(sprintf('%s/vars/vars-%s-pre%03d-post%03d.mat',folder,session,preint,postint-800),'spike_times','pos','vels','acc','vels_times','-v7');
+save(sprintf('%s/vars/vars-%s-pre%03d-post%03d.mat',folder,session,preint,postint-800),'spike_times','pos','vels','acc','vels_times','contConditions','-v7');
 writetable(unitsTbl,sprintf('%s/units/units-%s-pre%03d-post%03d.csv',folder,session,preint,postint-800))
 
 end

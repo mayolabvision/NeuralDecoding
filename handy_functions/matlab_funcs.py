@@ -26,12 +26,15 @@ def mat_to_pickle(filename,dt):
     dt = int(dt)
 
     # Load in variables from datafile
-    data         =  io.loadmat(filename)
+    data         =  io.loadmat(data_folder+'vars/'+filename)
 
     spike_times  =  data['spike_times'] # spike times of all neurons
     pos          =  data['pos'] # x and y eye positions
     vels         =  data['vels'] # x and y eye velocities
     acc          =  data['acc'] # x and y eye accelerations
+
+    conditions   =  data['contConditions']
+
     out_times    =  data['vels_times'] # times at which velocities were recorded
     out_times    =  np.squeeze(out_times)
 
@@ -45,12 +48,14 @@ def mat_to_pickle(filename,dt):
         spike_times[i]  =  np.squeeze(spike_times[i])
 
     neural_data  =  bin_spikes(spike_times,dt,t_start,t_end)
-    pos_binned  =  bin_output(pos,out_times,dt,t_start,t_end,downsample_factor)
-    vel_binned  =  bin_output(vels,out_times,dt,t_start,t_end,downsample_factor)
-    acc_binned  =  bin_output(acc,out_times,dt,t_start,t_end,downsample_factor)
+    pos_binned   =  bin_output(pos,out_times,dt,t_start,t_end,downsample_factor)
+    vel_binned   =  bin_output(vels,out_times,dt,t_start,t_end,downsample_factor)
+    acc_binned   =  bin_output(acc,out_times,dt,t_start,t_end,downsample_factor)
+    
+    cond_binned  =  bin_output(conditions,out_times,dt,t_start,t_end,downsample_factor)
 
-    with open(filename[:-4]+'-dt'+str(dt)+'.pickle','wb') as f:
-        pickle.dump([neural_data,pos_binned,vel_binned,acc_binned],f)
+    with open(data_folder+'vars/'+filename[:-4]+'-dt'+str(dt)+'.pickle','wb') as f:
+        pickle.dump([neural_data,pos_binned,vel_binned,acc_binned,cond_binned],f)
 
 def pickle_allFiles(dt):
     vars_list = glob.glob(data_folder+'vars/vars-*-post300.mat')

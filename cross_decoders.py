@@ -65,9 +65,15 @@ for repeat in range(num_repeats):
             from decoders import WienerFilterDecoder
             model=WienerFilterDecoder()
             model.fit(X_flat_train,y_train)
+
+            y_train_predicted=model.predict(X_flat_train)   
+            mean_r2_train = np.mean(get_R2(y_train,y_train_predicted))
+            mean_rho_train = np.mean(get_rho(y_train,y_train_predicted))
+            
             y_test_predicted=model.predict(X_flat_test)   
             mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
             mean_rho = np.mean(get_rho(y_test,y_test_predicted))
+
 
       #      modelN=WienerFilterDecoder()
       #      modelN.fit(X_flat_trainN,y_trainN)
@@ -75,7 +81,10 @@ for repeat in range(num_repeats):
       #      mean_r2N = np.mean(get_R2(y_testN,y_test_predictedN))
       #      mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
 
-            print("R2 = {}".format(mean_r2))
+            print("R2 train = {}".format(mean_r2_train))
+            print("R2 test = {}".format(mean_r2))
+
+
      #       print("R2 (null) = {}".format(mean_r2N))
 
         ##################### Wiener Cascade Decoder ###########################
@@ -422,15 +431,14 @@ for repeat in range(num_repeats):
             testC = 'mix'
 
         
-        result = [s,outer_fold,repeat,nm,nf,m,tt[0],trainC,testC,mean_r2,mean_rho,neuron_inds,time_elapsed]
+        result = [s,outer_fold,repeat,nm,nf,m,tt[0],trainC,testC,mean_r2_train,mean_rho_train,mean_r2,mean_rho,neuron_inds,time_elapsed]
         results.append(result)
-
 
     #######################################################################################################################################
 #    print("time elapsed = {} mins".format(time_elapsed/60))
 #    result = [s,repeat,outer_fold,nm,nf,m,mean_r2,mean_rho,mean_r2N,mean_rhoN]     
-df = pd.DataFrame(results,columns=['sess','outer_fold','repeat','nMT','nFEF','model','condition','train','test','mean_R2','mean_rho','neuron_inds','time_elapsed'])
-print(df)
+#df = pd.DataFrame(results,columns=['sess','outer_fold','repeat','nMT','nFEF','model','condition','train','test','mean_R2','mean_rho','neuron_inds','time_elapsed'])
+#print(df)
 
 
 pfile = helpers.make_directory('cross_conditions/'+(jobname),0)

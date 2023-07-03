@@ -429,9 +429,8 @@ for repeat in range(num_repeats):
     #######################################################################################################################################
 #    print("time elapsed = {} mins".format(time_elapsed/60))
 #    result = [s,repeat,outer_fold,nm,nf,m,mean_r2,mean_rho,mean_r2N,mean_rhoN]     
-df = pd.DataFrame(results,columns=['sess','outer_fold','repeat','nMT','nFEF','model','condition','train','test','mean_R2','mean_rho','neuron_inds','time_elapsed'])
-print(df)
-
+#df = pd.DataFrame(results,columns=['sess','outer_fold','repeat','nMT','nFEF','model','condition','train','test','mean_R2','mean_rho','neuron_inds','time_elapsed'])
+#print(df)
 
 pfile = helpers.make_directory('cross_conditions/'+(jobname),0)
 with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:

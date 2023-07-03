@@ -340,6 +340,9 @@ def get_data_Xconditions(line,repeat,outer_fold,shuffle,condition,trCo,teCo):
         yte = yte[shuf_ind,:,:]
         yte = np.reshape(yte, (yte.shape[0]*yte.shape[1], yte.shape[2]))
 
+    #print(np.mean(Xtr, axis=None))
+    #print(np.mean(Xte, axis=None))
+
     Xtr = get_spikes_with_history(Xtr,bins_before,bins_after,bins_current)
     Xtr = Xtr[range(bins_before,Xtr.shape[0]-bins_after),:,:]
     Xte = get_spikes_with_history(Xte,bins_before,bins_after,bins_current)

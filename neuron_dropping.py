@@ -34,7 +34,7 @@ jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 num_neurons0 = np.arange(0,nm+nf)
 n_split = np.array_split(num_neurons0, 5)
 
-rnd=0
+rnd=2
 num_neurons = n_split[rnd]
 print(num_neurons)
 

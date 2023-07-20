@@ -24,6 +24,7 @@ conda activate decoding
 #python neuron_sweep.py $1 1
 #python neuron_dropping.py $1 1
 #python neuron_single.py $1 1
-python cross_decoders.py $1 1
+#python cross_decoders.py $1 1
+python figure2.py $1 1
 
 echo "DONE"

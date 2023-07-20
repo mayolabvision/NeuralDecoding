@@ -1,0 +1,43 @@
+################# Parameter sweeps ######################
+* Number of bins before/current/after this bin 
+* Bin sizes (10ms - 100ms) 
+* Window size around pursuit onset/offset 
+X Number of neurons
+* Size of training/test set
+
+################ Possible "things" to decode out ###################
+* Continuous decoding outputs
+  - HE/VE/RA position
+  - HE/VE/RA velocity
+  - HE/VE/RA acceleration
+  - Pursuit gain
+  - Retinal position error (eye - targ)
+  - Retinal velocity error (eye - targ)
+
+* Classification outputs
+  - Stimulus contrast
+  - Target speed
+  - Direction (pref v. anti-pref)
+  - Saccades v. no saccades
+
+############# Possible decoders to train/test #####################
+* Cross decoders (same neurons, different trial conditions) 
+  - Stimulus contrast
+  - Target speed
+  - Direction
+  - Reaction time
+  - Saccades v. no saccades
+  - Main pursuit task v. map pursuit task v. map saccade task
+
+* Mismatch decoders (same neurons, mismatched trials w/ aligned time bins)
+  - Same condition v. different condition
+  - Same session v. different session
+  - Same task context v. different task context (main, map)
+
+####################################################################################
+
+Non-decoder analysis ideas:
+* Temporal decoder
+* Akash's metrics (rsc mean, rsc std, loading similarity, dimensionality, percent variance explained
+
+

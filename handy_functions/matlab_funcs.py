@@ -64,5 +64,5 @@ def pickle_allFiles(dt):
         if os.path.isfile(vars_list[i][:-4]+'-dt'+str(dt)+'.pickle'):
             print('bitch it already exists')
         else:
-            mat_to_pickle(vars_list[i],dt)
+            mat_to_pickle(vars_list[i][64:],dt)
 

@@ -1,4 +1,4 @@
-function data_formatting(session,folder,preint,postint)
+function [spike_times,pos,contConditions] = data_formatting(session,folder,preint,postint)
 addpath(genpath('/Users/kendranoneman/Projects/mayo/HelperFxns'))
 % Purpose: takes in raw struct with recording data and converts it into a
 % usable form for the Neural Decoding project
@@ -65,16 +65,19 @@ motionSpeeds = cellfun(@(q) str2double(q(strfind(q,'s')+2:strfind(q,'s')+3)), {e
 %cellfun(@(q) str2double(q(9:11)), trls(:,2), 'uni', 0)  cellfun(@(q) str2double(q(15:16)), trls(:,2), 'uni', 0)
 tt = [{exp_clean.dataMaestroPlx.trName}.' {exp_clean.dataMaestroPlx.trType}.' motionDirs stimContrasts motionSpeeds stimOnsets eyes_new];
 trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","Contrast","Speed","TargetMotionOnset","EyeTraces"]);
+trialTbl.TrialNum = cellfun(@(q) str2double(q(end-3:end)), trialTbl.TrialName, 'uni', 1);
+trialTbl = movevars(trialTbl,'TrialNum','After','TrialName');
 trialTbl.TrialName = categorical(string(trialTbl.TrialName)); trialTbl.TrialType = categorical(string(trialTbl.TrialType));
 
 contConditions = cell(size(trialTbl,1),3);
 for i=1:length(trialTbl.Contrast)
-    contConditions{i,1} = repmat(trialTbl.Contrast(i),preint+postint,1);
-    contConditions{i,2} = repmat(trialTbl.Speed(i),preint+postint,1);
-    contConditions{i,3} = repmat(trialTbl.Direction(i),preint+postint,1);
+    contConditions{i,1} = repmat(trialTbl.TrialNum(i),preint+postint,1);
+    contConditions{i,2} = repmat(trialTbl.Contrast(i),preint+postint,1);
+    contConditions{i,3} = repmat(trialTbl.Speed(i),preint+postint,1);
+    contConditions{i,4} = repmat(trialTbl.Direction(i),preint+postint,1);
 end
 
-contConditions = [vertcat(contConditions{:,1}) vertcat(contConditions{:,2}) vertcat(contConditions{:,3})];
+contConditions = [vertcat(contConditions{:,1}) vertcat(contConditions{:,2}) vertcat(contConditions{:,3}) vertcat(contConditions{:,4})];
 
 % Directions in this session (4, corrected by rotation factor)
 dirsdeg  =  sort(unique(trialTbl.Direction)); % direction for each trial 

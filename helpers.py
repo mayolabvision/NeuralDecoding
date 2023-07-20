@@ -56,7 +56,7 @@ def get_session(j,t,d):
     return session+'-pre'+str(times[t][0])+'-post'+str(times[t][1])+'-dt'+str(d),session+'-pre'+str(times[t][0])+'-post'+str(times[t][1])
 
 def get_bins(bn):
-    bins = [[6,1,6],[6,1,0],[0,1,6],[1,1,0],[2,1,0],[3,1,0],[1,0,0],[2,0,0],[3,0,0]]
+    bins = [[6,1,6],[13,1,0]]#,[6,1,0],[0,1,6],[1,1,0],[2,1,0],[3,1,0],[1,0,0],[2,0,0],[3,0,0]]
     return bins[bn][0],bins[bn][1],bins[bn][2]
 
 def get_foldneuronPairs(i):
@@ -141,7 +141,7 @@ def get_data(line,repeat,outer_fold,shuffle,dropOnly):
     sess,sess_nodt = get_session(s,t,d)
     [bins_before,bins_current,bins_after] = get_bins(bn)
     with open(cwd+'/datasets/vars/vars-'+sess+'.pickle','rb') as f:
-        neural_data,pos_binned,vel_binned,acc_binned,_=pickle.load(f,encoding='latin1')
+        neural_data,pos_binned,vel_binned,acc_binned,cond_binned=pickle.load(f,encoding='latin1')
     
     neural_data2 = neural_data[:,these_neurons]
     if dropOnly==1:
@@ -158,8 +158,9 @@ def get_data(line,repeat,outer_fold,shuffle,dropOnly):
         y=vel_binned
     elif o==2:
         y=acc_binned
+    cond = cond_binned[range(bins_before,y.shape[0]-bins_after),:]
     y = y[range(bins_before,y.shape[0]-bins_after),:]
-
+    
     if shuffle==1:
         y2 = y.T
         idx = np.random.rand(*y2.shape).argsort(axis=1)
@@ -196,10 +197,11 @@ def get_data(line,repeat,outer_fold,shuffle,dropOnly):
     X_valid=X[valid_set,:,:]
     X_flat_valid=X_flat[valid_set,:]
     y_valid=y[valid_set,:]
+    c_test=cond[testing_set,:]
 
     X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid)
 
-    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,these_neurons 
+    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test,these_neurons 
 
 def get_data_Xconditions(line,repeat,outer_fold,shuffle,condition,trCo,teCo):
     s = int(line[1])

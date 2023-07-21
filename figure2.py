@@ -48,7 +48,7 @@ X_trainN,X_testN,X_validN,X_flat_trainN,X_flat_testN,X_flat_validN,y_trainN,y_te
 
 #models = [0,1,2,3,4]
 #models = [5,6,7]
-models = [0,1]
+models = [7]
 init_points = 10
 n_iter = 10
 

@@ -15,7 +15,7 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
-params = 'params.txt'
+params = 'params/params_fig2a.txt'
 
 from metrics import get_R2
 from metrics import get_rho

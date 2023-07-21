@@ -47,8 +47,7 @@ X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_va
 X_trainN,X_testN,X_validN,X_flat_trainN,X_flat_testN,X_flat_validN,y_trainN,y_testN,y_validN,y_zscore_trainN,y_zscore_testN,y_zscore_validN,_,_ = helpers.get_data(line,repeat,outer_fold,1,0)
 
 #models = [0,1,2,3,4]
-#models = [5,6,7]
-models = [7]
+models = [m]
 init_points = 10
 n_iter = 10
 
@@ -137,10 +136,10 @@ for m in models:
         model=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta) 
         model.fit(X_flat_train,y_train) 
         y_test_predicted=model.predict(X_flat_test) 
-        mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
-        mean_rho = np.mean(get_rho(y_test,y_test_predicted))
+        r2 = get_R2(y_test,y_test_predicted)
+        rho = get_rho(y_test,y_test_predicted)
         
-        print("R2 = {}".format(mean_r2))
+        print("R2 = {}".format(r2))
 
         # null hypothesis
         def xgb_evaluateN(max_depth,num_round,eta):
@@ -161,10 +160,10 @@ for m in models:
         modelN=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta) 
         modelN.fit(X_flat_trainN,y_trainN)
         y_test_predictedN=model.predict(X_flat_testN)   
-        mean_r2N = np.mean(get_R2(y_testN,y_test_predictedN))
-        mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
+        r2N = get_R2(y_testN,y_test_predictedN)
+        rhoN = get_rho(y_testN,y_test_predictedN)
 
-        print("R2 (null) = {}".format(mean_r2N))
+        print("R2 (null) = {}".format(r2N))
 
     ######################### SVR Decoder #########################
     if m == 3:
@@ -183,10 +182,10 @@ for m in models:
         model=SVRDecoder(C=C, max_iter=max_iter)
         model.fit(X_flat_train,y_zscore_train) 
         y_test_predicted=model.predict(X_flat_test) 
-        mean_r2 = np.mean(get_R2(y_zscore_test,y_test_predicted))
-        mean_rho = np.mean(get_rho(y_zscore_test,y_test_predicted))
+        r2 = get_R2(y_zscore_test,y_test_predicted)
+        rho = get_rho(y_zscore_test,y_test_predicted)
         
-        print("R2 = {}".format(mean_r2))
+        print("R2 = {}".format(r2))
 
         # null hypothesis
         def svr_evaluateN(C):
@@ -202,10 +201,10 @@ for m in models:
         modelN=SVRDecoder(C=C, max_iter=max_iter)
         modelN.fit(X_flat_trainN,y_zscore_trainN) 
         y_test_predictedN=modelN.predict(X_flat_testN) 
-        mean_r2N = np.mean(get_R2(y_zscore_testN,y_test_predictedN))
-        mean_rhoN = np.mean(get_rho(y_zscore_testN,y_test_predictedN))
+        r2N = get_R2(y_zscore_testN,y_test_predictedN)
+        rhoN = get_rho(y_zscore_testN,y_test_predictedN)
         
-        print("R2 (null) = {}".format(mean_r2N))
+        print("R2 (null) = {}".format(r2N))
 
     ####################### DNN #######################
     if m == 4:
@@ -228,8 +227,8 @@ for m in models:
         model=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
         model.fit(X_flat_train,y_train) 
         y_test_predicted=model.predict(X_flat_test) 
-        mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
-        mean_rho = np.mean(get_rho(y_test,y_test_predicted))
+        r2 = get_R2(y_test,y_test_predicted)
+        rho = get_rho(y_test,y_test_predicted)
 
         print("R2 = {}".format(mean_r2))
 
@@ -252,10 +251,10 @@ for m in models:
         modelN=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
         modelN.fit(X_flat_trainN,y_trainN) 
         y_test_predictedN=modelN.predict(X_flat_testN) 
-        mean_r2N = np.mean(get_R2(y_testN,y_test_predictedN))
-        mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
+        r2N = get_R2(y_testN,y_test_predictedN)
+        rhoN = get_rho(y_testN,y_test_predictedN)
 
-        print("R2 (null) = {}".format(mean_r2N))
+        print("R2 (null) = {}".format(r2N))
 
     ########################## RNN ##############################3
     if m == 5:
@@ -278,10 +277,10 @@ for m in models:
         model=SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
         model.fit(X_train,y_train)
         y_test_predicted=model.predict(X_test)
-        mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
-        mean_rho = np.mean(get_rho(y_test,y_test_predicted))
+        r2 = get_R2(y_test,y_test_predicted)
+        rho = get_rho(y_test,y_test_predicted)
         
-        print("R2 = {}".format(mean_r2))
+        print("R2 = {}".format(r2))
 
         # null hypothesis
         def rnn_evaluateN(num_units,frac_dropout,n_epochs):
@@ -302,10 +301,10 @@ for m in models:
         modelN=SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
         modelN.fit(X_trainN,y_trainN)
         y_test_predictedN=modelN.predict(X_testN)
-        mean_r2N = np.mean(get_R2(y_testN,y_test_predictedN))
-        mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
+        r2N = get_R2(y_testN,y_test_predictedN)
+        rhoN = get_rho(y_testN,y_test_predictedN)
 
-        print("R2 (null) = {}".format(mean_r2N))
+        print("R2 (null) = {}".format(r2N))
 
 
     ######################### GRU Decoder ################################
@@ -329,8 +328,8 @@ for m in models:
         model=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
         model.fit(X_train,y_train)
         y_test_predicted=model.predict(X_test)
-        mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
-        mean_rho = np.mean(get_rho(y_test,y_test_predicted))
+        r2 = get_R2(y_test,y_test_predicted)
+        rho = get_rho(y_test,y_test_predicted)
         
         print("R2 = {}".format(mean_r2))
         def gru_evaluateN(num_units,frac_dropout,n_epochs):
@@ -351,10 +350,10 @@ for m in models:
         modelN=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
         modelN.fit(X_trainN,y_trainN)
         y_test_predictedN=modelN.predict(X_testN)
-        mean_r2N = np.mean(get_R2(y_testN,y_test_predictedN))
-        mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
+        r2N = get_R2(y_testN,y_test_predictedN)
+        rhoN = get_rho(y_testN,y_test_predictedN)
 
-        print("R2 (null) = {}".format(mean_r2N))
+        print("R2 (null) = {}".format(r2N))
     ######################### LSTM Decoder ############################
     if m == 7:
         from decoders import LSTMDecoder
@@ -376,10 +375,10 @@ for m in models:
         model=LSTMDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
         model.fit(X_train,y_train)
         y_test_predicted=model.predict(X_test)
-        mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
-        mean_rho = np.mean(get_rho(y_test,y_test_predicted))
+        r2 = get_R2(y_test,y_test_predicted)
+        rho = get_rho(y_test,y_test_predicted)
         
-        print("R2 = {}".format(mean_r2))
+        print("R2 = {}".format(r2))
 
         def lstm_evaluateN(num_units,frac_dropout,n_epochs):
             num_units=int(num_units)
@@ -399,10 +398,10 @@ for m in models:
         modelN=LSTMDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
         modelN.fit(X_trainN,y_trainN)
         y_test_predictedN=modelN.predict(X_testN)
-        mean_r2N = np.mean(get_R2(y_testN,y_test_predictedN))
-        mean_rhoN = np.mean(get_rho(y_testN,y_test_predictedN))
+        r2N = get_R2(y_testN,y_test_predictedN)
+        rhoN = get_rho(y_testN,y_test_predictedN)
 
-        print("R2 (null) = {}".format(mean_r2N))
+        print("R2 (null) = {}".format(r2N))
 
     #######################################################################################################################################
     time_elapsed = time.time()-t1
@@ -410,7 +409,7 @@ for m in models:
     result = [s,repeat,outer_fold,nm,nf,m,r2,rho,r2N,rhoN,time_elapsed]     
 
     pfile = helpers.make_directory('Figure2/'+(jobname[:-6]),0)
-    with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}'.format(outer_fold,m)+'.pickle','wb') as p:
+    with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
         pickle.dump([result,c_test],p)
      
     #with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}-eyetrace'.format(outer_fold,m)+'.pickle','wb') as p:

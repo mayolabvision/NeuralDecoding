@@ -56,7 +56,7 @@ def get_session(j,t,d):
     return session+'-pre'+str(times[t][0])+'-post'+str(times[t][1])+'-dt'+str(d),session+'-pre'+str(times[t][0])+'-post'+str(times[t][1])
 
 def get_bins(bn):
-    bins = [[6,1,6],[13,1,0]]#,[6,1,0],[0,1,6],[1,1,0],[2,1,0],[3,1,0],[1,0,0],[2,0,0],[3,0,0]]
+    bins = [[6,1,6],[8,1,0]]#,[6,1,0],[0,1,6],[1,1,0],[2,1,0],[3,1,0],[1,0,0],[2,0,0],[3,0,0]]
     return bins[bn][0],bins[bn][1],bins[bn][2]
 
 def get_foldneuronPairs(i):

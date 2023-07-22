@@ -6,18 +6,29 @@ import pickle
 from scipy.stats import circstd
 
 def get_outputs(data_folder,conditions,column_names):
-    results_all,times_all = [],[]
+    results_all,conds_all = [],[]
     direcs = sorted(os.listdir(data_folder))
     current_direcs = [d for d in direcs if all(c in d for c in conditions)]
     for direc in current_direcs:
         for file in sorted(os.listdir(data_folder+'/'+direc)):
             if file.endswith('.pickle'):
                 with open(data_folder+'/'+direc+'/'+file, 'rb') as f:
-                    results,times = pickle.load(f) 
-                    times_all.append(times)
+                    results,conds = pickle.load(f) 
+                    conds_all.append(conds)
                     results_all.append(results)
                         
     df = pd.DataFrame(results_all,columns=column_names)
+    df['R2_x']   = df['R2'].apply(lambda x: x[0])
+    df['R2_y']   = df['R2'].apply(lambda x: x[1])
+    df['rho_x']  = df['rho'].apply(lambda x: x[0])
+    df['rho_y']  = df['rho'].apply(lambda x: x[1])
+    df['R2N_x']  = df['R2_null'].apply(lambda x: x[0])
+    df['R2N_y']  = df['R2_null'].apply(lambda x: x[1])
+    df['rhoN_x'] = df['rho_null'].apply(lambda x: x[0])
+    df['rhoN_y'] = df['rho_null'].apply(lambda x: x[1])
+    
+    df = df.drop(columns=['R2','rho','R2_null','rho_null'])
+
     #df2 = df1.loc[(df1['mean_R2'] < 1) & (df1['mean_R2'] > -1)]
     #df = pd.concat([df,df1],ignore_index=False)
     

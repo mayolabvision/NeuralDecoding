@@ -230,7 +230,7 @@ for m in models:
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
 
-        print("R2 = {}".format(mean_r2))
+        print("R2 = {}".format(r2))
 
         # null hypothesis
         def dnn_evaluateN(num_units,frac_dropout,n_epochs):
@@ -331,7 +331,8 @@ for m in models:
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
         
-        print("R2 = {}".format(mean_r2))
+        print("R2 = {}".format(r2))
+        
         def gru_evaluateN(num_units,frac_dropout,n_epochs):
             num_units=int(num_units)
             frac_dropout=float(frac_dropout)

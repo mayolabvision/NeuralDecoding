@@ -32,6 +32,9 @@ s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))
 
+print(len(foldneuron_pairs))
+print(blah)
+
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
     neuron_fold = foldneuron_pairs[int(sys.argv[3])]
@@ -411,7 +414,7 @@ for m in models:
 
     pfile = helpers.make_directory('Figure2/'+(jobname[:-6]),0)
     with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
-        pickle.dump([result,c_test],p)
+        pickle.dump([result,c_test,y_test,y_test_predicted],p)
      
     #with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}-eyetrace'.format(outer_fold,m)+'.pickle','wb') as p:
     #    pickle.dump([y_test,y_test_predicted],p)

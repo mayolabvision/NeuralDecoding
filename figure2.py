@@ -414,7 +414,7 @@ for m in models:
 
     pfile = helpers.make_directory('Figure2/'+(jobname[:-6]),0)
     with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
-        pickle.dump([result,c_test,y_test,y_test_predicted],p)
+        pickle.dump([result,c_test,y_test,y_test_predicted,y_testN,y_test_predictedN],p)
      
     #with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}-eyetrace'.format(outer_fold,m)+'.pickle','wb') as p:
     #    pickle.dump([y_test,y_test_predicted],p)

@@ -32,9 +32,6 @@ s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))
 
-print(len(foldneuron_pairs))
-print(blah)
-
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
     neuron_fold = foldneuron_pairs[int(sys.argv[3])]

@@ -114,7 +114,7 @@ def normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_v
 
     return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid
 
-def get_data(line,repeat,outer_fold,shuffle,dropOnly):
+def get_data(line,repeat,outer_fold,dropOnly):
     s = int(line[1])
     t = int(line[2])
     d = int(line[3])
@@ -146,7 +146,7 @@ def get_data(line,repeat,outer_fold,shuffle,dropOnly):
     neural_data2 = neural_data[:,these_neurons]
     if dropOnly==1:
         neural_data2 = np.expand_dims(neural_data2, axis=1)
-    
+   
     X = get_spikes_with_history(neural_data2,bins_before,bins_after,bins_current)
     X = X[range(bins_before,X.shape[0]-bins_after),:,:]
     num_examples=X.shape[0]
@@ -161,12 +161,6 @@ def get_data(line,repeat,outer_fold,shuffle,dropOnly):
     cond = cond_binned[range(bins_before,y.shape[0]-bins_after),:]
     y = y[range(bins_before,y.shape[0]-bins_after),:]
     
-    if shuffle==1:
-        y2 = y.T
-        idx = np.random.rand(*y2.shape).argsort(axis=1)
-        y2 = np.take_along_axis(y2,idx,axis=1)
-        y = y2.T
-
     valid_range_all=[[0,.1],[.1,.2],[.2,.3],[.3,.4],[.4,.5],
                  [.5,.6],[.6,.7],[.7,.8],[.8,.9],[.9,1]]
     testing_range_all=[[.1,.2],[.2,.3],[.3,.4],[.4,.5],[.5,.6],
@@ -392,99 +386,6 @@ def get_data_Xconditions(line,repeat,outer_fold,shuffle,condition,trCo,teCo):
     X_valid=Xtr[valid_set,:,:]
     X_flat_valid=X_flat_tr[valid_set,:]
     y_valid=ytr[valid_set,:]
-
-    X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid)
-
-    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,these_neurons 
-
-def get_data_Xbrainarea(line,repeat,outer_fold,shuffle,trBA,teBA):
-    s = int(line[1])
-    t = int(line[2])
-    d = int(line[3])
-    m = int(line[4])
-    o = int(line[5])
-    nm = int(line[6])
-    nf = int(line[7])
-    bn = int(line[8])
-    fo = int(line[9])
-    fi = int(line[10]) 
-    r = int(line[11])
-
-    neurons_perRepeat = neuronsSample.get_neuronRepeats(line)
-    these_neurons = neurons_perRepeat[repeat]
-
-    sess,sess_nodt = get_session(s,t,d)
-    [bins_before,bins_current,bins_after] = get_bins(bn)
-    with open(cwd+'/datasets/vars/vars-'+sess+'.pickle','rb') as f:
-        neural_data,pos_binned,vel_binned,acc_binned,cond_binned=pickle.load(f,encoding='latin1')
-
-    units = pd.read_csv(cwd+'/datasets/units/units-'+sess_nodt+'.csv')
-   
-    neural_data_train = neural_data[:,np.intersect1d(neurons_perRepeat[repeat],units.index[units['BrainArea']==trBA].values)]
-    neural_data_test = neural_data[:,np.intersect1d(neurons_perRepeat[repeat],units.index[units['BrainArea']==teBA].values)]
-
-    X_train0 = get_spikes_with_history(neural_data_train,bins_before,bins_after,bins_current)
-    X_train0 = X_train0[range(bins_before,X_train0.shape[0]-bins_after),:,:]
-    X_test0 = get_spikes_with_history(neural_data_test,bins_before,bins_after,bins_current)
-    X_test0 = X_test0[range(bins_before,X_test0.shape[0]-bins_after),:,:]
-
-    cond_binned = cond_binned[range(bins_before,cond_binned.shape[0]-bins_after),:]
-    #rows = cond_binned[:,0]==100
-    #rows = cond_binned[:,1]==20
-    #rows = cond_binned[:,2]==325
-
-    #X = X[rows,:]
-
-    num_examples=X_train0.shape[0]
-    X_flat_train0=X_train0.reshape(X_train0.shape[0],(X_train0.shape[1]*X_train0.shape[2]))
-    X_flat_test0=X_test0.reshape(X_test0.shape[0],(X_test0.shape[1]*X_test0.shape[2]))
-
-    if o==0:
-        y=pos_binned
-    elif o==1:
-        y=vel_binned
-    elif o==2:
-        y=acc_binned
-
-    y = y[range(bins_before,y.shape[0]-bins_after),:]
-    #y=y[rows,:]
-
-    if shuffle==1:
-        y2 = y.T
-        idx = np.random.rand(*y2.shape).argsort(axis=1)
-        y2 = np.take_along_axis(y2,idx,axis=1)
-        y = y2.T
-
-    valid_range_all=[[0,.1],[.1,.2],[.2,.3],[.3,.4],[.4,.5],
-                 [.5,.6],[.6,.7],[.7,.8],[.8,.9],[.9,1]]
-    testing_range_all=[[.1,.2],[.2,.3],[.3,.4],[.4,.5],[.5,.6],
-                     [.6,.7],[.7,.8],[.8,.9],[.9,1],[0,.1]]
-    training_range_all=[[[.2,1]],[[0,.1],[.3,1]],[[0,.2],[.4,1]],[[0,.3],[.5,1]],[[0,.4],[.6,1]],
-                       [[0,.5],[.7,1]],[[0,.6],[.8,1]],[[0,.7],[.9,1]],[[0,.8]],[[.1,.9]]]
-
-    testing_range=testing_range_all[outer_fold]
-    testing_set=np.arange(int(np.round(testing_range[0]*num_examples))+bins_before,int(np.round(testing_range[1]*num_examples))-bins_after)
-    valid_range=valid_range_all[outer_fold]
-    valid_set=np.arange(int(np.round(valid_range[0]*num_examples))+bins_before,int(np.round(valid_range[1]*num_examples))-bins_after)
-
-    training_ranges=training_range_all[outer_fold]
-    for j in range(len(training_ranges)): 
-        training_range=training_ranges[j]
-        if j==0: #If it's the first portion of the training set, make it the training set
-            training_set=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples))-bins_after)
-        if j==1: #If it's the second portion of the training set, concatentate it to the first
-            training_set_temp=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples))-bins_after)
-            training_set=np.concatenate((training_set,training_set_temp),axis=0)
-
-    X_train=X_train0[training_set,:,:]
-    X_flat_train=X_flat_train0[training_set,:]
-    y_train=y[training_set,:]
-    X_test=X_test0[testing_set,:,:]
-    X_flat_test=X_flat_test0[testing_set,:]
-    y_test=y[testing_set,:]
-    X_valid=X_train0[valid_set,:,:]
-    X_flat_valid=X_flat_train0[valid_set,:]
-    y_valid=y[valid_set,:]
 
     X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid)
 

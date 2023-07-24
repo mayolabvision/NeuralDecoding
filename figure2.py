@@ -9,6 +9,7 @@ import os.path
 import os
 import random
 from sklearn.utils import shuffle
+from scipy.stats import ttest_1samp
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 warnings.filterwarnings('ignore', 'Solver terminated early.*')
@@ -43,376 +44,305 @@ outer_fold = neuron_fold[0]
 repeat = neuron_fold[1]
 
 ############ training ################
-X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test,these_neurons = helpers.get_data(line,repeat,outer_fold,0,0)
-X_trainN,X_testN,X_validN,X_flat_trainN,X_flat_testN,X_flat_validN,y_trainN,y_testN,y_validN,y_zscore_trainN,y_zscore_testN,y_zscore_validN,_,_ = helpers.get_data(line,repeat,outer_fold,1,0)
+X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test,these_neurons = helpers.get_data(line,repeat,outer_fold,0)
 
-#models = [0,1,2,3,4]
-models = [m]
 init_points = 10
 n_iter = 10
+num_permutations = 1000
 
 t1=time.time()
-for m in models:
-    print(m)
+##################### Wiener Filter Decoder ############################
+if m == 0:
+    from decoders import WienerFilterDecoder
+    model=WienerFilterDecoder()
+    model.fit(X_flat_train,y_train)
+    y_test_predicted=model.predict(X_flat_test)   
+    r2 = get_R2(y_test,y_test_predicted)
+    rho = get_rho(y_test,y_test_predicted)
+
+    r2_permuted,rho_permuted = [],[]
+    for _ in range(num_permutations):
+        idx = np.random.permutation(y_test.shape[0])
+        X_test_shuffled = X_flat_test[idx]
+        
+        y_test_predicted_shuffled = model.predict(X_test_shuffled)
+        r2_permuted.append(get_R2(y_test,y_test_predicted_shuffled))
+        rho_permuted.append(get_rho(y_test,y_test_predicted_shuffled))
+    r2N = np.array(r2_permuted)
+    rhoN = np.array(rho_permuted)
+    #_, p_value = ttest_1samp(r2_permuted, r2)
+
+    print("R2 = {}".format(r2))
+
+##################### Wiener Cascade Decoder ###########################
+if m == 1:
+    from decoders import WienerCascadeDecoder
+    def wc_evaluate(degree):
+        model_wc=WienerCascadeDecoder(degree) 
+        model_wc.fit(X_flat_train,y_train) 
+        y_valid_predicted_wc=model_wc.predict(X_flat_valid) 
+        return np.mean(get_R2(y_valid,y_valid_predicted_wc))
+    BO = BayesianOptimization(wc_evaluate, {'degree': (1, 5.01)}, verbose=0, allow_duplicate_points=True)    
+    BO.maximize(init_points=10, n_iter=10) 
+    params = max(BO.res, key=lambda x:x['target'])
+    degree = params['params']['degree']
     
-    ##################### Wiener Filter Decoder ############################
-    if m == 0:
-        from decoders import WienerFilterDecoder
-        model=WienerFilterDecoder()
-        model.fit(X_flat_train,y_train)
-        y_test_predicted=model.predict(X_flat_test)   
-        r2 = get_R2(y_test,y_test_predicted)
-        rho = get_rho(y_test,y_test_predicted)
-        #mean_r2 = np.mean(get_R2(y_test,y_test_predicted))
-        #mean_rho = np.mean(get_rho(y_test,y_test_predicted))
-
-        modelN=WienerFilterDecoder()
-        modelN.fit(X_flat_trainN,y_trainN)
-        y_test_predictedN=model.predict(X_flat_testN)   
-        r2N = get_R2(y_testN,y_test_predictedN)
-        rhoN = get_rho(y_testN,y_test_predictedN)
-
-        print("R2 = {}".format(r2))
-        print("R2 (null) = {}".format(r2N))
-
-    ##################### Wiener Cascade Decoder ###########################
-    if m == 1:
-        from decoders import WienerCascadeDecoder
-        def wc_evaluate(degree):
-            model_wc=WienerCascadeDecoder(degree) 
-            model_wc.fit(X_flat_train,y_train) 
-            y_valid_predicted_wc=model_wc.predict(X_flat_valid) 
-            return np.mean(get_R2(y_valid,y_valid_predicted_wc))
-        BO = BayesianOptimization(wc_evaluate, {'degree': (1, 5.01)}, verbose=0, allow_duplicate_points=True)    
-        BO.maximize(init_points=10, n_iter=10) 
-        params = max(BO.res, key=lambda x:x['target'])
-        degree = params['params']['degree']
-        
-        model=WienerCascadeDecoder(degree) #Declare model
-        model.fit(X_flat_train,y_train) #Fit model on training data
-        y_test_predicted=model.predict(X_flat_test)   
-        r2 = get_R2(y_test,y_test_predicted)
-        rho = get_rho(y_test,y_test_predicted)
-        
-        print("R2 = {}".format(r2))
-
-        # null hypothesis
-        def wc_evaluateN(degree):
-            model_wc=WienerCascadeDecoder(degree) 
-            model_wc.fit(X_flat_trainN,y_trainN) 
-            y_valid_predicted_wc=model_wc.predict(X_flat_validN) 
-            return np.mean(get_R2(y_validN,y_valid_predicted_wc))
-        BO = BayesianOptimization(wc_evaluateN, {'degree': (1, 5.01)}, verbose=0, allow_duplicate_points=True)    
-        BO.maximize(init_points=10, n_iter=10) 
-        params = max(BO.res, key=lambda x:x['target'])
-        degree = params['params']['degree']
-        
-        modelN=WienerCascadeDecoder(degree) #Declare model
-        modelN.fit(X_flat_trainN,y_trainN)
-        y_test_predictedN=model.predict(X_flat_testN)   
-        r2N = get_R2(y_testN,y_test_predictedN)
-        rhoN = get_rho(y_testN,y_test_predictedN)
-
-        print("R2 (null) = {}".format(r2N))
+    model=WienerCascadeDecoder(degree) #Declare model
+    model.fit(X_flat_train,y_train) #Fit model on training data
+    y_test_predicted=model.predict(X_flat_test)   
+    r2 = get_R2(y_test,y_test_predicted)
+    rho = get_rho(y_test,y_test_predicted)
     
-    ##################### XGBoost Decoder #########################
-    if m == 2:
-        from decoders import XGBoostDecoder
-        def xgb_evaluate(max_depth,num_round,eta):
-            max_depth=int(max_depth) 
-            num_round=int(num_round) 
-            eta=float(eta) 
-            model_xgb=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta) 
-            model_xgb.fit(X_flat_train,y_train) 
-            y_valid_predicted_xgb=model_xgb.predict(X_flat_valid) 
-            return np.mean(get_R2(y_valid,y_valid_predicted_xgb)) 
-        BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=0, allow_duplicate_points=True) 
-        BO.maximize(init_points=5, n_iter=5) 
-        params = max(BO.res, key=lambda x:x['target'])
-        num_round = int(params['params']['num_round'])
-        max_depth = int(params['params']['max_depth'])
-        eta = params['params']['eta']
-        
-        model=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta) 
-        model.fit(X_flat_train,y_train) 
-        y_test_predicted=model.predict(X_flat_test) 
-        r2 = get_R2(y_test,y_test_predicted)
-        rho = get_rho(y_test,y_test_predicted)
-        
-        print("R2 = {}".format(r2))
-
-        # null hypothesis
-        def xgb_evaluateN(max_depth,num_round,eta):
-            max_depth=int(max_depth) 
-            num_round=int(num_round) 
-            eta=float(eta) 
-            model_xgb=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta) 
-            model_xgb.fit(X_flat_trainN,y_trainN) 
-            y_valid_predicted_xgb=model_xgb.predict(X_flat_validN) 
-            return np.mean(get_R2(y_validN,y_valid_predicted_xgb)) 
-        BO = BayesianOptimization(xgb_evaluateN, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=0, allow_duplicate_points=True) 
-        BO.maximize(init_points=5, n_iter=5)  
-        params = max(BO.res, key=lambda x:x['target'])
-        num_round = int(params['params']['num_round'])
-        max_depth = int(params['params']['max_depth'])
-        eta = params['params']['eta']
-        
-        modelN=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta) 
-        modelN.fit(X_flat_trainN,y_trainN)
-        y_test_predictedN=model.predict(X_flat_testN)   
-        r2N = get_R2(y_testN,y_test_predictedN)
-        rhoN = get_rho(y_testN,y_test_predictedN)
-
-        print("R2 (null) = {}".format(r2N))
-
-    ######################### SVR Decoder #########################
-    if m == 3:
-        from decoders import SVRDecoder
-        max_iter=4000
-        def svr_evaluate(C):
-            model_svr=SVRDecoder(C=C, max_iter=max_iter)
-            model_svr.fit(X_flat_train,y_zscore_train) 
-            y_valid_predicted_svr=model_svr.predict(X_flat_valid)
-            return np.mean(get_R2(y_zscore_valid,y_valid_predicted_svr))
-        BO = BayesianOptimization(svr_evaluate, {'C': (.5, 10)}, verbose=1, allow_duplicate_points=True)    
-        BO.maximize(init_points=5, n_iter=5)
-        params = max(BO.res, key=lambda x:x['target'])
-        C = params['params']['C']
+    print("R2 = {}".format(r2))
     
-        model=SVRDecoder(C=C, max_iter=max_iter)
-        model.fit(X_flat_train,y_zscore_train) 
-        y_test_predicted=model.predict(X_flat_test) 
-        r2 = get_R2(y_zscore_test,y_test_predicted)
-        rho = get_rho(y_zscore_test,y_test_predicted)
+    r2_permuted,rho_permuted = [],[]
+    for _ in range(num_permutations):
+        idx = np.random.permutation(y_test.shape[0])
+        X_test_shuffled = X_flat_test[idx]
         
-        print("R2 = {}".format(r2))
+        y_test_predicted_shuffled = model.predict(X_test_shuffled)
+        r2_permuted.append(get_R2(y_test,y_test_predicted_shuffled))
+        rho_permuted.append(get_rho(y_test,y_test_predicted_shuffled))
+    r2N = np.array(r2_permuted)
+    rhoN = np.array(rho_permuted)
 
-        # null hypothesis
-        def svr_evaluateN(C):
-            model_svr=SVRDecoder(C=C, max_iter=max_iter)
-            model_svr.fit(X_flat_trainN,y_zscore_trainN) 
-            y_valid_predicted_svr=model_svr.predict(X_flat_validN)
-            return np.mean(get_R2(y_zscore_validN,y_valid_predicted_svr))
-        BO = BayesianOptimization(svr_evaluateN, {'C': (.5, 10)}, verbose=1, allow_duplicate_points=True)    
-        BO.maximize(init_points=5, n_iter=5)
-        params = max(BO.res, key=lambda x:x['target'])
-        C = params['params']['C']
+##################### XGBoost Decoder #########################
+if m == 2:
+    from decoders import XGBoostDecoder
+    def xgb_evaluate(max_depth,num_round,eta):
+        max_depth=int(max_depth) 
+        num_round=int(num_round) 
+        eta=float(eta) 
+        model_xgb=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta) 
+        model_xgb.fit(X_flat_train,y_train) 
+        y_valid_predicted_xgb=model_xgb.predict(X_flat_valid) 
+        return np.mean(get_R2(y_valid,y_valid_predicted_xgb)) 
+    BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=0, allow_duplicate_points=True) 
+    BO.maximize(init_points=5, n_iter=5) 
+    params = max(BO.res, key=lambda x:x['target'])
+    num_round = int(params['params']['num_round'])
+    max_depth = int(params['params']['max_depth'])
+    eta = params['params']['eta']
     
-        modelN=SVRDecoder(C=C, max_iter=max_iter)
-        modelN.fit(X_flat_trainN,y_zscore_trainN) 
-        y_test_predictedN=modelN.predict(X_flat_testN) 
-        r2N = get_R2(y_zscore_testN,y_test_predictedN)
-        rhoN = get_rho(y_zscore_testN,y_test_predictedN)
+    model=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta) 
+    model.fit(X_flat_train,y_train) 
+    y_test_predicted=model.predict(X_flat_test) 
+    r2 = get_R2(y_test,y_test_predicted)
+    rho = get_rho(y_test,y_test_predicted)
+    
+    print("R2 = {}".format(r2))
+
+    r2_permuted,rho_permuted = [],[]
+    for _ in range(num_permutations):
+        idx = np.random.permutation(y_test.shape[0])
+        X_test_shuffled = X_flat_test[idx]
         
-        print("R2 (null) = {}".format(r2N))
+        y_test_predicted_shuffled = model.predict(X_test_shuffled)
+        r2_permuted.append(get_R2(y_test,y_test_predicted_shuffled))
+        rho_permuted.append(get_rho(y_test,y_test_predicted_shuffled))
+    r2N = np.array(r2_permuted)
+    rhoN = np.array(rho_permuted)
 
-    ####################### DNN #######################
-    if m == 4:
-        from decoders import DenseNNDecoder
-        def dnn_evaluate(num_units,frac_dropout,n_epochs):
-            num_units=int(num_units)
-            frac_dropout=float(frac_dropout)
-            n_epochs=int(n_epochs)
-            model_dnn=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-            model_dnn.fit(X_flat_train,y_train)
-            y_valid_predicted_dnn=model_dnn.predict(X_flat_valid)
-            return np.mean(get_R2(y_valid,y_valid_predicted_dnn))
-        BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10)
-        params = max(BO.res, key=lambda x:x['target'])
-        frac_dropout=float(params['params']['frac_dropout'])
-        n_epochs=int(params['params']['n_epochs'])
-        num_units=int(params['params']['num_units'])
+######################### SVR Decoder #########################
+if m == 3:
+    from decoders import SVRDecoder
+    max_iter=4000
+    def svr_evaluate(C):
+        model_svr=SVRDecoder(C=C, max_iter=max_iter)
+        model_svr.fit(X_flat_train,y_zscore_train) 
+        y_valid_predicted_svr=model_svr.predict(X_flat_valid)
+        return np.mean(get_R2(y_zscore_valid,y_valid_predicted_svr))
+    BO = BayesianOptimization(svr_evaluate, {'C': (.5, 10)}, verbose=1, allow_duplicate_points=True)    
+    BO.maximize(init_points=5, n_iter=5)
+    params = max(BO.res, key=lambda x:x['target'])
+    C = params['params']['C']
 
-        model=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-        model.fit(X_flat_train,y_train) 
-        y_test_predicted=model.predict(X_flat_test) 
-        r2 = get_R2(y_test,y_test_predicted)
-        rho = get_rho(y_test,y_test_predicted)
+    model=SVRDecoder(C=C, max_iter=max_iter)
+    model.fit(X_flat_train,y_zscore_train) 
+    y_test_predicted=model.predict(X_flat_test) 
+    r2 = get_R2(y_zscore_test,y_test_predicted)
+    rho = get_rho(y_zscore_test,y_test_predicted)
+    
+    print("R2 = {}".format(r2))
 
-        print("R2 = {}".format(r2))
-
-        # null hypothesis
-        def dnn_evaluateN(num_units,frac_dropout,n_epochs):
-            num_units=int(num_units)
-            frac_dropout=float(frac_dropout)
-            n_epochs=int(n_epochs)
-            model_dnn=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-            model_dnn.fit(X_flat_trainN,y_trainN)
-            y_valid_predicted_dnn=model_dnn.predict(X_flat_validN)
-            return np.mean(get_R2(y_validN,y_valid_predicted_dnn))
-        BO = BayesianOptimization(dnn_evaluateN, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=5, n_iter=5)
-        params = max(BO.res, key=lambda x:x['target'])
-        frac_dropout=float(params['params']['frac_dropout'])
-        n_epochs=int(params['params']['n_epochs'])
-        num_units=int(params['params']['num_units'])
-
-        modelN=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-        modelN.fit(X_flat_trainN,y_trainN) 
-        y_test_predictedN=modelN.predict(X_flat_testN) 
-        r2N = get_R2(y_testN,y_test_predictedN)
-        rhoN = get_rho(y_testN,y_test_predictedN)
-
-        print("R2 (null) = {}".format(r2N))
-
-    ########################## RNN ##############################3
-    if m == 5:
-        from decoders import SimpleRNNDecoder
-        def rnn_evaluate(num_units,frac_dropout,n_epochs):
-            num_units=int(num_units)
-            frac_dropout=float(frac_dropout)
-            n_epochs=int(n_epochs)
-            model_rnn=SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-            model_rnn.fit(X_train,y_train)
-            y_valid_predicted_rnn=model_rnn.predict(X_valid)
-            return np.mean(get_R2(y_valid,y_valid_predicted_rnn))
-        BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=5, n_iter=5)
-        params = max(BO.res, key=lambda x:x['target'])
-        frac_dropout=float(params['params']['frac_dropout'])
-        n_epochs=int(params['params']['n_epochs'])
-        num_units=int(params['params']['num_units'])
-
-        model=SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-        model.fit(X_train,y_train)
-        y_test_predicted=model.predict(X_test)
-        r2 = get_R2(y_test,y_test_predicted)
-        rho = get_rho(y_test,y_test_predicted)
+    r2_permuted,rho_permuted = [],[]
+    for _ in range(num_permutations):
+        idx = np.random.permutation(y_zscore_test.shape[0])
+        X_test_shuffled = X_flat_test[idx]
         
-        print("R2 = {}".format(r2))
+        y_test_predicted_shuffled = model.predict(X_test_shuffled)
+        r2_permuted.append(get_R2(y_zscore_test,y_test_predicted_shuffled))
+        rho_permuted.append(get_rho(y_zscore_test,y_test_predicted_shuffled))
+    r2N = np.array(r2_permuted)
+    rhoN = np.array(rho_permuted)
 
-        # null hypothesis
-        def rnn_evaluateN(num_units,frac_dropout,n_epochs):
-            num_units=int(num_units)
-            frac_dropout=float(frac_dropout)
-            n_epochs=int(n_epochs)
-            model_rnn=SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-            model_rnn.fit(X_trainN,y_trainN)
-            y_valid_predicted_rnn=model_rnn.predict(X_validN)
-            return np.mean(get_R2(y_validN,y_valid_predicted_rnn))
-        BO = BayesianOptimization(rnn_evaluateN, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=5, n_iter=5)
-        params = max(BO.res, key=lambda x:x['target'])
-        frac_dropout=float(params['params']['frac_dropout'])
-        n_epochs=int(params['params']['n_epochs'])
-        num_units=int(params['params']['num_units'])
+####################### DNN #######################
+if m == 4:
+    from decoders import DenseNNDecoder
+    def dnn_evaluate(num_units,frac_dropout,n_epochs):
+        num_units=int(num_units)
+        frac_dropout=float(frac_dropout)
+        n_epochs=int(n_epochs)
+        model_dnn=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
+        model_dnn.fit(X_flat_train,y_train)
+        y_valid_predicted_dnn=model_dnn.predict(X_flat_valid)
+        return np.mean(get_R2(y_valid,y_valid_predicted_dnn))
+    BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
+    BO.maximize(init_points=10, n_iter=10)
+    params = max(BO.res, key=lambda x:x['target'])
+    frac_dropout=float(params['params']['frac_dropout'])
+    n_epochs=int(params['params']['n_epochs'])
+    num_units=int(params['params']['num_units'])
 
-        modelN=SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-        modelN.fit(X_trainN,y_trainN)
-        y_test_predictedN=modelN.predict(X_testN)
-        r2N = get_R2(y_testN,y_test_predictedN)
-        rhoN = get_rho(y_testN,y_test_predictedN)
+    model=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
+    model.fit(X_flat_train,y_train) 
+    y_test_predicted=model.predict(X_flat_test) 
+    r2 = get_R2(y_test,y_test_predicted)
+    rho = get_rho(y_test,y_test_predicted)
 
-        print("R2 (null) = {}".format(r2N))
-
-
-    ######################### GRU Decoder ################################
-    if m == 6:
-        from decoders import GRUDecoder
-        def gru_evaluate(num_units,frac_dropout,n_epochs):
-            num_units=int(num_units)
-            frac_dropout=float(frac_dropout)
-            n_epochs=int(n_epochs)
-            model_gru=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-            model_gru.fit(X_train,y_train)
-            y_valid_predicted_gru=model_gru.predict(X_valid)
-            return np.mean(get_R2(y_valid,y_valid_predicted_gru))
-        BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=3, n_iter=3)
-        params = max(BO.res, key=lambda x:x['target'])
-        frac_dropout=float(params['params']['frac_dropout'])
-        n_epochs=int(params['params']['n_epochs'])
-        num_units=int(params['params']['num_units'])
+    print("R2 = {}".format(r2))
+    
+    r2_permuted,rho_permuted = [],[]
+    for _ in range(num_permutations):
+        idx = np.random.permutation(y_test.shape[0])
+        X_test_shuffled = X_flat_test[idx]
         
-        model=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-        model.fit(X_train,y_train)
-        y_test_predicted=model.predict(X_test)
-        r2 = get_R2(y_test,y_test_predicted)
-        rho = get_rho(y_test,y_test_predicted)
+        y_test_predicted_shuffled = model.predict(X_test_shuffled)
+        r2_permuted.append(get_R2(y_test,y_test_predicted_shuffled))
+        rho_permuted.append(get_rho(y_test,y_test_predicted_shuffled))
+    r2N = np.array(r2_permuted)
+    rhoN = np.array(rho_permuted)
+
+########################## RNN ##############################3
+if m == 5:
+    from decoders import SimpleRNNDecoder
+    def rnn_evaluate(num_units,frac_dropout,n_epochs):
+        num_units=int(num_units)
+        frac_dropout=float(frac_dropout)
+        n_epochs=int(n_epochs)
+        model_rnn=SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
+        model_rnn.fit(X_train,y_train)
+        y_valid_predicted_rnn=model_rnn.predict(X_valid)
+        return np.mean(get_R2(y_valid,y_valid_predicted_rnn))
+    BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
+    BO.maximize(init_points=5, n_iter=5)
+    params = max(BO.res, key=lambda x:x['target'])
+    frac_dropout=float(params['params']['frac_dropout'])
+    n_epochs=int(params['params']['n_epochs'])
+    num_units=int(params['params']['num_units'])
+
+    model=SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
+    model.fit(X_train,y_train)
+    y_test_predicted=model.predict(X_test)
+    r2 = get_R2(y_test,y_test_predicted)
+    rho = get_rho(y_test,y_test_predicted)
+    
+    print("R2 = {}".format(r2))
+
+    r2_permuted,rho_permuted = [],[]
+    for _ in range(num_permutations):
+        idx = np.random.permutation(y_test.shape[0])
+        X_test_shuffled = X_test[idx]
         
-        print("R2 = {}".format(r2))
+        y_test_predicted_shuffled = model.predict(X_test_shuffled)
+        r2_permuted.append(get_R2(y_test,y_test_predicted_shuffled))
+        rho_permuted.append(get_rho(y_test,y_test_predicted_shuffled))
+    r2N = np.array(r2_permuted)
+    rhoN = np.array(rho_permuted)
+
+######################### GRU Decoder ################################
+if m == 6:
+    from decoders import GRUDecoder
+    def gru_evaluate(num_units,frac_dropout,n_epochs):
+        num_units=int(num_units)
+        frac_dropout=float(frac_dropout)
+        n_epochs=int(n_epochs)
+        model_gru=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
+        model_gru.fit(X_train,y_train)
+        y_valid_predicted_gru=model_gru.predict(X_valid)
+        return np.mean(get_R2(y_valid,y_valid_predicted_gru))
+    BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
+    BO.maximize(init_points=3, n_iter=3)
+    params = max(BO.res, key=lambda x:x['target'])
+    frac_dropout=float(params['params']['frac_dropout'])
+    n_epochs=int(params['params']['n_epochs'])
+    num_units=int(params['params']['num_units'])
+    
+    model=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
+    model.fit(X_train,y_train)
+    y_test_predicted=model.predict(X_test)
+    r2 = get_R2(y_test,y_test_predicted)
+    rho = get_rho(y_test,y_test_predicted)
+    
+    print("R2 = {}".format(r2))
+    
+    r2_permuted,rho_permuted = [],[]
+    for _ in range(num_permutations):
+        idx = np.random.permutation(y_test.shape[0])
+        X_test_shuffled = X_test[idx]
         
-        def gru_evaluateN(num_units,frac_dropout,n_epochs):
-            num_units=int(num_units)
-            frac_dropout=float(frac_dropout)
-            n_epochs=int(n_epochs)
-            model_gru=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-            model_gru.fit(X_trainN,y_trainN)
-            y_valid_predicted_gru=model_gru.predict(X_validN)
-            return np.mean(get_R2(y_validN,y_valid_predicted_gru))
-        BO = BayesianOptimization(gru_evaluateN, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=3, n_iter=3)
-        params = max(BO.res, key=lambda x:x['target'])
-        frac_dropout=float(params['params']['frac_dropout'])
-        n_epochs=int(params['params']['n_epochs'])
-        num_units=int(params['params']['num_units'])
+        y_test_predicted_shuffled = model.predict(X_test_shuffled)
+        r2_permuted.append(get_R2(y_test,y_test_predicted_shuffled))
+        rho_permuted.append(get_rho(y_test,y_test_predicted_shuffled))
+    r2N = np.array(r2_permuted)
+    rhoN = np.array(rho_permuted)
+
+######################### LSTM Decoder ############################
+if m == 7:
+    from decoders import LSTMDecoder
+    def lstm_evaluate(num_units,frac_dropout,n_epochs):
+        num_units=int(num_units)
+        frac_dropout=float(frac_dropout)
+        n_epochs=int(n_epochs)
+        model_lstm=LSTMDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
+        model_lstm.fit(X_train,y_train)
+        y_valid_predicted_lstm=model_lstm.predict(X_valid)
+        return np.mean(get_R2(y_valid,y_valid_predicted_lstm))
+    BO = BayesianOptimization(lstm_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
+    BO.maximize(init_points=10, n_iter=10)
+    params = max(BO.res, key=lambda x:x['target'])
+    frac_dropout=float(params['params']['frac_dropout'])
+    n_epochs=int(params['params']['n_epochs'])
+    num_units=int(params['params']['num_units'])
+
+    model=LSTMDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
+    model.fit(X_train,y_train)
+    y_test_predicted=model.predict(X_test)
+    r2 = get_R2(y_test,y_test_predicted)
+    rho = get_rho(y_test,y_test_predicted)
+    
+    print("R2 = {}".format(r2))
+
+    r2_permuted,rho_permuted = [],[]
+    for _ in range(num_permutations):
+        idx = np.random.permutation(y_test.shape[0])
+        X_test_shuffled = X_test[idx]
         
-        modelN=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-        modelN.fit(X_trainN,y_trainN)
-        y_test_predictedN=modelN.predict(X_testN)
-        r2N = get_R2(y_testN,y_test_predictedN)
-        rhoN = get_rho(y_testN,y_test_predictedN)
+        y_test_predicted_shuffled = model.predict(X_test_shuffled)
+        r2_permuted.append(get_R2(y_test,y_test_predicted_shuffled))
+        rho_permuted.append(get_rho(y_test,y_test_predicted_shuffled))
+    r2N = np.array(r2_permuted)
+    rhoN = np.array(rho_permuted)
 
-        print("R2 (null) = {}".format(r2N))
-    ######################### LSTM Decoder ############################
-    if m == 7:
-        from decoders import LSTMDecoder
-        def lstm_evaluate(num_units,frac_dropout,n_epochs):
-            num_units=int(num_units)
-            frac_dropout=float(frac_dropout)
-            n_epochs=int(n_epochs)
-            model_lstm=LSTMDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-            model_lstm.fit(X_train,y_train)
-            y_valid_predicted_lstm=model_lstm.predict(X_valid)
-            return np.mean(get_R2(y_valid,y_valid_predicted_lstm))
-        BO = BayesianOptimization(lstm_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10)
-        params = max(BO.res, key=lambda x:x['target'])
-        frac_dropout=float(params['params']['frac_dropout'])
-        n_epochs=int(params['params']['n_epochs'])
-        num_units=int(params['params']['num_units'])
+#######################################################################################################################################
+_, p_value = ttest_1samp(r2N, r2)
 
-        model=LSTMDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-        model.fit(X_train,y_train)
-        y_test_predicted=model.predict(X_test)
-        r2 = get_R2(y_test,y_test_predicted)
-        rho = get_rho(y_test,y_test_predicted)
-        
-        print("R2 = {}".format(r2))
+time_elapsed = time.time()-t1
+print("time elapsed = {} mins".format(time_elapsed/60))
 
-        def lstm_evaluateN(num_units,frac_dropout,n_epochs):
-            num_units=int(num_units)
-            frac_dropout=float(frac_dropout)
-            n_epochs=int(n_epochs)
-            model_lstm=LSTMDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-            model_lstm.fit(X_trainN,y_trainN)
-            y_valid_predicted_lstm=model_lstm.predict(X_validN)
-            return np.mean(get_R2(y_validN,y_valid_predicted_lstm))
-        BO = BayesianOptimization(lstm_evaluateN, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=5, n_iter=5)
-        params = max(BO.res, key=lambda x:x['target'])
-        frac_dropout=float(params['params']['frac_dropout'])
-        n_epochs=int(params['params']['n_epochs'])
-        num_units=int(params['params']['num_units'])
+if o==0:
+    output = 'position'
+elif o==1:
+    output = 'velocity'
+else:
+    output = 'acceleration'
 
-        modelN=LSTMDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-        modelN.fit(X_trainN,y_trainN)
-        y_test_predictedN=modelN.predict(X_testN)
-        r2N = get_R2(y_testN,y_test_predictedN)
-        rhoN = get_rho(y_testN,y_test_predictedN)
+result = [s,output,repeat,outer_fold,nm,nf,m,r2,rho,np.mean(r2N,axis=0),np.mean(rhoN,axis=0),p_value,time_elapsed]     
 
-        print("R2 (null) = {}".format(r2N))
-
-    #######################################################################################################################################
-    time_elapsed = time.time()-t1
-    print("time elapsed = {} mins".format(time_elapsed/60))
-    result = [s,repeat,outer_fold,nm,nf,m,r2,rho,r2N,rhoN,time_elapsed]     
-
-    pfile = helpers.make_directory('Figure2/'+(jobname[:-6]),0)
+pfile = helpers.make_directory('Figure2/'+(jobname[:-6]),0)
+if s==29:
     with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
-        pickle.dump([result,c_test,y_test,y_test_predicted,y_testN,y_test_predictedN],p)
-     
-    #with open(cwd+pfile+'/fold{:0>2d}-m{:0>1d}-eyetrace'.format(outer_fold,m)+'.pickle','wb') as p:
-    #    pickle.dump([y_test,y_test_predicted],p)
-
+        pickle.dump([result,c_test,y_test,y_test_predicted],p)
+else:
+    with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
+        pickle.dump([result,c_test],p)

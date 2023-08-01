@@ -166,7 +166,7 @@ if m == 3:
     print("R2 = {}".format(r2))
 
     r2_permuted,rho_permuted = [],[]
-    for _ in range(num_permutations):
+    for _ in range(2):
         idx = np.random.permutation(y_zscore_test.shape[0])
         X_test_shuffled = X_flat_test[idx]
         

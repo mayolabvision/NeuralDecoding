@@ -35,40 +35,36 @@ def get_outputs(data_folder,conditions,column_names):
     return df
 
 def get_outputs_wTraces(data_folder,conditions,column_names):
-    results_all,conds_all,yTest_all,yTestPred_all,yTestN_all,yTestNPred_all = [],[],[],[],[],[]
+    results_all,conds_all,yTest_all,yTestPred_all = [],[],[],[]
     direcs = sorted(os.listdir(data_folder))
     current_direcs = [d for d in direcs if all(c in d for c in conditions)]
     for direc in current_direcs:
         for file in sorted(os.listdir(data_folder+'/'+direc)):
             if file.endswith('.pickle'):
                 with open(data_folder+'/'+direc+'/'+file, 'rb') as f:
-                    results,conds,y_test,y_test_predicted,y_testN,y_test_predictedN = pickle.load(f) 
+                    results,conds,y_test,y_test_predicted = pickle.load(f)
                     conds_all.append(conds)
                     results_all.append(results)
                     yTest_all.append(y_test)
                     yTestPred_all.append(y_test_predicted)
-                    yTestN_all.append(y_testN)
-                    yTestNPred_all.append(y_test_predictedN)
                         
     df = pd.DataFrame(results_all,columns=column_names)
     df['R2_x']   = df['R2'].apply(lambda x: x[0])
     df['R2_y']   = df['R2'].apply(lambda x: x[1])
+    df['R2_mn']  = df['R2'].apply(lambda x: x.mean())
     df['rho_x']  = df['rho'].apply(lambda x: x[0])
     df['rho_y']  = df['rho'].apply(lambda x: x[1])
+    df['rho_mn']  = df['rho'].apply(lambda x: x.mean())
     df['R2N_x']  = df['R2_null'].apply(lambda x: x[0])
     df['R2N_y']  = df['R2_null'].apply(lambda x: x[1])
+    df['R2N_mn']  = df['R2_null'].apply(lambda x: x.mean())
     df['rhoN_x'] = df['rho_null'].apply(lambda x: x[0])
     df['rhoN_y'] = df['rho_null'].apply(lambda x: x[1])
-    
-    df = df.drop(columns=['R2','rho','R2_null','rho_null'])
-    if conditions[0]=='-o0-':
-        df = df.assign(output='position')
-    elif conditions[0]=='-o1-':
-        df = df.assign(output='velocity')
-    else:
-        df = df.assign(output='acceleration')
+    df['rhoN_mn']  = df['rho_null'].apply(lambda x: x.mean())
 
-    return df,yTest_all,yTestPred_all,yTestN_all,yTestNPred_all
+    df = df.drop(columns=['R2','rho','R2_null','rho_null'])
+    
+    return df,conds_all,yTest_all,yTestPred_all
 
 
 def get_outputsSweep(data_folder,conditions,column_names):

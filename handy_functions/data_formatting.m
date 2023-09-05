@@ -19,7 +19,7 @@ addpath(genpath('/Users/kendranoneman/Projects/mayo/HelperFxns'))
 % "output_times":   vector that states the time at all recorded time points 
 
 %%%%%%%%%%%%%%%%% load session data %%%%%%%%%%%%%%%%%%%%
-data = load('-mat',sprintf('Users/kendranoneman/Projects/mayo/data/neural-decoding/raw/combinedMaestroSpkSortMTFEF.%s.mat',session));
+data = load('-mat',sprintf('/Users/kendranoneman/Data/neural-decoding/raw/combinedMaestroSpkSortMTFEF.%s.mat',session));
 
 [exp_clean,unitnames,~] = struct_clean(data.exp);
 

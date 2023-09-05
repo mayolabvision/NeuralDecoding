@@ -114,88 +114,130 @@ def normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_v
 
     return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid
 
-def get_data(line,repeat,outer_fold,dropOnly):
-    s = int(line[1])
-    t = int(line[2])
-    d = int(line[3])
-    m = int(line[4])
-    o = int(line[5])
-    nm = int(line[6])
-    nf = int(line[7])
-    bn = int(line[8])
-    fo = int(line[9])
-    fi = int(line[10]) 
-    r = int(line[11])
+def normalize_trainTestKF(X_train,X_test,X_valid,y_train,y_test,y_valid):
+    #Z-score "X" inputs. 
+    X_train_mean=np.nanmean(X_train,axis=0) #Mean of training data
+    X_train_std=np.nanstd(X_train,axis=0) #Stdev of training data
+    X_train=(X_train-X_train_mean)/X_train_std #Z-score training data
+    X_test=(X_test-X_train_mean)/X_train_std #Preprocess testing data in same manner as training data
+    X_valid=(X_valid-X_train_mean)/X_train_std #Preprocess validation data in same manner as training data
 
-    if r>0:
-        neurons_perRepeat = neuronsSample.get_neuronRepeats(line)
-        these_neurons = neurons_perRepeat[repeat]
-    else:
-        if dropOnly==0:
-            neurons_all = np.arange(0,nm+nf)
-            these_neurons = np.delete(neurons_all, repeat)
-        else:
-            neurons_all = np.arange(0,nm+nf)
-            these_neurons = neurons_all[repeat]
-
-    sess,sess_nodt = get_session(s,t,d)
-    [bins_before,bins_current,bins_after] = get_bins(bn)
-    with open(cwd+'/datasets/vars/vars-'+sess+'.pickle','rb') as f:
-        neural_data,pos_binned,vel_binned,acc_binned,cond_binned=pickle.load(f,encoding='latin1')
+    #Zero-center outputs
+    y_train_mean=np.nanmean(y_train,axis=0) #Mean of training data outputs
+    y_train=y_train-y_train_mean #Zero-center training output
+    y_test=y_test-y_train_mean #Preprocess testing data in same manner as training data
+    y_valid=y_valid-y_train_mean #Preprocess validation data in same manner as training data
     
-    neural_data2 = neural_data[:,these_neurons]
-    if dropOnly==1:
-        neural_data2 = np.expand_dims(neural_data2, axis=1)
-   
-    X = get_spikes_with_history(neural_data2,bins_before,bins_after,bins_current)
-    X = X[range(bins_before,X.shape[0]-bins_after),:,:]
-    num_examples=X.shape[0]
-    X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
+    #Z-score outputs (for SVR)
+    y_train_std=np.nanstd(y_train,axis=0)
+    y_zscore_train=y_train/y_train_std
+    y_zscore_test=y_test/y_train_std
+    y_zscore_valid=y_valid/y_train_std  
 
-    if o==0:
-        y=pos_binned
-    elif o==1:
-        y=vel_binned
-    elif o==2:
-        y=acc_binned
-    cond = cond_binned[range(bins_before,y.shape[0]-bins_after),:]
-    y = y[range(bins_before,y.shape[0]-bins_after),:]
-    
+    return X_train,X_test,X_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid
+
+def get_fold(outer_fold,num_examples,bn,m):
     valid_range_all=[[0,.1],[.1,.2],[.2,.3],[.3,.4],[.4,.5],
                  [.5,.6],[.6,.7],[.7,.8],[.8,.9],[.9,1]]
     testing_range_all=[[.1,.2],[.2,.3],[.3,.4],[.4,.5],[.5,.6],
                      [.6,.7],[.7,.8],[.8,.9],[.9,1],[0,.1]]
     training_range_all=[[[.2,1]],[[0,.1],[.3,1]],[[0,.2],[.4,1]],[[0,.3],[.5,1]],[[0,.4],[.6,1]],
                        [[0,.5],[.7,1]],[[0,.6],[.8,1]],[[0,.7],[.9,1]],[[0,.8]],[[.1,.9]]]
-
+        
     testing_range=testing_range_all[outer_fold]
-    testing_set=np.arange(int(np.round(testing_range[0]*num_examples))+bins_before,int(np.round(testing_range[1]*num_examples))-bins_after)
     valid_range=valid_range_all[outer_fold]
-    valid_set=np.arange(int(np.round(valid_range[0]*num_examples))+bins_before,int(np.round(valid_range[1]*num_examples))-bins_after)
-
     training_ranges=training_range_all[outer_fold]
-    for j in range(len(training_ranges)): 
-        training_range=training_ranges[j]
-        if j==0: #If it's the first portion of the training set, make it the training set
-            training_set=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples))-bins_after)
-        if j==1: #If it's the second portion of the training set, concatentate it to the first
-            training_set_temp=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples))-bins_after)
-            training_set=np.concatenate((training_set,training_set_temp),axis=0)
-                
-    X_train=X[training_set,:,:]
-    X_flat_train=X_flat[training_set,:]
-    y_train=y[training_set,:]
-    X_test=X[testing_set,:,:]
-    X_flat_test=X_flat[testing_set,:]
-    y_test=y[testing_set,:]
-    X_valid=X[valid_set,:,:]
-    X_flat_valid=X_flat[valid_set,:]
-    y_valid=y[valid_set,:]
-    c_test=cond[testing_set,:]
 
-    X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid)
+    if m<8:
+        [bins_before,bins_current,bins_after] = get_bins(bn)
+        testing_set=np.arange(int(np.round(testing_range[0]*num_examples))+bins_before,int(np.round(testing_range[1]*num_examples))-bins_after)
+        valid_set=np.arange(int(np.round(valid_range[0]*num_examples))+bins_before,int(np.round(valid_range[1]*num_examples))-bins_after)
 
-    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test,these_neurons 
+        for j in range(len(training_ranges)): 
+            training_range=training_ranges[j]
+            if j==0: #If it's the first portion of the training set, make it the training set
+                training_set=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples))-bins_after)
+            if j==1: #If it's the second portion of the training set, concatentate it to the first
+                training_set_temp=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples))-bins_after)
+                training_set=np.concatenate((training_set,training_set_temp),axis=0)
+    else:
+        testing_set=np.arange(int(np.round(testing_range[0]*num_examples))+1,int(np.round(testing_range[1]*num_examples))-1)
+        valid_set=np.arange(int(np.round(valid_range[0]*num_examples))+1,int(np.round(valid_range[1]*num_examples))-1)
+
+        for j in range(len(training_ranges)): #Go through different separated portions of the training set
+            training_range=training_ranges[j]
+            if j==0: #If it's the first portion of the training set, make it the training set
+                training_set=np.arange(int(np.round(training_range[0]*num_examples))+1,int(np.round(training_range[1]*num_examples))-1)
+            if j==1: #If it's the second portion of the training set, concatentate it to the first
+                training_set_temp=np.arange(int(np.round(training_range[0]*num_examples))+1,int(np.round(training_range[1]*num_examples))-1)
+                training_set=np.concatenate((training_set,training_set_temp),axis=0)
+
+    return training_set,testing_set,valid_set
+
+def get_data(neural_data,these_neurons,y,cond_binned,outer_fold,bn,dt,m):
+    neural_data2 = neural_data[:,these_neurons]
+
+    if m<8:
+        [bins_before,bins_current,bins_after] = get_bins(bn)
+        X = get_spikes_with_history(neural_data2,bins_before,bins_after,bins_current)
+        X = X[range(bins_before,X.shape[0]-bins_after),:,:]
+        X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
+
+        cond = cond_binned[range(bins_before,y.shape[0]-bins_after),:]
+        y = y[range(bins_before,y.shape[0]-bins_after),:]
+    else:
+        y = setup_KF(y,dt)
+        cond = cond_binned 
+        X = neural_data2
+
+    num_examples=X.shape[0]
+    training_set,testing_set,valid_set =  get_fold(outer_fold,num_examples,bn,m)
+
+    if m<8:
+        X_train=X[training_set,:,:]
+        X_flat_train=X_flat[training_set,:]
+        y_train=y[training_set,:]
+        X_test=X[testing_set,:,:]
+        X_flat_test=X_flat[testing_set,:]
+        y_test=y[testing_set,:]
+        X_valid=X[valid_set,:,:]
+        X_flat_valid=X_flat[valid_set,:]
+        y_valid=y[valid_set,:]
+        c_test=cond[testing_set,:]
+
+        X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid)
+
+    else:
+        X_train=X[training_set,:]
+        y_train=y[training_set,:]
+        X_valid=X[valid_set,:]
+        y_valid=y[valid_set,:]
+        X_test=X[testing_set,:]
+        y_test=y[testing_set,:]
+        c_test = cond[testing_set,:]
+
+        X_train,X_test,X_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTestKF(X_train,X_test,X_valid,y_train,y_test,y_valid)
+
+        X_flat_train=X_train
+        X_flat_test=X_test
+        X_flat_valid=X_valid
+
+    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test 
+
+def setup_KF(vels_binned,dt):
+    
+    pos_binned=np.zeros(vels_binned.shape) #Initialize 
+    pos_binned[0,:]=0 #Assume starting position is at [0,0]
+    for i in range(pos_binned.shape[0]-1): 
+        pos_binned[i+1,0]=pos_binned[i,0]+vels_binned[i,0]*dt #Note that .05 is the length of the time bin
+        pos_binned[i+1,1]=pos_binned[i,1]+vels_binned[i,1]*dt
+
+    temp=np.diff(vels_binned,axis=0) #The acceleration is the difference in velocities across time bins 
+    acc_binned=np.concatenate((temp,temp[-1:,:]),axis=0) #Assume acceleration at last time point is same as 2nd to last
+
+    y = np.concatenate((pos_binned,vels_binned,acc_binned),axis=1)
+
+    return y 
 
 def get_data_Xconditions(line,repeat,outer_fold,shuffle,condition,trCo,teCo):
     s = int(line[1])

@@ -12,22 +12,23 @@ from preprocessing_funcs import get_spikes_with_history
 from sklearn.model_selection import KFold
 import helpers
 
-def get_neuronRepeats(line):
-    s = int(line[1])
-    t = int(line[2])
-    d = int(line[3])
-    m = int(line[4])
-    o = int(line[5])
-    nm = int(line[6])
-    nf = int(line[7])
-    bn = int(line[8])
-    fo = int(line[9])
-    fi = int(line[10]) 
-    num_repeats = int(line[11])
+def get_neuronRepeats(s,t,d,*args):
+    
     sess,sess_nodt = helpers.get_session(s,t,d)
+    units = pd.read_csv(cwd+'/datasets/units/units-'+sess_nodt+'.csv')
+
+    if len(args) == 0:
+        num_repeats = 1
+        nm = (units['BrainArea'] == 'MT').sum() 
+        nf = (units['BrainArea'] == 'FEF').sum()
+    elif len(args) == 1:
+        num_repeats = args[0]
+        nm = (units['BrainArea'] == 'MT').sum()
+        nf = (units['BrainArea'] == 'FEF').sum()
+    elif len(args) == 3:
+        num_repeats,nm,nf = args
 
     if not os.path.isfile(cwd+'/datasets/dsplt/dsplt-'+sess+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle'):
-        units = pd.read_csv(cwd+'/datasets/units/units-'+sess_nodt+'.csv')
 
         neurons_perRepeat = []
         for r in range(num_repeats):
@@ -48,5 +49,5 @@ def get_neuronRepeats(line):
         with open(cwd+'/datasets/dsplt/dsplt-'+sess+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle','rb') as f:
             neurons_perRepeat = pickle.load(f,encoding='latin1')
 
-    return neurons_perRepeat
+    return neurons_perRepeat,nm,nf
 

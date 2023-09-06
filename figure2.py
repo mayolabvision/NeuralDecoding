@@ -79,9 +79,6 @@ if m == 0:
     r2 = get_R2(y_test,y_test_predicted)
     rho = get_rho(y_test,y_test_predicted)
 
-    #print(coeffs)
-    #print(intercept)
-
     print("R2 = {}".format(r2))
 
 ##################### Wiener Cascade Decoder ###########################
@@ -102,7 +99,9 @@ if m == 1:
     y_test_predicted=model.predict(X_flat_test)   
     r2 = get_R2(y_test,y_test_predicted)
     rho = get_rho(y_test,y_test_predicted)
-    
+   
+    coeffs, intercept = model.get_coefficients_intercepts(0) 
+
     print("R2 = {}".format(r2))
     
 ##################### XGBoost Decoder #########################
@@ -124,7 +123,7 @@ if m == 2:
     eta = params['params']['eta']
     
     model=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta) 
-    model.fit(X_flat_train,y_train) 
+    coeffs,intercept = model.fit(X_flat_train,y_train) 
     y_test_predicted=model.predict(X_flat_test) 
     r2 = get_R2(y_test,y_test_predicted)
     rho = get_rho(y_test,y_test_predicted)
@@ -146,7 +145,7 @@ if m == 3:
     C = params['params']['C']
 
     model=SVRDecoder(C=C, max_iter=max_iter)
-    model.fit(X_flat_train,y_zscore_train) 
+    coeffs,intercept = model.fit(X_flat_train,y_zscore_train) 
     y_test_predicted=model.predict(X_flat_test) 
     r2 = get_R2(y_zscore_test,y_test_predicted)
     rho = get_rho(y_zscore_test,y_test_predicted)
@@ -172,7 +171,8 @@ if m == 4:
     num_units=int(params['params']['num_units'])
 
     model=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-    model.fit(X_flat_train,y_train) 
+    coeffs = model.fit(X_flat_train,y_train) 
+    intercept = np.nan
     y_test_predicted=model.predict(X_flat_test) 
     r2 = get_R2(y_test,y_test_predicted)
     rho = get_rho(y_test,y_test_predicted)
@@ -191,14 +191,15 @@ if m == 5:
         y_valid_predicted_rnn=model_rnn.predict(X_valid)
         return np.mean(get_R2(y_valid,y_valid_predicted_rnn))
     BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-    BO.maximize(init_points=5, n_iter=5)
+    BO.maximize(init_points=10, n_iter=10)
     params = max(BO.res, key=lambda x:x['target'])
     frac_dropout=float(params['params']['frac_dropout'])
     n_epochs=int(params['params']['n_epochs'])
     num_units=int(params['params']['num_units'])
 
     model=SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-    model.fit(X_train,y_train)
+    coeffs = model.fit(X_train,y_train)
+    intercept = np.nan
     y_test_predicted=model.predict(X_test)
     r2 = get_R2(y_test,y_test_predicted)
     rho = get_rho(y_test,y_test_predicted)
@@ -224,7 +225,8 @@ if m == 6:
     num_units=int(params['params']['num_units'])
     
     model=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-    model.fit(X_train,y_train)
+    coeffs = model.fit(X_train,y_train)
+    intercept = np.nan
     y_test_predicted=model.predict(X_test)
     r2 = get_R2(y_test,y_test_predicted)
     rho = get_rho(y_test,y_test_predicted)
@@ -243,14 +245,15 @@ if m == 7:
         y_valid_predicted_lstm=model_lstm.predict(X_valid)
         return np.mean(get_R2(y_valid,y_valid_predicted_lstm))
     BO = BayesianOptimization(lstm_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-    BO.maximize(init_points=10, n_iter=10)
+    BO.maximize(init_points=3, n_iter=3)
     params = max(BO.res, key=lambda x:x['target'])
     frac_dropout=float(params['params']['frac_dropout'])
     n_epochs=int(params['params']['n_epochs'])
     num_units=int(params['params']['num_units'])
 
     model=LSTMDecoder(units=num_units,dropout=frac_dropout,batch_size=128,num_epochs=n_epochs,workers=workers)
-    model.fit(X_train,y_train)
+    coeffs = model.fit(X_train,y_train)
+    intercept = np.nan
     y_test_predicted=model.predict(X_test)
     r2 = get_R2(y_test,y_test_predicted)
     rho = get_rho(y_test,y_test_predicted)
@@ -326,13 +329,92 @@ if m == 8:
         X_valid=X_valid[lag:,:]
     
     model=KalmanFilterDecoder(C=C) #Define model
-    model.fit(X_train,y_train) #Fit model
+    coeffs = model.fit(X_train,y_train) #Fit model
+    intercept = np.nan
     y_test_predicted=model.predict(X_test,y_test) #Get test set predictions
 
     r2 = get_R2(y_test,y_test_predicted)
     rho = get_rho(y_test,y_test_predicted)
 
     print("R2 = {}".format(r2))
+
+######################### WMP ############################
+if m==9:
+    from decoders import WeightedMovingAverage
+    def wmp_evaluate(window_size):
+        window_size=int(window_size)
+        model = WeightedMovingAverage(window_size=window_size,n_outputs=y_train.shape[1])
+        y_valid_predicted = model.predict(X_flat_valid)
+        return np.mean(get_R2(y_valid, y_valid_predicted))
+
+    BO = BayesianOptimization(wmp_evaluate, {'window_size': (1, 20.01)}, verbose=0, allow_duplicate_points=True)
+    BO.maximize(init_points=10, n_iter=20)
+    params = max(BO.res, key=lambda x: x['target'])
+    window_size = int(params['params']['window_size'])
+
+    model = WeightedMovingAverage(window_size=window_size,n_outputs=y_train.shape[1])
+    y_test_predicted = model.predict(X_flat_test)
+    r2 = get_R2(y_test, y_test_predicted)
+    rho = get_rho(y_test, y_test_predicted)
+
+    coeffs = np.nan
+    intercept = np.nan
+
+    print("R2 = {}".format(r2))
+    print("rho = {}".format(rho))
+
+#################### OMP ########################
+if m==10:
+    from decoders import OrthogonalMatchingPursuitDecoder
+
+    def omp_evaluate(n_nonzero_coefs):
+        n_nonzero_coefs = int(n_nonzero_coefs)
+        model = OrthogonalMatchingPursuitDecoder(n_nonzero_coefs=n_nonzero_coefs, n_outputs=y_train.shape[1])
+        model.fit(X_flat_train, y_train)
+        y_valid_predicted = model.predict(X_flat_valid)
+        return np.mean(get_R2(y_valid, y_valid_predicted))
+
+    BO = BayesianOptimization(omp_evaluate, {'n_nonzero_coefs': (1, 20.01)}, verbose=0, allow_duplicate_points=True)
+    BO.maximize(init_points=10, n_iter=20)
+    params = max(BO.res, key=lambda x: x['target'])
+    n_nonzero_coefs = int(params['params']['n_nonzero_coefs'])
+
+    model = OrthogonalMatchingPursuitDecoder(n_nonzero_coefs=n_nonzero_coefs, n_outputs=y_train.shape[1])
+    coeffs,intercept = model.fit(X_flat_train, y_train)
+    y_test_predicted = model.predict(X_flat_test)
+    r2 = get_R2(y_test, y_test_predicted)
+    rho = get_rho(y_test, y_test_predicted)
+
+    print("R2 = {}".format(r2))
+    print("rho = {}".format(rho))
+
+############### cascade OMP ####################
+if m==11:
+    from decoders import CascadeOrthogonalMatchingPursuitDecoder
+    
+    def cascade_omp_evaluate(n_stages,n_nonzero_coefs):
+        n_stages = int(n_stages)
+        n_nonzero_coefs = int(n_nonzero_coefs)
+        model = CascadeOrthogonalMatchingPursuitDecoder(n_stages=n_stages, n_nonzero_coefs=n_nonzero_coefs, n_outputs=y_train.shape[1])  # You can adjust n_nonzero_coefs
+        model.fit(X_flat_train, y_train)
+        y_valid_predicted = model.predict(X_flat_valid)
+        return np.mean(get_R2(y_valid, y_valid_predicted))
+
+    BO = BayesianOptimization(cascade_omp_evaluate, {'n_stages': (1, 100.01), 'n_nonzero_coefs': (1,20.01)}, verbose=0, allow_duplicate_points=True)
+    BO.maximize(init_points=5, n_iter=10)  # You can adjust the number of initial points and iterations
+    params = max(BO.res, key=lambda x: x['target'])
+    n_stages = int(params['params']['n_stages'])
+    n_nonzero_coefs = int(params['params']['n_nonzero_coefs'])
+
+    model = CascadeOrthogonalMatchingPursuitDecoder(n_stages=n_stages, n_nonzero_coefs=n_nonzero_coefs, n_outputs=y_train.shape[1])  # You can adjust n_nonzero_coefs
+    coeffs,intercept = model.fit(X_flat_train, y_train)
+    y_test_predicted = model.predict(X_flat_test)
+    r2 = get_R2(y_test, y_test_predicted)
+    rho = get_rho(y_test, y_test_predicted)
+
+    print("R2 = {}".format(r2))
+    print("rho = {}".format(rho))
+
 
 #######################################################################################################################################
 time_elapsed = time.time()-t1
@@ -345,7 +427,7 @@ elif o==1:
 elif o==2:
     output = 'acceleration'
 
-result = [s,output,repeat,outer_fold,nm,nf,m,r2,rho,time_elapsed]     
+result = [s,output,repeat,outer_fold,nm,nf,m,r2,rho,coeffs,intercept,time_elapsed]     
 
 pfile = helpers.make_directory('Main/'+(jobname[:-6]),0)
 if s==29:

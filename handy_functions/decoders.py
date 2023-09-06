@@ -17,6 +17,7 @@ from keras.models import Sequential
 from keras.layers import Dense, LSTM, SimpleRNN, GRU, Activation, Dropout
 from keras.utils import np_utils
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.linear_model import OrthogonalMatchingPursuit
 
 ##################### DECODER FUNCTIONS ##########################
 
@@ -73,9 +74,8 @@ class WienerFilterRegression(object):
         """
 
         y_test_predicted=self.model.predict(X_flat_test) #Make predictions
+
         return y_test_predicted
-
-
 
 
 ##################### WIENER CASCADE ##########################
@@ -93,7 +93,7 @@ class WienerCascadeRegression(object):
 
     def __init__(self,degree=3):
          self.degree=degree
-
+         self.models = [] 
 
     def fit(self,X_flat_train,y_train):
 
@@ -111,7 +111,6 @@ class WienerCascadeRegression(object):
         """
 
         num_outputs=y_train.shape[1] #Number of outputs
-        models=[] #Initialize list of models (there will be a separate model for each output)
         for i in range(num_outputs): #Loop through outputs
             #Fit linear portion of model
             regr = linear_model.LinearRegression() #Call the linear portion of the model "regr"
@@ -120,8 +119,17 @@ class WienerCascadeRegression(object):
             #Fit nonlinear portion of model
             p=np.polyfit(y_train_predicted_linear,y_train[:,i],self.degree)
             #Add model for this output (both linear and nonlinear parts) to the list "models"
-            models.append([regr,p])
-        self.model=models
+            self.models.append([regr,p])
+        self.model=self.models
+
+    def get_coefficients_intercepts(self, output_idx):
+        if output_idx < len(self.models):
+            linear_model = self.models[output_idx][0]
+            coefficients = linear_model.coef_
+            intercept = linear_model.intercept_
+            return coefficients, intercept
+        else:
+            return None
 
 
     def predict(self,X_flat_test):
@@ -147,6 +155,227 @@ class WienerCascadeRegression(object):
             #Predictions on test set
             y_test_predicted_linear=regr.predict(X_flat_test) #Get predictions on the linear portion of the model
             y_test_predicted[:,i]=np.polyval(p,y_test_predicted_linear) #Run the linear predictions through the nonlinearity to get the final predictions
+        
+        return y_test_predicted
+
+##################### Moving Average Predictor ##########################
+class WeightedMovingAverage(object):
+
+    """
+    Class for the Weighted Moving Average Decoder
+
+    There are no parameters to set.
+
+    This class implements a simple weighted moving average approach for decoding.
+    """
+    def __init__(self, window_size=10, n_outputs=None):
+        self.window_size = window_size
+        self.n_outputs = n_outputs
+
+    def fit(self, X_train, y_train):
+
+        """
+        Train Weighted Moving Average Decoder
+
+        Parameters
+        ----------
+        X_flat_train: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data.
+            See example file for an example of how to format the neural data correctly.
+
+        y_train: numpy 2d array of shape [n_samples, n_outputs]
+            This is the outputs that are being predicted.
+
+        window_size: integer, optional, default=10
+            The size of the moving average window for decoding.
+
+        Returns
+        -------
+        None
+        """
+
+        self.window_size = window_size
+        self.n_samples, self.n_features = X_train.shape
+        self.n_outputs = y_train.shape[1]  # Number of outputs
+
+    def predict(self, X_test):
+
+        """
+        Predict outcomes using the trained Weighted Moving Average Decoder
+
+        Parameters
+        ----------
+        X_flat_test: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data being used to predict outputs.
+
+        Returns
+        -------
+        y_test_predicted: numpy 2d array of shape [n_samples, n_outputs]
+            The predicted outputs.
+        """
+
+        n_samples_test, n_features_test = X_test.shape
+        y_test_predicted = np.zeros((n_samples_test, self.n_outputs))
+
+        for i in range(n_samples_test):
+            # Calculate the weighted moving average for each output
+            for j in range(self.n_outputs):
+                # Use a simple weighted moving average with a window of size self.window_size
+                y_test_predicted[i, j] = np.sum(X_test[i, -self.window_size:]) / self.window_size
+
+        return y_test_predicted
+
+##################### Sparse Decoder ##########################
+class OrthogonalMatchingPursuitDecoder(object):
+    """
+    Class for the Orthogonal Matching Pursuit (OMP) Decoder
+
+    Parameters
+    ----------
+    n_nonzero_coefs: int, optional, default=None
+        The maximum number of nonzero coefficients to include in the solution.
+        If None, all non-zero coefficients are used.
+
+    n_outputs: int, optional, default=None
+        The number of output dimensions to predict.
+
+    Attributes
+    ----------
+    omp_models: list of OMP models
+        List of OMP models, one for each output dimension.
+
+    n_outputs: int
+        The number of output dimensions.
+    """
+
+    def __init__(self, n_nonzero_coefs=None, n_outputs=None):
+        self.n_nonzero_coefs = n_nonzero_coefs
+        self.n_outputs = n_outputs
+        self.models = []
+
+    def fit(self, X_train, y_train):
+        """
+        Train Orthogonal Matching Pursuit (OMP) Decoder
+
+        Parameters
+        ----------
+        X_train: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data.
+
+        y_train: numpy 2d array of shape [n_samples, n_outputs]
+            This is the outputs that are being predicted.
+
+        Returns
+        -------
+        None
+        """
+        if self.n_outputs is None:
+            self.n_outputs = y_train.shape[1]
+
+        for i in range(self.n_outputs):
+            model = OrthogonalMatchingPursuit(n_nonzero_coefs=self.n_nonzero_coefs)
+            model.fit(X_train, y_train[:, i])
+            self.models.append(model)
+
+        return self.model.coef_,self.model.intercept_
+
+
+    def predict(self, X_test):
+        """
+        Predict outcomes using the trained Orthogonal Matching Pursuit (OMP) Decoder
+
+        Parameters
+        ----------
+        X_test: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data being used to predict outputs.
+
+        Returns
+        -------
+        y_test_predicted: numpy 2d array of shape [n_samples, n_outputs]
+            The predicted outputs.
+        """
+        n_samples_test, _ = X_test.shape
+        y_test_predicted = np.zeros((n_samples_test, self.n_outputs))
+
+        for i in range(self.n_outputs):
+            model = self.models[i]
+            y_test_predicted[:, i] = model.predict(X_test)
+
+        return y_test_predicted
+
+#################### Cascade OMP ###########################
+class CascadeOrthogonalMatchingPursuitDecoder(object):
+    """
+    Class for the Cascade Orthogonal Matching Pursuit (C-OMP) Decoder
+
+    Parameters
+    ----------
+    n_stages: int, optional, default=None
+        The number of cascade stages.
+    
+    n_nonzero_coefs: int, optional, default=None
+        The maximum number of nonzero coefficients to include in the solution.
+
+    Attributes
+    ----------
+    omp_models: list of OMP models
+        List of OMP models, one for each cascade stage.
+    """
+
+    def __init__(self, n_stages=1, n_nonzero_coefs=None, n_outputs=None):
+        self.n_stages = n_stages
+        self.n_nonzero_coefs = n_nonzero_coefs
+        self.n_outputs = n_outputs
+        self.models = []
+
+    def fit(self, X_train, y_train):
+        """
+        Train Cascade Orthogonal Matching Pursuit (C-OMP) Decoder
+
+        Parameters
+        ----------
+        X_train: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data.
+
+        y_train: numpy 2d array of shape [n_samples, n_outputs]
+            This is the outputs that are being predicted.
+
+        Returns
+        -------
+        None
+        """
+        self.n_samples, self.n_features = X_train.shape
+        if self.n_outputs is None:
+            self.n_outputs = y_train.shape[1]
+
+        for i in range(self.n_stages):
+            model = OrthogonalMatchingPursuit(n_nonzero_coefs=self.n_nonzero_coefs)
+            model.fit(X_train, y_train)
+            self.models.append(model)
+
+        return self.model.coef_,self.model.intercept_
+
+    def predict(self, X_test):
+        """
+        Predict outcomes using the trained Cascade Orthogonal Matching Pursuit (C-OMP) Decoder
+
+        Parameters
+        ----------
+        X_test: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data being used to predict outputs.
+
+        Returns
+        -------
+        y_test_predicted: numpy 2d array of shape [n_samples, n_outputs]
+            The predicted outputs.
+        """
+        n_samples_test, _ = X_test.shape
+        y_test_predicted = np.zeros((n_samples_test, self.n_outputs))
+
+        for i in range(self.n_stages):
+            model = self.models[i]
+            y_test_predicted += model.predict(X_test)
+
         return y_test_predicted
 
 
@@ -211,6 +440,8 @@ class KalmanFilterRegression(object):
         params=[A,W,H,Q]
         self.model=params
 
+        return params
+
     def predict(self,X_kf_test,y_test):
 
         """
@@ -261,14 +492,8 @@ class KalmanFilterRegression(object):
             state=state_m+K*(Z[:,t+1]-H*state_m)
             states[:,t+1]=np.squeeze(state) #Record state at the timestep
         y_test_predicted=states.T
+        
         return y_test_predicted
-
-
-
-
-
-
-
 
 
 ##################### DENSE (FULLY-CONNECTED) NEURAL NETWORK ##########################
@@ -353,6 +578,14 @@ class DenseNNRegression(object):
         model.fit(X_flat_train,y_train,batch_size=self.batch_size,epochs=self.num_epochs,verbose=self.verbose,workers=self.workers,use_multiprocessing=True) #Fit the model
         self.model=model
 
+        # Retrieve the model's weights and biases
+        model_weights = []
+        for layer in model.layers:
+            layer_weights = layer.get_weights()
+            if layer_weights:
+                model_weights.append(layer_weights)
+
+        return model_weights
 
     def predict(self,X_flat_test):
 
@@ -372,8 +605,6 @@ class DenseNNRegression(object):
 
         y_test_predicted = self.model.predict(X_flat_test) #Make predictions
         return y_test_predicted
-
-
 
 
 ##################### SIMPLE RECURRENT NEURAL NETWORK ##########################
@@ -441,6 +672,14 @@ class SimpleRNNRegression(object):
         model.fit(X_train,y_train,batch_size=self.batch_size,epochs=self.num_epochs,verbose=self.verbose,workers=self.workers,use_multiprocessing=True) #Fit the model
         self.model=model
 
+        # Retrieve the model's weights and biases
+        model_weights = []
+        for layer in model.layers:
+            layer_weights = layer.get_weights()
+            if layer_weights:
+                model_weights.append(layer_weights)
+
+        return model_weights
 
     def predict(self,X_test):
 
@@ -528,6 +767,14 @@ class GRURegression(object):
         model.fit(X_train,y_train,batch_size=self.batch_size,epochs=self.num_epochs,verbose=self.verbose,workers=self.workers,use_multiprocessing=True) #Fit the model
         self.model=model
 
+        # Retrieve the model's weights and biases
+        model_weights = []
+        for layer in model.layers:
+            layer_weights = layer.get_weights()
+            if layer_weights:
+                model_weights.append(layer_weights)
+
+        return model_weights
 
     def predict(self,X_test):
 
@@ -614,7 +861,15 @@ class LSTMRegression(object):
         #else:
         model.fit(X_train,y_train,batch_size=self.batch_size,epochs=self.num_epochs,verbose=self.verbose,workers=self.workers,use_multiprocessing=True) #Fit the model
         self.model=model
+        
+        # Retrieve the model's weights and biases
+        model_weights = []
+        for layer in model.layers:
+            layer_weights = layer.get_weights()
+            if layer_weights:
+                model_weights.append(layer_weights)
 
+        return model_weights
 
     def predict(self,X_test):
 
@@ -706,7 +961,6 @@ class XGBoostRegression(object):
 
         self.model=models
 
-
     def predict(self,X_flat_test):
 
         """
@@ -780,6 +1034,7 @@ class SVRegression(object):
             models.append(model) #Add fit model to list of models
         self.model=models
 
+        return self.model.coef_,self.model.intercept_
 
     def predict(self,X_flat_test):
 

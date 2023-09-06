@@ -56,7 +56,7 @@ def get_session(j,t,d):
     return session+'-pre'+str(times[t][0])+'-post'+str(times[t][1])+'-dt'+str(d),session+'-pre'+str(times[t][0])+'-post'+str(times[t][1])
 
 def get_bins(bn):
-    bins = [[6,1,6],[8,1,0]]#,[6,1,0],[0,1,6],[1,1,0],[2,1,0],[3,1,0],[1,0,0],[2,0,0],[3,0,0]]
+    bins = [[6,1,6],[8,1,0],[0,1,0]]#,[6,1,0],[0,1,6],[1,1,0],[2,1,0],[3,1,0],[1,0,0],[2,0,0],[3,0,0]]
     return bins[bn][0],bins[bn][1],bins[bn][2]
 
 def get_foldneuronPairs(i):
@@ -177,7 +177,7 @@ def get_fold(outer_fold,num_examples,bn,m):
 def get_data(neural_data,these_neurons,y,cond_binned,outer_fold,bn,dt,m):
     neural_data2 = neural_data[:,these_neurons]
 
-    if m<8:
+    if m<8 or m>8:
         [bins_before,bins_current,bins_after] = get_bins(bn)
         X = get_spikes_with_history(neural_data2,bins_before,bins_after,bins_current)
         X = X[range(bins_before,X.shape[0]-bins_after),:,:]
@@ -185,7 +185,7 @@ def get_data(neural_data,these_neurons,y,cond_binned,outer_fold,bn,dt,m):
 
         cond = cond_binned[range(bins_before,y.shape[0]-bins_after),:]
         y = y[range(bins_before,y.shape[0]-bins_after),:]
-    else:
+    elif m==8: #KF
         y = setup_KF(y,dt)
         cond = cond_binned 
         X = neural_data2
@@ -193,7 +193,7 @@ def get_data(neural_data,these_neurons,y,cond_binned,outer_fold,bn,dt,m):
     num_examples=X.shape[0]
     training_set,testing_set,valid_set =  get_fold(outer_fold,num_examples,bn,m)
 
-    if m<8:
+    if m<8 or m>8:
         X_train=X[training_set,:,:]
         X_flat_train=X_flat[training_set,:]
         y_train=y[training_set,:]

@@ -80,10 +80,10 @@ print("time elapsed = {} mins".format(time_elapsed/60))
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats
 result = [s,t,d,m,output,nm,nf,bn,repeat,outer_fold,r2,rho,coef_dict,prms,time_elapsed]     
 
-pfile = helpers.make_directory('Main/'+(jobname[:-6]),0)
+pfile = helpers.make_directory('Main/'+(jobname),0)
 if s==29:
-    with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
+    with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
         pickle.dump([result,c_test,y_test,y_test_predicted],p)
 else:
-    with open(cwd+pfile+'/fold{:0>2d}'.format(outer_fold)+'.pickle','wb') as p:
+    with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
         pickle.dump([result,c_test],p)

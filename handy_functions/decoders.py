@@ -22,11 +22,115 @@ from sklearn.linear_model import OrthogonalMatchingPursuit
 ##################### DECODER FUNCTIONS ##########################
 
 ##################### WIENER FILTER ##########################
+from scipy.signal import wiener
+from sklearn import linear_model
+import numpy as np
 
 class WienerFilterRegression(object):
 
     """
     Class for the Wiener Filter Decoder
+
+    There are no parameters to set.
+
+    This class leverages the Wiener filter in combination with scikit-learn linear regression.
+    """
+
+    def __init__(self):
+        self.model = None
+
+    def fit(self, X_flat_train, y_train):
+        """
+        Train Wiener Filter Decoder
+
+        Parameters
+        ----------
+        X_flat_train: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data.
+            See example file for an example of how to format the neural data correctly
+
+        y_train: numpy 2d array of shape [n_samples, n_outputs]
+            This is the outputs that are being predicted
+        """
+
+        # Apply the Wiener filter to the input data
+        X_filtered_train = self.apply_wiener_filter(X_flat_train)
+
+        # Initialize linear regression model
+        self.model = linear_model.LinearRegression()
+
+        # Train the model
+        self.model.fit(X_filtered_train, y_train)
+
+        return self.model.coef_, self.model.intercept_
+
+    def predict(self, X_flat_test):
+        """
+        Predict outcomes using trained Wiener Cascade Decoder
+
+        Parameters
+        ----------
+        X_flat_test: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data being used to predict outputs.
+
+        Returns
+        -------
+        y_test_predicted: numpy 2d array of shape [n_samples, n_outputs]
+            The predicted outputs
+        """
+
+        # Apply the Wiener filter to the input data
+        X_filtered_test = self.apply_wiener_filter(X_flat_test)
+
+        # Make predictions using the trained linear regression model
+        y_test_predicted = self.model.predict(X_filtered_test)
+
+        return y_test_predicted
+
+    def apply_wiener_filter(self, X):
+        """
+        Apply the Wiener filter to the input data
+
+        Parameters
+        ----------
+        X: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data.
+
+        Returns
+        -------
+        X_filtered: numpy 2d array of shape [n_samples, n_features]
+            The filtered neural data using the Wiener filter
+        """
+        # Apply the Wiener filter to each feature independently
+        X_filtered = np.apply_along_axis(self.wiener_with_warnings, axis=0, arr=X)
+
+        return X_filtered
+
+    def wiener_with_warnings(self, x):
+        """
+        Apply the Wiener filter to a single feature with warnings handling
+
+        Parameters
+        ----------
+        x: numpy 1d array
+            A single feature of the neural data.
+
+        Returns
+        -------
+        x_filtered: numpy 1d array
+            The filtered feature using the Wiener filter
+        """
+        with np.errstate(divide='ignore', invalid='ignore'):
+            x_filtered = wiener(x)
+        return x_filtered
+
+
+##################### LINEAR REGRESSION ##########################
+
+class LinearRegression(object):
+
+    """
+    Class for the Linear Regression Decoder
 
     There are no parameters to set.
 
@@ -40,7 +144,7 @@ class WienerFilterRegression(object):
     def fit(self,X_flat_train,y_train):
 
         """
-        Train Wiener Filter Decoder
+        Train Linear Regression Decoder
 
         Parameters
         ----------
@@ -60,7 +164,7 @@ class WienerFilterRegression(object):
     def predict(self,X_flat_test):
 
         """
-        Predict outcomes using trained Wiener Cascade Decoder
+        Predict outcomes using trained Linear Regression Decoder
 
         Parameters
         ----------
@@ -77,10 +181,121 @@ class WienerFilterRegression(object):
 
         return y_test_predicted
 
-
 ##################### WIENER CASCADE ##########################
 
+from scipy.signal import wiener
+from sklearn import linear_model
+import numpy as np
+
 class WienerCascadeRegression(object):
+
+    """
+    Class for the Wiener Cascade Decoder
+
+    Parameters
+    ----------
+    degree: integer, optional, default 3
+        The degree of the polynomial used for the static nonlinearity
+    """
+
+    def __init__(self, degree=3):
+         self.degree = degree
+         self.models = []
+
+    def fit(self, X_flat_train, y_train):
+        """
+        Train Wiener Cascade Decoder
+
+        Parameters
+        ----------
+        X_flat_train: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data.
+            See example file for an example of how to format the neural data correctly
+
+        y_train: numpy 2d array of shape [n_samples, n_outputs]
+            This is the outputs that are being predicted
+        """
+
+        num_outputs = y_train.shape[1]  # Number of outputs
+        for i in range(num_outputs):  # Loop through outputs
+            # Fit linear portion of model
+            regr = linear_model.LinearRegression()  # Call the linear portion of the model "regr"
+            regr.fit(X_flat_train, y_train[:, i])  # Fit linear
+            y_train_predicted_linear = regr.predict(X_flat_train)  # Get outputs of linear portion of model
+
+            # Apply the Wiener filter to the linear predictions
+            y_train_filtered_linear = self.apply_wiener_filter(y_train_predicted_linear)
+
+            # Fit nonlinear portion of model on the filtered linear predictions
+            p = np.polyfit(y_train_filtered_linear, y_train[:, i], self.degree)
+
+            # Add model for this output (both linear and nonlinear parts) to the list "models"
+            self.models.append([regr, p])
+
+    def get_coefficients_intercepts(self, output_idx):
+        if output_idx < len(self.models):
+            linear_model = self.models[output_idx][0]
+            coefficients = linear_model.coef_
+            intercept = linear_model.intercept_
+            return coefficients, intercept
+        else:
+            return None
+
+    def predict(self, X_flat_test):
+        """
+        Predict outcomes using trained Wiener Cascade Decoder
+
+        Parameters
+        ----------
+        X_flat_test: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data being used to predict outputs.
+
+        Returns
+        -------
+        y_test_predicted: numpy 2d array of shape [n_samples, n_outputs]
+            The predicted outputs
+        """
+
+        num_outputs = len(self.models)  # Number of outputs being predicted
+
+        y_test_predicted = np.empty([X_flat_test.shape[0], num_outputs])  # Initialize matrix that contains predicted outputs
+        for i in range(num_outputs):  # Loop through outputs
+            [regr, p] = self.models[i]  # Get the linear (regr) and nonlinear (p) portions of the trained model
+
+            # Predictions on test set
+            y_test_predicted_linear = regr.predict(X_flat_test)  # Get predictions on the linear portion of the model
+
+            # Apply the Wiener filter to the linear predictions
+            y_test_filtered_linear = self.apply_wiener_filter(y_test_predicted_linear)
+
+            # Run the linear predictions through the nonlinearity to get the final predictions
+            y_test_predicted[:, i] = np.polyval(p, y_test_filtered_linear)
+
+        return y_test_predicted
+
+    def apply_wiener_filter(self, x):
+        """
+        Apply the Wiener filter to the input data
+
+        Parameters
+        ----------
+        x: numpy 1d array
+            A single feature of the neural data.
+
+        Returns
+        -------
+        x_filtered: numpy 1d array
+            The filtered feature using the Wiener filter
+        """
+        # Apply the Wiener filter to the input feature
+        x_filtered = wiener(x)
+
+        return x_filtered
+
+
+##################### LINEAR CASCADE ##########################
+
+class LinearCascadeRegression(object):
 
     """
     Class for the Wiener Cascade Decoder
@@ -277,7 +492,7 @@ class OrthogonalMatchingPursuitDecoder(object):
             model.fit(X_train, y_train[:, i])
             self.models.append(model)
 
-        return self.model.coef_,self.model.intercept_
+        return model.coef_,model.intercept_
 
 
     def predict(self, X_test):
@@ -353,7 +568,7 @@ class CascadeOrthogonalMatchingPursuitDecoder(object):
             model.fit(X_train, y_train)
             self.models.append(model)
 
-        return self.model.coef_,self.model.intercept_
+        return model.coef_,model.intercept_
 
     def predict(self, X_test):
         """
@@ -375,6 +590,96 @@ class CascadeOrthogonalMatchingPursuitDecoder(object):
         for i in range(self.n_stages):
             model = self.models[i]
             y_test_predicted += model.predict(X_test)
+
+        return y_test_predicted
+
+
+#################### WRLS ###########################
+from sklearn.linear_model import SGDRegressor
+
+class WeightedRecursiveLeastSquares(object):
+    """  
+    Class for Weighted Recursive Least Squares (WRLS) Decoder
+
+    Parameters
+    ----------
+    alpha: float, optional, default 0.9
+        Forgetting factor, controlling the weight of past information.
+
+    Attributes
+    ----------
+    coefficients: numpy 1d array
+        Model coefficients for each feature.
+
+    Examples
+    --------
+    # Create and fit a WRLS decoder
+    decoder = WeightedRecursiveLeastSquares()
+    decoder.fit(X_train, y_train)
+    
+    # Make predictions
+    y_test_predicted = decoder.predict(X_test)
+    """
+
+    def __init__(self, alpha=0.9):
+        self.alpha = alpha
+        self.models = None
+        self.is_fitted = False  # Custom attribute to track if models are fitted
+
+    def fit(self, X_train, y_train):
+        """
+        Train the WRLS Decoder.
+
+        Parameters
+        ----------
+        X_train: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data.
+
+        y_train: numpy 2d array of shape [n_samples, n_outputs]
+            This is the outputs that are being predicted.
+        """
+        n_outputs = y_train.shape[1]
+        self.models = [SGDRegressor(learning_rate='constant', eta0=0.1, alpha=self.alpha)
+                       for _ in range(n_outputs)]
+
+        for t in range(X_train.shape[0]):
+            x_t = X_train[t, :].reshape(1, -1)
+            y_t = y_train[t, :]
+
+            for i in range(n_outputs):
+                # Check if the model is fitted, and if not, fit it
+                if not self.is_fitted:
+                    self.models[i].partial_fit(x_t, [y_t[i]])
+                else:
+                    y_hat_t = self.models[i].predict(x_t)
+                    error_t = y_t[i] - y_hat_t
+
+                    # Update the model for output i
+                    self.models[i].partial_fit(x_t, [y_t[i]], [error_t])
+
+        # After fitting, set the flag to indicate models are fitted
+        self.is_fitted = True
+
+    def predict(self, X_test):
+        """
+        Predict outcomes using the trained WRLS Decoder.
+
+        Parameters
+        ----------
+        X_test: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data being used to predict outputs.
+
+        Returns
+        -------
+        y_test_predicted: numpy 2d array of shape [n_samples, n_outputs]
+            The predicted outputs.
+        """
+        n_samples = X_test.shape[0]
+        n_outputs = len(self.models)
+        y_test_predicted = np.empty((n_samples, n_outputs))
+
+        for i in range(n_outputs):
+            y_test_predicted[:, i] = self.models[i].predict(X_test)
 
         return y_test_predicted
 
@@ -481,20 +786,273 @@ class KalmanFilterRegression(object):
         states[:,0]=np.copy(np.squeeze(state))
 
         #Get predicted state for every time bin
-        for t in range(X.shape[1]-1):
-            #Do first part of state update - based on transition matrix
-            P_m=A*P*A.T+W
-            state_m=A*state
+        kalman_gains = []
 
-            #Do second part of state update - based on measurement matrix
-            K=P_m*H.T*inv(H*P_m*H.T+Q) #Calculate Kalman gain
-            P=(np.matrix(np.eye(num_states))-K*H)*P_m
-            state=state_m+K*(Z[:,t+1]-H*state_m)
-            states[:,t+1]=np.squeeze(state) #Record state at the timestep
-        y_test_predicted=states.T
-        
+# Get predicted state for every time bin
+        for t in range(X.shape[1]-1):
+            # Do first part of state update - based on transition matrix
+            P_m = A * P * A.T + W
+            state_m = A * state
+
+            # Do second part of state update - based on measurement matrix
+            K = P_m * H.T * inv(H * P_m * H.T + Q)  # Calculate Kalman gain
+
+            # Append the Kalman gain to the array
+            kalman_gains.append(K)
+
+            P = (np.matrix(np.eye(num_states)) - K * H) * P_m
+            state = state_m + K * (Z[:, t+1] - H * state_m)
+            states[:, t+1] = np.squeeze(state)  # Record state at the timestep
+
+        y_test_predicted = states.T
+ 
+        return y_test_predicted, kalman_gains
+
+
+########################## Extended Kalman Filter ####################################
+import numpy as np
+from numpy.linalg import inv
+
+class ExtendedKalmanFilterRegression(object):
+    def __init__(self, C=1):
+        self.C = C
+        self.A = None
+        self.Q = None
+        self.H = None
+        self.R = None
+        self.x = None
+        self.P = None
+
+    def fit(self, X_kf_train, y_train):
+        X = np.matrix(y_train.T)
+        Z = np.matrix(X_kf_train.T)
+
+        nt = X.shape[1]
+
+        X2 = X[:, 1:]
+        X1 = X[:, 0:nt - 1]
+        self.A = X2 * X1.T * inv(X1 * X1.T)
+        self.Q = ((X2 - self.A * X1) * ((X2 - self.A * X1).T)) / (nt - 1) / self.C
+
+        self.H = Z * X.T * (inv(X * X.T))
+        self.R = ((Z - self.H * X) * ((Z - self.H * X).T)) / nt
+
+        self.x = np.matrix(np.zeros((X.shape[0], 1)))  # Initialize state estimate
+        self.P = np.matrix(np.eye(X.shape[0]))  # Initialize state estimate covariance
+
+    def predict(self, X_kf_test, y_test):
+        Z = np.matrix(X_kf_test.T)
+
+        num_states = self.x.shape[0]
+        states = np.empty((num_states, Z.shape[1]))
+        states[:, 0] = np.squeeze(self.x)
+
+        for t in range(Z.shape[1] - 1):
+            # Prediction step
+            self.x = self.A * self.x
+            self.P = self.A * self.P * self.A.T + self.Q
+
+            # Update step
+            K = self.P * self.H.T * inv(self.H * self.P * self.H.T + self.R)
+            self.x = self.x + K * (Z[:, t + 1] - self.H * self.x)
+            self.P = (np.matrix(np.eye(num_states)) - K * self.H) * self.P
+
+            states[:, t + 1] = np.squeeze(self.x)
+
+        y_test_predicted = states.T
+
         return y_test_predicted
 
+########################## Unscented Kalman Filter ####################################
+
+from scipy.linalg import sqrtm
+
+class UnscentedKalmanFilterRegression(object):
+
+    """
+    Class for the Unscented Kalman Filter Decoder
+
+    Parameters
+    -----------
+    C - float, optional, default 1
+    This parameter scales the noise matrix associated with the transition in kinematic states.
+    It effectively allows changing the weight of the new neural evidence in the current update.
+
+    Our implementation of the Unscented Kalman filter for neural decoding is based on the concept of sigma-point Kalman filtering, where sigma points are propagated through nonlinear functions to estimate the state and its covariance.
+
+    """
+
+    def __init__(self, C=1):
+        self.C = C
+
+    def fit(self, X_ukf_train, y_train):
+
+        """
+        Train Unscented Kalman Filter Decoder
+
+        Parameters
+        ----------
+        X_ukf_train: numpy 2d array of shape [n_samples (i.e. timebins), n_neurons]
+            This is the neural data in Unscented Kalman filter format.
+            See example file for an example of how to format the neural data correctly.
+
+        y_train: numpy 2d array of shape [n_samples (i.e. timebins), n_outputs]
+            This is the outputs that are being predicted.
+        """
+
+        # Rename and reformat the variables for Unscented Kalman filter
+        X = np.matrix(y_train.T)
+        Z = np.matrix(X_ukf_train.T)
+
+        # Number of time bins
+        nt = X.shape[1]
+
+        # Calculate the transition matrix (from x_t to x_t+1) using least-squares, and compute its covariance
+        X2 = X[:, 1:]
+        X1 = X[:, 0:nt - 1]
+        A = X2 * X1.T * np.linalg.inv(X1 * X1.T)  # Transition matrix
+        W = ((X2 - A * X1) * ((X2 - A * X1).T)) / (nt - 1) / self.C  # Covariance of transition matrix
+
+        # Calculate the measurement matrix (from x_t to z_t) using least-squares, and compute its covariance
+        H = Z * X.T * (np.linalg.inv(X * X.T))  # Measurement matrix
+        Q = ((Z - H * X) * ((Z - H * X).T)) / nt  # Covariance of measurement matrix
+
+        params = [A, W, H, Q]
+        self.model = params
+
+        return params
+
+    def predict(self, X_ukf_test, y_test):
+
+        """
+        Predict outcomes using trained Unscented Kalman Filter Decoder
+
+        Parameters
+        ----------
+        X_ukf_test: numpy 2d array of shape [n_samples (i.e. timebins), n_neurons]
+            This is the neural data in Unscented Kalman filter format.
+
+        y_test: numpy 2d array of shape [n_samples (i.e. timebins), n_outputs]
+            The actual outputs
+            This parameter is necessary for the Unscented Kalman filter
+            because the first value is necessary for initialization.
+
+        Returns
+        -------
+        y_test_predicted: numpy 2d array of shape [n_samples (i.e. timebins), n_outputs]
+            The predicted outputs
+        """
+
+        # Extract parameters
+        A, W, H, Q = self.model
+
+        # Rename and reformat the variables for Unscented Kalman filter
+        X = np.matrix(y_test.T)
+        Z = np.matrix(X_ukf_test.T)
+
+        # Initializations
+        num_states = X.shape[0]  # Dimensionality of the state
+        states = np.empty(X.shape)  # Keep track of states over time (states is what will be returned as y_test_predicted)
+        P_m = np.matrix(np.zeros([num_states, num_states]))
+        P = np.matrix(np.zeros([num_states, num_states]))
+        state = X[:, 0]  # Initial state
+        states[:, 0] = np.copy(np.squeeze(state))
+
+        # Get predicted state for every time bin
+        for t in range(X.shape[1] - 1):
+            # Do first part of state update - based on transition matrix
+            P_m = A * P * A.T + W
+            state_m = A * state
+
+            # Do second part of state update - based on measurement matrix
+            K = P_m * H.T * np.linalg.inv(H * P_m * H.T + Q)  # Calculate Kalman gain
+            P = (np.matrix(np.eye(num_states)) - K * H) * P_m
+            state = state_m + K * (Z[:, t + 1] - H * state_m)
+            states[:, t + 1] = np.squeeze(state)  # Record state at the timestep
+        y_test_predicted = states.T
+
+        return y_test_predicted
+
+
+##################### GAUSSIAN PROCESS REGRESSION (GPR) ##########################
+from sklearn.gaussian_process.kernels import RBF
+from sklearn.gaussian_process.kernels import Kernel
+from scipy.spatial.distance import cdist
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+
+class GaussianProcessRegressionDecoder(object):
+    """
+    Class for the Gaussian Process Regression Decoder
+
+    Parameters
+    ----------
+    kernel_length_scale: float, optional, default 1.0
+        The length scale for the RBF kernel function
+
+    Attributes
+    ----------
+    kernel_length_scale: float
+        The length scale for the RBF kernel function
+    models: list
+        A list to store trained Gaussian Process Regressor models for each output
+    """
+
+    def __init__(self, kernel_length_scale=1.0):
+        self.kernel_length_scale = kernel_length_scale
+        self.models = []
+
+    def fit(self, X_flat_train, y_train):
+        """
+        Train Gaussian Process Regression Decoder
+
+        Parameters
+        ----------
+        X_flat_train: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data.
+
+        y_train: numpy 2d array of shape [n_samples, n_outputs]
+            This is the outputs that are being predicted
+        """
+        num_outputs = y_train.shape[1]
+
+        # Initialize a list to store coefficients for each output dimension
+        coefficients = []
+
+        for i in range(num_outputs):
+            kernel = 1.0 * RBF(length_scale=self.kernel_length_scale)
+            gpr = GaussianProcessRegressor(kernel=kernel)
+            gpr.fit(X_flat_train, y_train[:, i])
+            self.models.append(gpr)
+
+            # Extract the coefficients (weights) from the GPR kernel
+            coefficients_i = gpr.kernel_.get_params()['k1__length_scale']
+            coefficients.append(coefficients_i)
+
+        return coefficients
+
+    def predict(self, X_flat_test):
+        """
+        Predict outcomes using trained Gaussian Process Regression Decoder
+
+        Parameters
+        ----------
+        X_flat_test: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data being used to predict outputs.
+
+        Returns
+        -------
+        y_test_predicted: numpy 2d array of shape [n_samples, n_outputs]
+            The predicted outputs
+        """
+        num_outputs = len(self.models)
+        y_test_predicted = np.empty([X_flat_test.shape[0], num_outputs])
+
+        for i in range(num_outputs):
+            gpr_model = self.models[i]
+            y_test_predicted[:, i] = gpr_model.predict(X_flat_test)
+
+        return y_test_predicted
 
 ##################### DENSE (FULLY-CONNECTED) NEURAL NETWORK ##########################
 
@@ -797,12 +1355,16 @@ class GRURegression(object):
 
 
 
+
 #################### LONG SHORT TERM MEMORY (LSTM) DECODER ##########################
+import tensorflow as tf
+from tensorflow.keras.layers import Input, LSTM, Dense
+from tensorflow.keras.models import Model
+
 
 class LSTMRegression(object):
-
     """
-    Class for the gated recurrent unit (GRU) decoder
+    Class for the LSTM Decoder
 
     Parameters
     ----------
@@ -817,25 +1379,30 @@ class LSTMRegression(object):
 
     verbose: binary, optional, default=0
         Whether to show progress of the fit after each epoch
+
+    batch_size: integer, optional, default 128
+        Batch size for training
+
+    workers: integer, optional, default 1
+        Number of workers for data loading during training
     """
 
-    def __init__(self,units=400,dropout=0,batch_size=128,num_epochs=10,verbose=0,workers=1):
-         self.units=units
-         self.dropout=dropout
-         self.batch_size=batch_size
-         self.num_epochs=num_epochs
-         self.verbose=verbose
-         self.workers=workers
+    def __init__(self, units=400, dropout=0, num_epochs=10, verbose=0, batch_size=128, workers=1):
+        self.units = units
+        self.dropout = dropout
+        self.num_epochs = num_epochs
+        self.verbose = verbose
+        self.batch_size = batch_size
+        self.workers = workers
+        self.model = None
 
-
-    def fit(self,X_train,y_train):
-
+    def fit(self, X_train, y_train):
         """
-        Train LSTM Decoder
+        Train LFADS Decoder
 
         Parameters
         ----------
-        X_train: numpy 3d array of shape [n_samples,n_time_bins,n_neurons]
+        X_train: numpy 3d array of shape [n_samples, n_time_bins, n_neurons]
             This is the neural data.
             See example file for an example of how to format the neural data correctly
 
@@ -843,24 +1410,20 @@ class LSTMRegression(object):
             This is the outputs that are being predicted
         """
 
-        model=Sequential() #Declare model
-        #Add recurrent layer
-        #if keras_v1:
-        #    model.add(LSTM(self.units,input_shape=(X_train.shape[1],X_train.shape[2]),dropout_W=self.dropout,dropout_U=self.dropout)) #Within recurrent layer, include dropout
-        #else:
-        model.add(LSTM(self.units,input_shape=(X_train.shape[1],X_train.shape[2]),dropout=self.dropout,recurrent_dropout=self.dropout)) #Within recurrent layer, include dropout
-        if self.dropout!=0: model.add(Dropout(self.dropout)) #Dropout some units (recurrent layer output units)
+        # Define the LFADS model
+        input_layer = Input(shape=(X_train.shape[1], X_train.shape[2]))
+        lstm_layer = LSTM(self.units, dropout=self.dropout)(input_layer)  # Remove return_sequences=True
+        output_layer = Dense(y_train.shape[1])(lstm_layer)  # Adjust for y_train shape
 
-        #Add dense connections to output layer
-        model.add(Dense(y_train.shape[1]))
+        model = Model(inputs=input_layer, outputs=output_layer)
 
-        #Fit model (and set fitting parameters)
-        model.compile(loss='mse',optimizer='rmsprop',metrics=['accuracy']) #Set loss function and optimizer
-        #if keras_v1:
-        #    model.fit(X_train,y_train,nb_epoch=self.num_epochs,verbose=self.verbose) #Fit the model
-        #else:
-        model.fit(X_train,y_train,batch_size=self.batch_size,epochs=self.num_epochs,verbose=self.verbose,workers=self.workers,use_multiprocessing=True) #Fit the model
-        self.model=model
+        # Compile the model
+        model.compile(loss='mse', optimizer='rmsprop', metrics=['accuracy'])
+
+        # Fit the model
+        model.fit(X_train, y_train, epochs=self.num_epochs, batch_size=self.batch_size, verbose=self.verbose, workers=self.workers)
+
+        self.model = model
         
         # Retrieve the model's weights and biases
         model_weights = []
@@ -871,25 +1434,23 @@ class LSTMRegression(object):
 
         return model_weights
 
-    def predict(self,X_test):
-
+    def predict(self, X_test):
         """
-        Predict outcomes using trained LSTM Decoder
+        Predict outcomes using trained LFADS Decoder
 
         Parameters
         ----------
-        X_test: numpy 3d array of shape [n_samples,n_time_bins,n_neurons]
+        X_test: numpy 3d array of shape [n_samples, n_time_bins, n_neurons]
             This is the neural data being used to predict outputs.
 
         Returns
         -------
-        y_test_predicted: numpy 2d array of shape [n_samples,n_outputs]
+        y_test_predicted: numpy 2d array of shape [n_samples, n_outputs]
             The predicted outputs
         """
 
-        y_test_predicted = self.model.predict(X_test) #Make predictions
+        y_test_predicted = self.model.predict(X_test)  # Make predictions
         return y_test_predicted
-
 
 
 ##################### EXTREME GRADIENT BOOSTING (XGBOOST) ##########################
@@ -1239,9 +1800,13 @@ class NaiveBayesRegression(object):
 
 ######### ALIASES for Regression ########
 
+LinearDecoder = LinearRegression
+LinearCascadeDecoder = LinearCascadeRegression
 WienerFilterDecoder = WienerFilterRegression
 WienerCascadeDecoder = WienerCascadeRegression
 KalmanFilterDecoder = KalmanFilterRegression
+ExtendedKalmanFilterDecoder = ExtendedKalmanFilterRegression
+UnscentedKalmanFilterDecoder = UnscentedKalmanFilterRegression
 DenseNNDecoder = DenseNNRegression
 SimpleRNNDecoder = SimpleRNNRegression
 GRUDecoder = GRURegression

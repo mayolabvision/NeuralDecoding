@@ -59,6 +59,12 @@ def get_bins(bn):
     bins = [[6,1,6],[3,1,0],[0,1,0]]#,[6,1,0],[0,1,6],[1,1,0],[2,1,0],[3,1,0],[1,0,0],[2,0,0],[3,0,0]]
     return bins[bn][0],bins[bn][1],bins[bn][2]
 
+def get_bins_fromTime(d,bn):
+    binsPre = int(bn/d)
+    binsCur = int(1)
+    binsPost = int(0)
+    return binsPre,binsCur,binsPost
+
 def get_foldneuronPairs(i):
     s,t,d,m,o,nm,nf,bn,fo,fi,r = get_params(i)
     pairs = list(product(range(fo), range(r)))

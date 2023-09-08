@@ -38,7 +38,8 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
 
-        prms = [np.nan]
+        coef_dict = {'coef': coeffs, 'intercept': intercept}
+        prms = {'nan': 0}
 
         print("R2 = {}".format(r2))
 
@@ -51,15 +52,12 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             y_valid_predicted_wc=model_wc.predict(X_flat_valid) 
             return np.mean(get_R2(y_valid,y_valid_predicted_wc))
         
-        pool = multiprocessing.Pool(processes=workers)
-        BO = BayesianOptimization(wc_evaluate, {'degree': (1, 5.01)}, verbose=verb, allow_duplicate_points=True)    
-        BO.maximize(init_points=10, n_iter=10, n_jobs=workers)
-        pool.close()
-        pool.join()
+        BO = BayesianOptimization(wc_evaluate, {'degree': (1, 10.01)}, verbose=verb, allow_duplicate_points=True)    
+        BO.maximize(init_points=20, n_iter=20)#, n_jobs=workers)
         params = max(BO.res, key=lambda x:x['target'])
         degree = params['params']['degree']
 
-        prms = [degree]
+        prms = {'degree': degree}
         
         model=WienerCascadeDecoder(degree) #Declare model
         model.fit(X_flat_train,y_train) #Fit model on training data
@@ -68,6 +66,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         rho = get_rho(y_test,y_test_predicted)
        
         coeffs, intercept = model.get_coefficients_intercepts(0) 
+        coef_dict = {'coef': coeffs, 'intercept': intercept}
 
         print("R2 = {}".format(r2))
 
@@ -89,8 +88,6 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         else:
             max_out = [4,5]
             
-        pool = multiprocessing.Pool(processes=workers)
-
         def kf_evaluate_lag(lag,X_train,y_train,X_valid,y_valid):    
             if lag<0:
                 y_train=y_train[-lag:,:]
@@ -106,19 +103,19 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             def kf_evaluate(C):
                 model=KalmanFilterDecoder(C=C) #Define model
                 model.fit(X_train,y_train) #Fit model
-                y_valid_predicted=model.predict(X_valid,y_valid) #Get validation set predictions
+                y_valid_predicted,_=model.predict(X_valid,y_valid) #Get validation set predictions
                 
                 return np.mean(get_R2(y_valid,y_valid_predicted)[max_out]) #Velocity is components 2 and 3
             
             #Do Bayesian optimization!
-            BO = BayesianOptimization(kf_evaluate, {'C': (.01, 100)}, verbose=verb, allow_duplicate_points=True) #Define Bayesian optimization, and set limits of hyperparameters
-            BO.maximize(init_points=20, n_iter=20, n_jobs=workers)
+            BO = BayesianOptimization(kf_evaluate, {'C': (0.5, 20)}, verbose=verb, allow_duplicate_points=True) #Define Bayesian optimization, and set limits of hyperparameters
+            BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
             params = max(BO.res, key=lambda x:x['target'])
             C=float(params['params']['C'])
 
             model=KalmanFilterDecoder(C=C) #Define model
             model.fit(X_train,y_train) #Fit model
-            y_valid_predicted=model.predict(X_valid,y_valid) #Get validation set predictions
+            y_valid_predicted,_=model.predict(X_valid,y_valid) #Get validation set predictions
             
             return [np.mean(get_R2(y_valid,y_valid_predicted)[max_out]), C] #Velocity is components 2 and 3
 
@@ -129,13 +126,10 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
 
             print(lag_results[j])
 
-        pool.close()
-        pool.join()
-
         lag=valid_lags[np.argmax(lag_results)] #The lag
         C=C_results[np.argmax(lag_results)] #The hyperparameter C 
 
-        prms = [lag,C]
+        prms = {'lag': lag, 'process_noise_scale': C}
 
         #Re-align data to take lag into account
         if lag<0:
@@ -155,7 +149,9 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         
         model=KalmanFilterDecoder(C=C) #Define model
         coeffs = model.fit(X_train,y_train) #Fit model, intercept = kalman gains
-        y_test_predicted, intercept = model.predict(X_test,y_test) #Get test set predictions
+        y_test_predicted,gains = model.predict(X_test,y_test) #Get test set predictions
+
+        coef_dict = {'transition_matrix_A': coeffs[0], 'cov_transition_matrix_W': coeffs[1], 'measurement_matrix_H': coeffs[2], 'cov_measurement_matrix_Q': coeffs[3], 'kalman_gains': gains}
 
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
@@ -165,29 +161,29 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
 ######################## SVR Decoder #########################
     if m == 3:
         from decoders import SVRDecoder
-        max_iter=1000
+        max_iter=2000
         def svr_evaluate(C):
             model_svr=SVRDecoder(C=C, max_iter=max_iter)
             model_svr.fit(X_flat_train,y_zscore_train) 
             y_valid_predicted_svr=model_svr.predict(X_flat_valid)
             return np.mean(get_R2(y_zscore_valid,y_valid_predicted_svr))
 
-        pool = multiprocessing.Pool(processes=workers)
         BO = BayesianOptimization(svr_evaluate, {'C': (.5, 10)}, verbose=verb, allow_duplicate_points=True)    
-        BO.maximize(init_points=5, n_iter=5, n_jobs=workers)
-        pool.close()
-        pool.join()
+        BO.maximize(init_points=5, n_iter=5)#, n_jobs=workers)
 
         params = max(BO.res, key=lambda x:x['target'])
         C = params['params']['C']
-        prms = [C]
+        prms = {'C': C}
 
         model=SVRDecoder(C=C, max_iter=max_iter)
-        coeffs,intercept = model.fit(X_flat_train,y_zscore_train) 
+        support_vects, coeffs = model.fit(X_flat_train,y_zscore_train) 
         y_test_predicted=model.predict(X_flat_test) 
         r2 = get_R2(y_zscore_test,y_test_predicted)
         rho = get_rho(y_zscore_test,y_test_predicted)
-        
+       
+        margin_widths = model.get_margin_width
+        coef_dict = {'support_vectors': support_vects, 'coefficients': coeffs, 'margin_widths': margin_widths}
+
         print("R2 = {}".format(r2))
 
 ##################### XGBoost Decoder #########################
@@ -197,25 +193,27 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             max_depth=int(max_depth) 
             num_round=int(num_round) 
             eta=float(eta) 
-            model_xgb=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta) 
+            model_xgb=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta, workers=workers) 
             model_xgb.fit(X_flat_train,y_train) 
             y_valid_predicted_xgb=model_xgb.predict(X_flat_valid) 
             return np.mean(get_R2(y_valid,y_valid_predicted_xgb)) 
 
-        pool = multiprocessing.Pool(processes=workers)
         BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=verb, allow_duplicate_points=True) 
-        BO.maximize(init_points=5, n_iter=5, n_jobs=workers)
-        pool.close()
-        pool.join()
+        BO.maximize(init_points=5, n_iter=5)#, n_jobs=workers)
 
         params = max(BO.res, key=lambda x:x['target'])
         num_round = int(params['params']['num_round'])
         max_depth = int(params['params']['max_depth'])
         eta = params['params']['eta']
-        prms = [num_round,max_depth,eta]
+       
+        prms = {'num_round': num_round, 'max_depth': max_depth, 'eta': eta}
+
+        model=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta, workers=workers) 
+        model.fit(X_flat_train,y_train) 
         
-        model=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta) 
-        coeffs,intercept = model.fit(X_flat_train,y_train) 
+        weights = model.get_feature_importance(importance_type='weight')
+        coef_dict = {'weights': weights}
+
         y_test_predicted=model.predict(X_flat_test) 
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
@@ -235,25 +233,23 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             y_valid_predicted_dnn=model_dnn.predict(X_flat_valid)
             return np.mean(get_R2(y_valid,y_valid_predicted_dnn))
 
-        pool = multiprocessing.Pool(processes=workers)
         BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10, n_jobs=workers)
-        pool.close()
-        pool.join()
+        BO.maximize(init_points=20, n_iter=20)#, n_jobs=workers)
 
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
         batch_size=int(params['params']['batch_size'])
         n_epochs=int(params['params']['n_epochs'])
         num_units=int(params['params']['num_units'])
-        prms = [num_units,frac_dropout,batch_size,n_epochs]
+        prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
 
         model=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers)
-        coeffs = model.fit(X_flat_train,y_train) 
-        intercept = np.nan
+        weights = model.fit(X_flat_train,y_train) 
         y_test_predicted=model.predict(X_flat_test) 
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
+
+        coef_dict = {'weights': weights}  
 
         print("R2 = {}".format(r2))
         
@@ -270,11 +266,8 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             y_valid_predicted_rnn=model_rnn.predict(X_valid)
             return np.mean(get_R2(y_valid,y_valid_predicted_rnn))
 
-        pool = multiprocessing.Pool(processes=workers)
         BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10, n_jobs=workers)
-        pool.close()
-        pool.join()
+        BO.maximize(init_points=20, n_iter=20)#, n_jobs=workers)
         
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -282,15 +275,16 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         n_epochs=int(params['params']['n_epochs'])
         num_units=int(params['params']['num_units'])
 
-        prms = [num_units,frac_dropout,batch_size,n_epochs]
+        prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
 
         model=SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers)
-        coeffs = model.fit(X_train,y_train)
-        intercept = np.nan
+        weights = model.fit(X_train,y_train)
         y_test_predicted=model.predict(X_test)
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
-        
+
+        coef_dict = {'weights': weights}  
+
         print("R2 = {}".format(r2))
 
 ######################### GRU Decoder ################################
@@ -306,11 +300,8 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             y_valid_predicted_gru=model_gru.predict(X_valid)
             return np.mean(get_R2(y_valid,y_valid_predicted_gru))
 
-        pool = multiprocessing.Pool(processes=workers)
         BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32, 256),'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10, n_jobs=workers)
-        pool.close()
-        pool.join()
+        BO.maximize(init_points=20, n_iter=20)#, n_jobs=workers)
         
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -318,15 +309,16 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         n_epochs=int(params['params']['n_epochs'])
         num_units=int(params['params']['num_units'])
        
-        prms = [num_units,frac_dropout,batch_size,n_epochs]
+        prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
 
         model=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers,verbose=0)
-        coeffs = model.fit(X_train,y_train)
-        intercept = np.nan
+        weights = model.fit(X_train,y_train)
         y_test_predicted=model.predict(X_test)
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
-        
+
+        coef_dict = {'weights': weights}  
+
         print("R2 = {}".format(r2))
         
 ######################### LSTM Decoder ############################
@@ -352,28 +344,29 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             'num_epochs': (2, 21)
         }
 
-        pool = multiprocessing.Pool(processes=workers)
         BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10, n_jobs=workers)
-        pool.close()
-        pool.join()
+        BO.maximize(init_points=1, n_iter=1)#, n_jobs=workers)
         
         best_params = BO.max['params']
         units = int(best_params['units'])
         dropout = float(best_params['dropout'])
         batch_size = int(best_params['batch_size'])
         num_epochs = int(best_params['num_epochs'])
+        
+        prms = {'num_units': units, 'frac_dropout': dropout, 'batch_size': batch_size, 'n_epochs': num_epochs}
 
         model = LSTMDecoder(units=units, dropout=dropout, batch_size=batch_size, num_epochs=num_epochs, verbose=1)
-        coeffs = model.fit(X_train, y_train)
+        weights = model.fit(X_train, y_train)
 
         y_test_predicted = model.predict(X_test)
         r2 = get_R2(y_test, y_test_predicted)
         rho = get_rho(y_test, y_test_predicted)
+        
+        coef_dict = {'weights': weights}  
 
         print("R2 = {}".format(r2))
     
-    return r2,rho,coeffs,intercept,prms,y_test,y_test_predicted
+    return r2,rho,coef_dict,prms,y_test,y_test_predicted
 
 
 ######################################################## OTHER MODELS #######################################################3

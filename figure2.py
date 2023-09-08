@@ -71,14 +71,14 @@ X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_va
 t1=time.time()
 #######################################################################################################################################
 
-r2,rho,coeffs,intercept,params,y_test,y_test_predicted = run_model(m,o,bn,1,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid)
+r2,rho,coef_dict,prms,y_test,y_test_predicted = run_model(m,o,bn,1,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid)
 
 #######################################################################################################################################
 time_elapsed = time.time()-t1
 print("time elapsed = {} mins".format(time_elapsed/60))
 
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats
-result = [s,t,d,m,output,nm,nf,bn,repeat,outer_fold,r2,rho,coeffs,intercept,params,time_elapsed]     
+result = [s,t,d,m,output,nm,nf,bn,repeat,outer_fold,r2,rho,coef_dict,prms,time_elapsed]     
 
 pfile = helpers.make_directory('Main/'+(jobname[:-6]),0)
 if s==29:

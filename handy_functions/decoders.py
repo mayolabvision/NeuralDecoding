@@ -824,6 +824,9 @@ class ExtendedKalmanFilterRegression(object):
         self.P = None
 
     def fit(self, X_kf_train, y_train):
+        num_samples, num_neurons = X_kf_train.shape
+        num_samples, num_outputs = y_train.shape
+
         X = np.matrix(y_train.T)
         Z = np.matrix(X_kf_train.T)
 
@@ -831,14 +834,51 @@ class ExtendedKalmanFilterRegression(object):
 
         X2 = X[:, 1:]
         X1 = X[:, 0:nt - 1]
-        self.A = X2 * X1.T * inv(X1 * X1.T)
+        self.A = X2 * X1.T * np.linalg.inv(X1 * X1.T)
         self.Q = ((X2 - self.A * X1) * ((X2 - self.A * X1).T)) / (nt - 1) / self.C
 
-        self.H = Z * X.T * (inv(X * X.T))
-        self.R = ((Z - self.H * X) * ((Z - self.H * X).T)) / nt
+        # Initialize state estimate
+        self.x = np.matrix(np.zeros((self.A.shape[0], 1)))
 
-        self.x = np.matrix(np.zeros((X.shape[0], 1)))  # Initialize state estimate
-        self.P = np.matrix(np.eye(X.shape[0]))  # Initialize state estimate covariance
+        # For the EKF, you'll need to compute Jacobians for your nonlinear measurement function (H)
+        # Assuming a nonlinear function f(x), you can compute the Jacobian H as follows:
+        # H = df(x) / dx, where df(x) is the gradient of your measurement function.
+
+        # Example:
+        # Define your nonlinear measurement function h(x)
+        def h(x):
+            # Example nonlinear measurement function
+            return np.sqrt(x)
+
+        num_states = self.A.shape[0]  # Number of states is determined by the shape of A
+
+        # Compute Jacobian H at the current state estimate
+        H = np.zeros((num_outputs, num_states))
+        for i in range(num_states):
+            dx = 1e-6  # Small change in state
+            perturbation = np.zeros((num_states, 1))
+            perturbation[i] = dx
+            h_plus = h(self.x + perturbation).flatten()  # Flatten to 1D array
+            h_minus = h(self.x - perturbation).flatten()  # Flatten to 1D array
+            H[:, i] = (h_plus - h_minus) / (2 * dx)
+
+        self.H = H
+
+        # Update dimensions
+        num_states = self.H.shape[1]
+
+        # Now, perform the correct matrix operations and flatten self.x:
+        self.x = self.x.flatten()  # Flatten self.x
+        print(self.x.shape)
+        print(self.H.shape)
+        print(Z.shape)
+
+        test = np.dot(self.H, self.x.T)
+        print(test.shape)
+
+        self.R = np.sum(np.square(Z - np.dot(self.H, self.x.T)), axis=0) / nt
+
+        self.P = np.matrix(np.eye(num_states))  # Initialize state estimate covariance
 
     def predict(self, X_kf_test, y_test):
         Z = np.matrix(X_kf_test.T)
@@ -853,7 +893,7 @@ class ExtendedKalmanFilterRegression(object):
             self.P = self.A * self.P * self.A.T + self.Q
 
             # Update step
-            K = self.P * self.H.T * inv(self.H * self.P * self.H.T + self.R)
+            K = self.P * self.H.T * np.linalg.inv(self.H * self.P * self.H.T + self.R)
             self.x = self.x + K * (Z[:, t + 1] - self.H * self.x)
             self.P = (np.matrix(np.eye(num_states)) - K * self.H) * self.P
 
@@ -1454,6 +1494,7 @@ class LSTMRegression(object):
 
 
 ##################### EXTREME GRADIENT BOOSTING (XGBOOST) ##########################
+from sklearn.inspection import permutation_importance
 
 class XGBoostRegression(object):
 
@@ -1476,11 +1517,12 @@ class XGBoostRegression(object):
         for negative values (default), the gpu is not used
     """
 
-    def __init__(self,max_depth=3,num_round=300,eta=0.3,gpu=-1):
+    def __init__(self,max_depth=3,num_round=300,eta=0.3,gpu=-1,workers=-1):
         self.max_depth=max_depth
         self.num_round=num_round
         self.eta=eta
         self.gpu=gpu
+        self.nthread=workers
 
     def fit(self,X_flat_train,y_train):
 
@@ -1507,12 +1549,14 @@ class XGBoostRegression(object):
             'eta': self.eta,
             'seed': 2925, #for reproducibility
             'silent': True,
-            'verbosity' : 0}
-        if self.gpu<0:
-            param['nthread'] = -1 #with -1 it will use all available threads
-        else:
-            param['gpu_id']=self.gpu
-            param['updater']='grow_gpu'
+            'verbosity' : 0,
+            'nthread':self.nthread}
+
+#if self.gpu<0:
+#param['nthread'] = -1 #with -1 it will use all available threads
+#else:
+#param['gpu_id']=self.gpu
+#param['updater']='grow_gpu'
 
         models=[] #Initialize list of models (there will be a separate model for each output)
         for y_idx in range(num_outputs): #Loop through outputs
@@ -1546,6 +1590,55 @@ class XGBoostRegression(object):
             y_test_predicted[:,y_idx] = bst.predict(dtest) #Make prediction
         return y_test_predicted
 
+    def get_feature_importance(self, importance_type='weight'):
+        """
+        Get feature importance scores using built-in XGBoost metrics.
+
+        Parameters
+        ----------
+        importance_type: str, optional, default='weight'
+            The type of importance score to retrieve. Options: 'weight', 'gain', 'cover'.
+
+        Returns
+        -------
+        importance_scores: list of dicts
+            A list of dictionaries, where each dictionary maps feature names to their importance scores for each model.
+        """
+        if hasattr(self, 'model'):
+            importance_scores = []
+            for model in self.model:
+                importance = model.get_score(importance_type=importance_type)
+                importance_scores.append(importance)
+            return importance_scores
+        else:
+            raise ValueError("Model has not been trained yet. Call the 'fit' method first.")
+
+    def get_permutation_importance(self, X_test, y_test, n_repeats=10, random_state=0):
+        """
+        Get feature importance scores using permutation importance.
+
+        Parameters
+        ----------
+        X_test: numpy 2d array of shape [n_samples, n_features]
+            Test data used for permutation importance calculation.
+
+        y_test: numpy 1d array of shape [n_samples]
+            True target values corresponding to X_test.
+
+        n_repeats: int, optional, default=10
+            The number of times to permute each feature.
+
+        random_state: int, optional, default=0
+            Random seed for reproducibility.
+
+        Returns
+        -------
+        permutation_scores: dict
+            A dictionary mapping feature names to their permutation importance scores.
+        """
+
+        result = permutation_importance(self.model, X_test, y_test, n_repeats=n_repeats, random_state=random_state)
+        return {feature_name: score for feature_name, score in zip(X_test.columns, result.importances_mean)}
 
 ##################### SUPPORT VECTOR REGRESSION ##########################
 
@@ -1587,15 +1680,19 @@ class SVRegression(object):
             This is the outputs that are being predicted
         """
 
-        num_outputs=y_train.shape[1] #Number of outputs
-        models=[] #Initialize list of models (there will be a separate model for each output)
-        for y_idx in range(num_outputs): #Loop through outputs
-            model=SVR(C=self.C, max_iter=self.max_iter) #Initialize SVR model
-            model.fit(X_flat_train, y_train[:,y_idx]) #Train the model
-            models.append(model) #Add fit model to list of models
-        self.model=models
+        num_outputs = y_train.shape[1]  # Number of outputs
+        models, support_vectors, coefficients = [],[],[]  # Initialize list of models (there will be a separate model for each output)
 
-        return self.model.coef_,self.model.intercept_
+        for y_idx in range(num_outputs):  # Loop through outputs
+            model = SVR(C=self.C, max_iter=self.max_iter)  # Initialize SVR model
+            model.fit(X_flat_train, y_train[:, y_idx])  # Train the model
+            models.append(model)  # Add fit model to list of models
+            support_vectors.append(model.support_vectors_)
+            coefficients.append(model.dual_coef_)
+
+        self.model = models
+        
+        return support_vectors, coefficients 
 
     def predict(self,X_flat_test):
 
@@ -1620,7 +1717,15 @@ class SVRegression(object):
             y_test_predicted[:,y_idx]=model.predict(X_flat_test) #Make predictions
         return y_test_predicted
 
-
+    def get_margin_width(self):
+        # Calculate margin width for each output
+        margin_widths = []
+        for coefficients in self.coefficients:
+            # Calculate margin width as 1 / ||w||, where w is the weight vector (coefficients)
+            weight_vector_norm = np.linalg.norm(coefficients)
+            margin_width = 1.0 / weight_vector_norm
+            margin_widths.append(margin_width)
+        return margin_widths
 
 
 #GLM helper function for the NaiveBayesDecoder

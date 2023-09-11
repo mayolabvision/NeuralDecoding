@@ -6,11 +6,11 @@
 #SBATCH --error=runs/outfiles/error_%A_%a.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=1
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=knoneman@pitt.edu
-#SBATCH --time=0-05:59:59
-#SBATCH --array=7
+#SBATCH --time=0-00:09:59
+#SBATCH --array=0-9
 
 echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."
 echo "My SLURM_ARRAY_TASK_ID is $SLURM_ARRAY_TASK_ID"
@@ -25,6 +25,7 @@ conda activate decoding
 #python neuron_dropping.py $1 1
 #python neuron_single.py $1 1
 #python cross_decoders.py $1 1
-python figure2.py $1 1 
+#python figure2.py $1 1 
+python figure3a.py $1 1
 
 echo "DONE"

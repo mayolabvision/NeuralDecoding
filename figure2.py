@@ -34,6 +34,10 @@ print(line)
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))
 
+print(foldneuron_pairs)
+print(foldneuron_pairs==[1,9])
+print(blah)
+
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
     neuron_fold = foldneuron_pairs[int(sys.argv[3])]

@@ -20,7 +20,7 @@ from random import shuffle
 import glob 
 
 def make_name(s,t,d,m,o,nm,nf,bn,fo,fi,r):
-    return "s{:02d}-t{}-d{:03d}-m{:02d}-o{}-nm{:02d}-nf{:02d}-bn{}-fo{:02d}-fi{:02d}-r{:04d}".format(s,t,d,m,o,nm,nf,bn,fo,fi,r)
+    return "s{:02d}-t{}-d{:03d}-m{:02d}-o{}-nm{:02d}-nf{:02d}-bn{:03d}-fo{:02d}-fi{:02d}-r{:04d}".format(s,t,d,m,o,nm,nf,bn,fo,fi,r)
 
 def checkdir(name):
     if not os.path.exists(name):

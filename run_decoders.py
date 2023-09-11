@@ -345,7 +345,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         }
 
         BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True)
-        BO.maximize(init_points=1, n_iter=1)#, n_jobs=workers)
+        BO.maximize(init_points=20, n_iter=20)#, n_jobs=workers)
         
         best_params = BO.max['params']
         units = int(best_params['units'])

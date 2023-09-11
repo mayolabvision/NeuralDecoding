@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
-params = 'params/params_fig2a.txt'
+params = 'params/params_fig3a.txt'
 
 from metrics import get_R2
 from metrics import get_rho
@@ -33,10 +33,6 @@ line = np.loadtxt(params)[int(sys.argv[1])]
 print(line)
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))
-
-print(foldneuron_pairs)
-print(foldneuron_pairs==[1,9])
-print(blah)
 
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
@@ -84,7 +80,7 @@ print("time elapsed = {} mins".format(time_elapsed/60))
 #s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats
 result = [s,t,d,m,output,nm,nf,bn,repeat,outer_fold,r2,rho,coef_dict,prms,time_elapsed]     
 
-pfile = helpers.make_directory('Main/'+(jobname),0)
+pfile = helpers.make_directory('BinSweep/'+(jobname),0)
 if s==29:
     with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
         pickle.dump([result,c_test,y_test,y_test_predicted],p)

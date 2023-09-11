@@ -1,6 +1,6 @@
-000 29 0 025 0 0 24 24 02 10 1 1   #lineID,session,timesPrePost,binwidth,model,output,numMT,numFEF,binsBefore,outerFolds,innerFolds,numRepeats  
-001 29 0 025 0 1 24 24 02 10 1 1   
-002 29 0 025 0 2 24 24 02 10 1 1   
+000 29 0 025 0 0 24 24 02 10 1 01   #lineID,session,timesPrePost,binwidth,model,output,numMT,numFEF,binsBefore,outerFolds,innerFolds,numRepeats  
+001 29 0 025 0 1 24 24 02 10 1 01   
+002 29 0 025 0 2 24 24 02 10 1 01   
 003 29 0 025 1 0 24 24 02 10 1 10   
 004 29 0 025 1 1 24 24 02 10 1 10   
 005 29 0 025 1 2 24 24 02 10 1 10   
@@ -25,9 +25,9 @@
 024 29 0 025 8 0 24 24 02 10 1 10   
 025 29 0 025 8 1 24 24 02 10 1 10   
 026 29 0 025 8 2 24 24 02 10 1 10   
-027 29 0 025 0 0 24 24 04 10 1 1   #lineID,session,timesPrePost,binwidth,model,output,numMT,numFEF,binsBefore,outerFolds,innerFolds,numRepeats  
-028 29 0 025 0 1 24 24 04 10 1 1   
-029 29 0 025 0 2 24 24 04 10 1 1   
+027 29 0 025 0 0 24 24 04 10 1 01 
+028 29 0 025 0 1 24 24 04 10 1 01   
+029 29 0 025 0 2 24 24 04 10 1 01   
 030 29 0 025 1 0 24 24 04 10 1 10   
 031 29 0 025 1 1 24 24 04 10 1 10   
 032 29 0 025 1 2 24 24 04 10 1 10   

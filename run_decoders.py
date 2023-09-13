@@ -104,7 +104,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             
             #Do Bayesian optimization!
             BO = BayesianOptimization(kf_evaluate, {'C': (0.5, 20)}, verbose=verb, allow_duplicate_points=True) #Define Bayesian optimization, and set limits of hyperparameters
-            BO.maximize(init_points=1, n_iter=1)#, n_jobs=workers)
+            BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
             params = max(BO.res, key=lambda x:x['target'])
             C=float(params['params']['C'])
 
@@ -151,34 +151,6 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
 
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
-
-        print("R2 = {}".format(r2))
-
-######################## SVR Decoder #########################
-    if m == 3:
-        from decoders import SVRDecoder
-        max_iter=2000
-        def svr_evaluate(C):
-            model_svr=SVRDecoder(C=C, max_iter=max_iter)
-            model_svr.fit(X_flat_train,y_zscore_train) 
-            y_valid_predicted_svr=model_svr.predict(X_flat_valid)
-            return np.mean(get_R2(y_zscore_valid,y_valid_predicted_svr))
-
-        BO = BayesianOptimization(svr_evaluate, {'C': (.5, 10)}, verbose=verb, allow_duplicate_points=True)    
-        BO.maximize(init_points=5, n_iter=5)#, n_jobs=workers)
-
-        params = max(BO.res, key=lambda x:x['target'])
-        C = params['params']['C']
-        prms = {'C': C}
-
-        model=SVRDecoder(C=C, max_iter=max_iter)
-        support_vects, coeffs = model.fit(X_flat_train,y_zscore_train) 
-        y_test_predicted=model.predict(X_flat_test) 
-        r2 = get_R2(y_zscore_test,y_test_predicted)
-        rho = get_rho(y_zscore_test,y_test_predicted)
-       
-        margin_widths = model.get_margin_width
-        coef_dict = {'support_vectors': support_vects, 'coefficients': coeffs, 'margin_widths': margin_widths}
 
         print("R2 = {}".format(r2))
 
@@ -259,7 +231,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             return np.mean(get_R2(y_valid,y_valid_predicted_dnn))
 
         BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=20, n_iter=20)#, n_jobs=workers)
+        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
 
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -292,7 +264,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             return np.mean(get_R2(y_valid,y_valid_predicted_rnn))
 
         BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=20, n_iter=20)#, n_jobs=workers)
+        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
         
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -326,7 +298,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             return np.mean(get_R2(y_valid,y_valid_predicted_gru))
 
         BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32, 256),'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=20, n_iter=20)#, n_jobs=workers)
+        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
         
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -370,7 +342,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         }
 
         BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True)
-        BO.maximize(init_points=20, n_iter=20)#, n_jobs=workers)
+        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
         
         best_params = BO.max['params']
         units = int(best_params['units'])

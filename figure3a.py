@@ -82,7 +82,7 @@ if m!=2:
     result = [s,t,d,m,output,nm,nf,bn,repeat,outer_fold,r2,rho,prms,time_elapsed]     
 
     jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
-    pfile = helpers.make_directory('BinSweep_test/'+(jobname),0)
+    pfile = helpers.make_directory((jobname),0)
     if s==29 and repeat==0:
         with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
             pickle.dump([result,c_test,y_test,y_test_predicted],p)

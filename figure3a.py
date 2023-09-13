@@ -48,25 +48,18 @@ repeat = neuron_fold[1]
 these_neurons = neurons_perRepeat[repeat]
 
 sess,sess_nodt = helpers.get_session(s,t,d)
-jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
 
 with open(cwd+'/datasets/vars/vars-'+sess+'.pickle','rb') as f:
     neural_data,pos_binned,vel_binned,acc_binned,cond_binned=pickle.load(f,encoding='latin1')
 
 if o==0:
     output = 'position'
-    y = pos_binned
 elif o==1:
     output = 'velocity'
-    y = vel_binned
 elif o==2:
     output = 'acceleration'
-    y = acc_binned
 
-if m==2:
-    y = vel_binned
-
-X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test = helpers.get_data(neural_data,these_neurons,y,cond_binned,outer_fold,bn,d,m)
+X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test = helpers.get_data(neural_data,these_neurons,o,pos_binned,vel_binned,acc_binned,cond_binned,outer_fold,bn,m)
 
 t1=time.time()
 #######################################################################################################################################
@@ -78,14 +71,49 @@ time_elapsed = time.time()-t1
 print("time elapsed = {} mins".format(time_elapsed/60))
 
 #s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats
-result = [s,t,d,m,output,nm,nf,bn,repeat,outer_fold,r2,rho,prms,time_elapsed]     
+if m!=2:
+    if o==0:
+        output = 'position'
+    elif o==1:
+        output = 'velocity'
+    elif o==2:
+        output = 'acceleration'
+    
+    result = [s,t,d,m,output,nm,nf,bn,repeat,outer_fold,r2,rho,prms,time_elapsed]     
 
-pfile = helpers.make_directory('BinSweep/'+(jobname),0)
-#if s==29:
-#    with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
-#        pickle.dump([result,c_test,y_test,y_test_predicted],p)
-#else:
-with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
-    pickle.dump(result,p)
+    jobname = helpers.make_name(s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats)
+    pfile = helpers.make_directory('BinSweep_test/'+(jobname),0)
+    if s==29 and repeat==0:
+        with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
+            pickle.dump([result,c_test,y_test,y_test_predicted],p)
+    else:
+        with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
+            pickle.dump([result],p)
+else:
+    for oo in range(3):
+        if oo==0:
+            output = 'position'
+            rr2 = r2[:2]
+            rrho = rho[:2]
+        elif oo==1:
+            output = 'velocity'
+            rr2 = r2[2:4]
+            rrho = rho[2:4]
+        elif oo==2:
+            output = 'acceleration'
+            rr2 = r2[4:]
+            rrho = rho[4:]
+
+        print(rr2)
+        result = [s,t,d,m,output,nm,nf,bn,repeat,outer_fold,rr2,rrho,prms,time_elapsed]     
+
+        jobname = helpers.make_name(s,t,d,m,oo,nm,nf,bn,fo,fi,num_repeats)
+        pfile = helpers.make_directory('BinSweep_test/'+(jobname),0)
+        if s==29 and repeat==0:
+            with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
+                pickle.dump([result,c_test,y_test,y_test_predicted],p)
+        else:
+            with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
+                pickle.dump([result],p)
 
 

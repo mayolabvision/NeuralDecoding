@@ -81,13 +81,8 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         lag_results=np.empty(num_valid_lags) #Array to store validation R2 results for each lag
         C_results=np.empty(num_valid_lags) #Array to store the best hyperparameter for each lag
 
-        if o==0:
-            max_out = [0,1]
-        elif o==1:
-            max_out = [2,3]
-        else:
-            max_out = [4,5]
-            
+        max_out = [0,1,2,3,4,5]
+
         def kf_evaluate_lag(lag,X_train,y_train,X_valid,y_valid):    
             if lag<0:
                 y_train=y_train[-lag:,:]
@@ -109,7 +104,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             
             #Do Bayesian optimization!
             BO = BayesianOptimization(kf_evaluate, {'C': (0.5, 20)}, verbose=verb, allow_duplicate_points=True) #Define Bayesian optimization, and set limits of hyperparameters
-            BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
+            BO.maximize(init_points=1, n_iter=1)#, n_jobs=workers)
             params = max(BO.res, key=lambda x:x['target'])
             C=float(params['params']['C'])
 
@@ -154,7 +149,6 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         #coef_dict = {'transition_matrix_A': coeffs[0], 'cov_transition_matrix_W': coeffs[1], 'measurement_matrix_H': coeffs[2], 'cov_measurement_matrix_Q': coeffs[3], 'kalman_gains': gains}
         coef_dict = {'test': np.nan}
 
-
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
 
@@ -189,7 +183,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         print("R2 = {}".format(r2))
 
 ##################### XGBoost Decoder #########################
-    if m == 4:
+    if m == 3:
         from decoders import XGBoostDecoder
         def xgb_evaluate(max_depth,num_round,eta):
             max_depth=int(max_depth) 
@@ -221,6 +215,35 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         rho = get_rho(y_test,y_test_predicted)
         
         print("R2 = {}".format(r2))
+
+######################## SVR Decoder #########################
+    if m == 4:
+        from decoders import SVRDecoder
+        max_iter=2000
+        def svr_evaluate(C):
+            model_svr=SVRDecoder(C=C, max_iter=max_iter)
+            model_svr.fit(X_flat_train,y_zscore_train) 
+            y_valid_predicted_svr=model_svr.predict(X_flat_valid)
+            return np.mean(get_R2(y_zscore_valid,y_valid_predicted_svr))
+
+        BO = BayesianOptimization(svr_evaluate, {'C': (.5, 10)}, verbose=verb, allow_duplicate_points=True)    
+        BO.maximize(init_points=5, n_iter=5)#, n_jobs=workers)
+
+        params = max(BO.res, key=lambda x:x['target'])
+        C = params['params']['C']
+        prms = {'C': C}
+
+        model=SVRDecoder(C=C, max_iter=max_iter)
+        support_vects, coeffs = model.fit(X_flat_train,y_zscore_train) 
+        y_test_predicted=model.predict(X_flat_test) 
+        r2 = get_R2(y_zscore_test,y_test_predicted)
+        rho = get_rho(y_zscore_test,y_test_predicted)
+       
+        margin_widths = model.get_margin_width
+        coef_dict = {'support_vectors': support_vects, 'coefficients': coeffs, 'margin_widths': margin_widths}
+
+        print("R2 = {}".format(r2))
+
 
 ####################### DNN #######################
     if m == 5:

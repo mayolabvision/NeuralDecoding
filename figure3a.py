@@ -55,18 +55,12 @@ with open(cwd+'/datasets/vars/vars-'+sess+'.pickle','rb') as f:
 
 if o==0:
     output = 'position'
-    y = pos_binned
 elif o==1:
     output = 'velocity'
-    y = vel_binned
 elif o==2:
     output = 'acceleration'
-    y = acc_binned
 
-if m==2:
-    y = vel_binned
-
-X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test = helpers.get_data(neural_data,these_neurons,y,cond_binned,outer_fold,bn,d,m)
+X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test = helpers.get_data(neural_data,these_neurons,o,pos_binned,vel_binned,acc_binned,cond_binned,outer_fold,bn,m)
 
 t1=time.time()
 #######################################################################################################################################
@@ -80,12 +74,12 @@ print("time elapsed = {} mins".format(time_elapsed/60))
 #s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats
 result = [s,t,d,m,output,nm,nf,bn,repeat,outer_fold,r2,rho,prms,time_elapsed]     
 
-pfile = helpers.make_directory('BinSweep/'+(jobname),0)
-#if s==29:
-#    with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
-#        pickle.dump([result,c_test,y_test,y_test_predicted],p)
+pfile = helpers.make_directory('BinSweep_test/'+(jobname),0)
+if s==29 and repeat==0:
+    with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
+        pickle.dump([result,c_test,y_test,y_test_predicted],p)
 #else:
 with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
-    pickle.dump(result,p)
+    pickle.dump([result],p)
 
 

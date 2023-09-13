@@ -182,8 +182,15 @@ def get_fold(outer_fold,num_examples,bn,m):
 
     return training_set,testing_set,valid_set
 
-def get_data(neural_data,these_neurons,y,cond_binned,outer_fold,bn,dt,m):
+def get_data(neural_data,these_neurons,o,pos_binned,vel_binned,acc_binned,cond_binned,outer_fold,bn,m):
     neural_data2 = neural_data[:,these_neurons]
+    
+    if o==0:
+        y = pos_binned
+    elif o==1:
+        y = vel_binned
+    elif o==2:
+        y = acc_binned
 
     if m!=2:
         [bins_before,bins_current,bins_after] = get_bins(bn)
@@ -194,7 +201,7 @@ def get_data(neural_data,these_neurons,y,cond_binned,outer_fold,bn,dt,m):
         cond = cond_binned[range(bins_before,y.shape[0]-bins_after),:]
         y = y[range(bins_before,y.shape[0]-bins_after),:]
     else: #KF
-        y = setup_KF(y,dt)
+        y = np.concatenate((pos_binned,vel_binned,acc_binned),axis=1)
         cond = cond_binned 
         X = neural_data2
 
@@ -231,21 +238,6 @@ def get_data(neural_data,these_neurons,y,cond_binned,outer_fold,bn,dt,m):
         X_flat_valid=X_valid
 
     return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test 
-
-def setup_KF(vels_binned,dt):
-    
-    pos_binned=np.zeros(vels_binned.shape) #Initialize 
-    pos_binned[0,:]=0 #Assume starting position is at [0,0]
-    for i in range(pos_binned.shape[0]-1): 
-        pos_binned[i+1,0]=pos_binned[i,0]+vels_binned[i,0]*dt #Note that .05 is the length of the time bin
-        pos_binned[i+1,1]=pos_binned[i,1]+vels_binned[i,1]*dt
-
-    temp=np.diff(vels_binned,axis=0) #The acceleration is the difference in velocities across time bins 
-    acc_binned=np.concatenate((temp,temp[-1:,:]),axis=0) #Assume acceleration at last time point is same as 2nd to last
-
-    y = np.concatenate((pos_binned,vels_binned,acc_binned),axis=1)
-
-    return y 
 
 def get_data_Xconditions(line,repeat,outer_fold,shuffle,condition,trCo,teCo):
     s = int(line[1])

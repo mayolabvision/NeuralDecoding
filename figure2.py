@@ -34,10 +34,6 @@ print(line)
 s,t,d,m,o,nm,nf,bn,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
 foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))
 
-print(foldneuron_pairs)
-print(foldneuron_pairs==[1,9])
-print(blah)
-
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
     neuron_fold = foldneuron_pairs[int(sys.argv[3])]
@@ -67,10 +63,7 @@ elif o==2:
     output = 'acceleration'
     y = acc_binned
 
-if m==2:
-    y = vel_binned
-
-X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test = helpers.get_data(neural_data,these_neurons,y,cond_binned,outer_fold,bn,d,m)
+X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test = helpers.get_data(neural_data,these_neurons,o,pos_binned,vel_binned,acc_binned,cond_binned,outer_fold,bn,m)
 
 t1=time.time()
 #######################################################################################################################################

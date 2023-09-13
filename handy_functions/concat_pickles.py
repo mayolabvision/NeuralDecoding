@@ -55,15 +55,15 @@ def get_outputs_wTraces(data_folder,conditions,column_names):
     df['rho_x']  = df['rho'].apply(lambda x: x[0])
     df['rho_y']  = df['rho'].apply(lambda x: x[1])
     df['rho_mn']  = df['rho'].apply(lambda x: x.mean())
+    '''
     df['R2N_x']  = df['R2_null'].apply(lambda x: x[0])
     df['R2N_y']  = df['R2_null'].apply(lambda x: x[1])
     df['R2N_mn']  = df['R2_null'].apply(lambda x: x.mean())
     df['rhoN_x'] = df['rho_null'].apply(lambda x: x[0])
     df['rhoN_y'] = df['rho_null'].apply(lambda x: x[1])
     df['rhoN_mn']  = df['rho_null'].apply(lambda x: x.mean())
-
     df = df.drop(columns=['R2','rho','R2_null','rho_null'])
-    
+    '''
     return df,conds_all,yTest_all,yTestPred_all
 
 

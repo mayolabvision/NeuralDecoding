@@ -104,7 +104,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             
             #Do Bayesian optimization!
             BO = BayesianOptimization(kf_evaluate, {'C': (0.5, 20)}, verbose=verb, allow_duplicate_points=True) #Define Bayesian optimization, and set limits of hyperparameters
-            BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
+            BO.maximize(init_points=1, n_iter=1)#, n_jobs=workers)
             params = max(BO.res, key=lambda x:x['target'])
             C=float(params['params']['C'])
 
@@ -151,16 +151,6 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
 
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
-
-        if o==0:
-            r2 = r2[0,1]
-            rho = rho[0,1]
-        elif o==1:
-            r2 = r2[2,3]
-            rho = rho[2,3]
-        else:
-            r2 = r2[4,5]
-            rho = rho[4,5]
 
         print("R2 = {}".format(r2))
 

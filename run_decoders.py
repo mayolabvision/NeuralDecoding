@@ -151,7 +151,9 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         coeffs = model.fit(X_train,y_train) #Fit model, intercept = kalman gains
         y_test_predicted,gains = model.predict(X_test,y_test) #Get test set predictions
 
-        coef_dict = {'transition_matrix_A': coeffs[0], 'cov_transition_matrix_W': coeffs[1], 'measurement_matrix_H': coeffs[2], 'cov_measurement_matrix_Q': coeffs[3], 'kalman_gains': gains}
+        #coef_dict = {'transition_matrix_A': coeffs[0], 'cov_transition_matrix_W': coeffs[1], 'measurement_matrix_H': coeffs[2], 'cov_measurement_matrix_Q': coeffs[3], 'kalman_gains': gains}
+        coef_dict = {'test': np.nan}
+
 
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)

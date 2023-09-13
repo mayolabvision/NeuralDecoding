@@ -86,6 +86,6 @@ pfile = helpers.make_directory('BinSweep/'+(jobname),0)
 #        pickle.dump([result,c_test,y_test,y_test_predicted],p)
 #else:
 with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
-    pickle.dump([result,c_test],p)
+    pickle.dump(result,p)
 
 

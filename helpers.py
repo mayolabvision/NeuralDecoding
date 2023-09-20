@@ -10,7 +10,7 @@ from math import ceil
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
-params = 'params/params_fig3a.txt'
+params = 'params/params_full.txt'
 data_folder     = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets/'
 
 import neuronsSample
@@ -19,8 +19,8 @@ from sklearn.model_selection import KFold
 from random import shuffle
 import glob 
 
-def make_name(s,t,d,m,o,nm,nf,bn,fo,fi,r):
-    return "s{:02d}-t{}-d{:03d}-m{:02d}-o{}-nm{:02d}-nf{:02d}-bn{:03d}-fo{:02d}-fi{:02d}-r{:04d}".format(s,t,d,m,o,nm,nf,bn,fo,fi,r)
+def make_name(s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,r):
+    return "s{:02d}-t{}-dto{:03d}-df{}-o{}-wi{:03d}-dti{:03d}-m{:02d}-nm{:02d}-nf{:02d}-fo{:02d}-fi{:02d}-r{:04d}".format(s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,r)
 
 def checkdir(name):
     if not os.path.exists(name):
@@ -31,16 +31,18 @@ def get_params(i):
     line = np.loadtxt(params)[i]
     s = int(line[1])
     t = int(line[2])
-    d = int(line[3])
-    m = int(line[4])
+    dto = int(line[3])
+    df = int(line[4])
     o = int(line[5])
-    nm = int(line[6])
-    nf = int(line[7])
-    bn = int(line[8])
-    fo = int(line[9])
-    fi = int(line[10]) 
-    r = int(line[11])
-    return s,t,d,m,o,nm,nf,bn,fo,fi,r
+    wi = int(line[6])
+    dti = int(line[7])
+    m = int(line[8])
+    nm = int(line[9])
+    nf = int(line[10])
+    fo = int(line[11]) 
+    fi = int(line[12])
+    r = int(line[13])
+    return s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,r
 
 def make_directory(jobname,nameOnly):
     cwd = os.getcwd()
@@ -50,10 +52,10 @@ def make_directory(jobname,nameOnly):
            os.makedirs(cwd+f,exist_ok=True)
     return f
 
-def get_session(j,t,d):
+def get_session(j,t,dto,df,wi,dti):
     session = 'pa'+str(j)+'dir4A'
     times = [[500,300]]
-    return session+'-pre'+str(times[t][0])+'-post'+str(times[t][1])+'-dt'+str(d),session+'-pre'+str(times[t][0])+'-post'+str(times[t][1])
+    return session+'-pre{}-post{}-dto{:03d}-df{}-wi{:03d}-dti{:03d}'.format(times[t][0],times[t][1],dto,df,wi,dti), session+'-pre{}-post{}'.format(times[t][0],times[t][1])
 
 def get_bins(bn):
     #bins = [[6,1,6],[3,1,0],[0,1,0]]#,[6,1,0],[0,1,6],[1,1,0],[2,1,0],[3,1,0],[1,0,0],[2,0,0],[3,0,0]]
@@ -68,7 +70,7 @@ def get_bins_fromTime(d,bn):
     return binsPre,binsCur,binsPost
 
 def get_foldneuronPairs(i):
-    s,t,d,m,o,nm,nf,bn,fo,fi,r = get_params(i)
+    s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,r = get_params(i)
     pairs = list(product(range(fo), range(r)))
     return pairs
 
@@ -144,7 +146,38 @@ def normalize_trainTestKF(X_train,X_test,X_valid,y_train,y_test,y_valid):
 
     return X_train,X_test,X_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid
 
-def get_fold(outer_fold,num_examples,bn,m):
+def get_fold(outer_fold,fo,fi,num_examples):
+
+    kf = KFold(n_splits=fo, shuffle=True, random_state=42)
+    validation_split = float(fi/100)
+
+    # Lists to store training and testing indices for each fold
+    train_indices = []
+    validation_indices = []
+    test_indices = []
+
+    # Split the data into folds
+    for train_idx, test_idx in kf.split(range(num_examples)):
+        # Further split each training set into train and validation
+        n_train = len(train_idx)
+        n_validation = int(n_train * validation_split)
+
+        # Randomly shuffle the training indices
+        np.random.shuffle(train_idx)
+
+        # Separate into train and validation indices
+        train_split_idx = train_idx[:n_train - n_validation]
+        validation_split_idx = train_idx[n_train - n_validation:]
+
+        train_indices.append(train_split_idx)
+        validation_indices.append(validation_split_idx)
+        test_indices.append(test_idx)
+
+    training_set = train_indices[outer_fold]
+    testing_set = test_indices[outer_fold]
+    valid_set = validation_indices[outer_fold]
+
+    '''
     valid_range_all=[[0,.1],[.1,.2],[.2,.3],[.3,.4],[.4,.5],
                  [.5,.6],[.6,.7],[.7,.8],[.8,.9],[.9,1]]
     testing_range_all=[[.1,.2],[.2,.3],[.3,.4],[.4,.5],[.5,.6],
@@ -157,9 +190,8 @@ def get_fold(outer_fold,num_examples,bn,m):
     training_ranges=training_range_all[outer_fold]
 
     if m!=2:
-        [bins_before,bins_current,bins_after] = get_bins(bn)
-        testing_set=np.arange(int(np.round(testing_range[0]*num_examples))+bins_before,int(np.round(testing_range[1]*num_examples))-bins_after)
-        valid_set=np.arange(int(np.round(valid_range[0]*num_examples))+bins_before,int(np.round(valid_range[1]*num_examples))-bins_after)
+        testing_set=np.arange(int(np.round(testing_range[0]*num_examples))+bins_before,int(np.round(testing_range[1]*num_examples)))
+        valid_set=np.arange(int(np.round(valid_range[0]*num_examples))+bins_before,int(np.round(valid_range[1]*num_examples)))
 
         for j in range(len(training_ranges)): 
             training_range=training_ranges[j]
@@ -179,34 +211,23 @@ def get_fold(outer_fold,num_examples,bn,m):
             if j==1: #If it's the second portion of the training set, concatentate it to the first
                 training_set_temp=np.arange(int(np.round(training_range[0]*num_examples))+1,int(np.round(training_range[1]*num_examples))-1)
                 training_set=np.concatenate((training_set,training_set_temp),axis=0)
-
+    '''
     return training_set,testing_set,valid_set
 
-def get_data(neural_data,these_neurons,o,pos_binned,vel_binned,acc_binned,cond_binned,outer_fold,bn,m):
-    neural_data2 = neural_data[:,these_neurons]
-    
-    if o==0:
-        y = pos_binned
-    elif o==1:
-        y = vel_binned
-    elif o==2:
-        y = acc_binned
-
+def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,fi,outer_fold,bn,m):
     if m!=2:
-        [bins_before,bins_current,bins_after] = get_bins(bn)
-        X = get_spikes_with_history(neural_data2,bins_before,bins_after,bins_current)
-        X = X[range(bins_before,X.shape[0]-bins_after),:,:]
-        X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
-
-        cond = cond_binned[range(bins_before,y.shape[0]-bins_after),:]
-        y = y[range(bins_before,y.shape[0]-bins_after),:]
+        if o==0:
+            y = pos_binned
+        elif o==1:
+            y = vel_binned
+        elif o==2:
+            y = acc_binned
     else: #KF
         y = np.concatenate((pos_binned,vel_binned,acc_binned),axis=1)
-        cond = cond_binned 
-        X = neural_data2
-
+        
+    X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
     num_examples=X.shape[0]
-    training_set,testing_set,valid_set =  get_fold(outer_fold,num_examples,bn,m)
+    training_set,testing_set,valid_set =  get_fold(outer_fold,fo,fi,num_examples)
 
     if m!=2:
         X_train=X[training_set,:,:]

@@ -22,7 +22,8 @@ from preprocessing_funcs import bin_spikes
 from preprocessing_funcs import bin_output
 from preprocessing_funcs import get_spikes_with_history
 
-data_folder     = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets/'
+cwd = os.getcwd()
+data_folder = cwd+'/datasets/'
 
 def mat_to_pickle(filename,dto,wi,dti,downsample_factor):
     dto = int(dto)

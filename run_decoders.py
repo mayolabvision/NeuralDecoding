@@ -27,25 +27,37 @@ from psutil import cpu_count
 import helpers
 import neuronsSample
 
-def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid):
+def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid):
 
 ##################### WF ############################
     if m == 0:
         from decoders import WienerFilterDecoder
+        t1=time.time()
         model=WienerFilterDecoder()
         coeffs,intercept = model.fit(X_flat_train,y_train)
+        train_time = time.time()-t1
+        
+        y_train_predicted=model.predict(X_flat_train)   
+        r2mn_train,r2_train = get_R2(y_train,y_train_predicted)
+        rhomn_train,rho_train = get_rho(y_train,y_train_predicted)
+        
+        t2=time.time()
         y_test_predicted=model.predict(X_flat_test)   
-        r2 = get_R2(y_test,y_test_predicted)
-        rho = get_rho(y_test,y_test_predicted)
+        test_time = time.time()-t1
+        
+        r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
+        rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
 
         coef_dict = {'coef': coeffs, 'intercept': intercept}
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
         prms = {'nan': 0}
 
-        print("R2 = {}".format(r2))
+        print("R2 = {}".format(r2mn_test))
 
 ##################### C-WF ###########################
     if m == 1:
         from decoders import WienerCascadeDecoder
+        t1=time.time()
         def wc_evaluate(degree):
             model_wc=WienerCascadeDecoder(degree) 
             model_wc.fit(X_flat_train,y_train) 
@@ -56,15 +68,24 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         BO.maximize(init_points=20, n_iter=20)#, n_jobs=workers)
         params = max(BO.res, key=lambda x:x['target'])
         degree = params['params']['degree']
-
         prms = {'degree': degree}
         
         model=WienerCascadeDecoder(degree) #Declare model
         model.fit(X_flat_train,y_train) #Fit model on training data
+        train_time = time.time()-t1
+        
+        t2=time.time()
         y_test_predicted=model.predict(X_flat_test)   
-        r2 = get_R2(y_test,y_test_predicted)
-        rho = get_rho(y_test,y_test_predicted)
+        test_time = time.time()-t1
        
+        y_train_predicted=model.predict(X_flat_train)
+        r2_train,r2mn_train = get_R2(y_train,y_train_predicted)
+        rho_train,rhomn_train = get_rho(y_train,y_train_predicted)
+
+        r2_test,r2mn_test = get_R2(y_test,y_test_predicted)
+        rho_test,rhomn_test = get_rho(y_test,y_test_predicted)
+       
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
         coeffs, intercept = model.get_coefficients_intercepts(0) 
         coef_dict = {'coef': coeffs, 'intercept': intercept}
 
@@ -73,6 +94,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
 ######################### Kalman Filter ############################
     if m == 2:
         from decoders import KalmanFilterDecoder
+        t1=time.time()
        
         [bins_before,bins_current,bins_after] = helpers.get_bins(bn)
 
@@ -125,8 +147,10 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         C=C_results[np.argmax(lag_results)] #The hyperparameter C 
 
         prms = {'lag': lag, 'process_noise_scale': C}
+        train_time = time.time()-t1
 
         #Re-align data to take lag into account
+        t2=time.time()
         if lag<0:
             y_train=y_train[-lag:,:]
             X_train=X_train[:lag,:]
@@ -151,12 +175,14 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
 
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
+        test_time = time.time()-t1
 
         print("R2 = {}".format(r2))
 
 ##################### XGBoost Decoder #########################
     if m == 3:
         from decoders import XGBoostDecoder
+        t1=time.time()
         def xgb_evaluate(max_depth,num_round,eta):
             max_depth=int(max_depth) 
             num_round=int(num_round) 
@@ -175,7 +201,9 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         eta = params['params']['eta']
        
         prms = {'num_round': num_round, 'max_depth': max_depth, 'eta': eta}
+        train_time = time.time()-t1
 
+        t2=time.time()
         model=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta, workers=workers) 
         model.fit(X_flat_train,y_train) 
         
@@ -185,12 +213,14 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         y_test_predicted=model.predict(X_flat_test) 
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
+        test_time = time.time()-t1
         
         print("R2 = {}".format(r2))
 
 ######################## SVR Decoder #########################
     if m == 4:
         from decoders import SVRDecoder
+        t1=time.time()
         max_iter=2000
         def svr_evaluate(C):
             model_svr=SVRDecoder(C=C, max_iter=max_iter)
@@ -204,12 +234,15 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         params = max(BO.res, key=lambda x:x['target'])
         C = params['params']['C']
         prms = {'C': C}
+        train_time = time.time()-t1
 
+        t2=time.time()
         model=SVRDecoder(C=C, max_iter=max_iter)
         support_vects, coeffs = model.fit(X_flat_train,y_zscore_train) 
         y_test_predicted=model.predict(X_flat_test) 
         r2 = get_R2(y_zscore_test,y_test_predicted)
         rho = get_rho(y_zscore_test,y_test_predicted)
+        test_time = time.time()-t1
        
         margin_widths = model.get_margin_width
         coef_dict = {'support_vectors': support_vects, 'coefficients': coeffs, 'margin_widths': margin_widths}
@@ -220,6 +253,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
 ####################### DNN #######################
     if m == 5:
         from decoders import DenseNNDecoder
+        t1=time.time()
         def dnn_evaluate(num_units,frac_dropout,batch_size,n_epochs):
             num_units=int(num_units)
             frac_dropout=float(frac_dropout)
@@ -238,13 +272,17 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         batch_size=int(params['params']['batch_size'])
         n_epochs=int(params['params']['n_epochs'])
         num_units=int(params['params']['num_units'])
+        
         prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
+        train_time = time.time()-t1
 
+        t2=time.time()
         model=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers)
         weights = model.fit(X_flat_train,y_train) 
         y_test_predicted=model.predict(X_flat_test) 
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
+        test_time = time.time()-t1
 
         coef_dict = {'weights': weights}  
 
@@ -253,6 +291,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
 ########################## RNN ##############################3
     if m == 6:
         from decoders import SimpleRNNDecoder
+        t1=time.time()
         def rnn_evaluate(num_units,frac_dropout,batch_size,n_epochs):
             num_units=int(num_units)
             frac_dropout=float(frac_dropout)
@@ -264,7 +303,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             return np.mean(get_R2(y_valid,y_valid_predicted_rnn))
 
         BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
+        BO.maximize(init_points=3, n_iter=3)#, n_jobs=workers)
         
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -273,12 +312,15 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         num_units=int(params['params']['num_units'])
 
         prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
+        train_time = time.time()-t1
 
+        t2=time.time()
         model=SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers)
         weights = model.fit(X_train,y_train)
         y_test_predicted=model.predict(X_test)
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
+        test_time = time.time()-t1
 
         coef_dict = {'weights': weights}  
 
@@ -287,6 +329,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
 ######################### GRU Decoder ################################
     if m == 7:
         from decoders import GRUDecoder
+        t1=time.time()
         def gru_evaluate(num_units,frac_dropout,batch_size,n_epochs):
             num_units=int(num_units)
             frac_dropout=float(frac_dropout)
@@ -307,12 +350,15 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         num_units=int(params['params']['num_units'])
        
         prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
+        train_time = time.time()-t1
 
+        t2=time.time()
         model=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers,verbose=0)
         weights = model.fit(X_train,y_train)
         y_test_predicted=model.predict(X_test)
         r2 = get_R2(y_test,y_test_predicted)
         rho = get_rho(y_test,y_test_predicted)
+        test_time = time.time()-t1
 
         coef_dict = {'weights': weights}  
 
@@ -320,6 +366,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         
 ######################### LSTM Decoder ############################
     if m == 8:
+        t1=time.time()
         from decoders import LSTMDecoder
 
 # Define the evaluation function
@@ -351,19 +398,22 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         num_epochs = int(best_params['num_epochs'])
         
         prms = {'num_units': units, 'frac_dropout': dropout, 'batch_size': batch_size, 'n_epochs': num_epochs}
+        train_time = time.time()-t1
 
+        t2=time.time()
         model = LSTMDecoder(units=units, dropout=dropout, batch_size=batch_size, num_epochs=num_epochs, verbose=1)
         weights = model.fit(X_train, y_train)
 
         y_test_predicted = model.predict(X_test)
         r2 = get_R2(y_test, y_test_predicted)
         rho = get_rho(y_test, y_test_predicted)
+        test_time = time.time()-t1
         
         coef_dict = {'weights': weights}  
 
         print("R2 = {}".format(r2))
     
-    return r2,rho,coef_dict,prms,y_test,y_test_predicted
+    return r2mn_train,rhomn_train,r2mn_test,rhomn_test,eval_full,coef_dict,prms,y_test,y_test_predicted,train_time,test_time
 
 
 ######################################################## OTHER MODELS #######################################################3

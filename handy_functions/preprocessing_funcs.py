@@ -28,8 +28,8 @@ def bin_spikes(spike_times,dt,wdw_start,wdw_end):
     #Count number of spikes in each bin for each neuron, and put in array
     for i in range(num_neurons):
         neural_data[:,i]=np.histogram(spike_times[i],edges)[0]
+    
     return neural_data
-
 
 
 ######## BIN_OUTPUT #######
@@ -68,20 +68,52 @@ def bin_output(outputs,output_times,dt,wdw_start,wdw_end,downsample_factor=1):
 
     ###Put outputs into bins###
     edges=np.arange(wdw_start,wdw_end,dt) #Get edges of time bins
-    num_bins=edges.shape[0]-1 #Number of bins
-    output_dim=outputs.shape[1] #Number of output features
-    outputs_binned=np.empty([num_bins,output_dim]) #Initialize matrix of binned outputs
+    num_bins=edges.shape[0]-1
+    output_dim=outputs.shape[1]
+    outputs_binned=np.empty([num_bins,output_dim])
     #Loop through bins, and get the mean outputs in those bins
-    for i in range(num_bins): #Loop through bins
-        idxs=np.where((np.squeeze(output_times)>=edges[i]) & (np.squeeze(output_times)<edges[i+1]))[0] #Indices to consider the output signal (when it's in the correct time range)
-        for j in range(output_dim): #Loop through output features
-            outputs_binned[i,j]=np.mean(outputs[idxs,j])
+    for i in range(num_bins):
+        idxs=(np.squeeze(output_times)>=edges[i]) & (np.squeeze(output_times)<edges[i+1])
+        outputs_binned[i,:] = outputs[idxs,:].mean(axis=0)
 
-    return outputs_binned
-
+    return outputs_binned,edges
 
 ###$$ GET_SPIKES_WITH_HISTORY #####
-def get_spikes_with_history(neural_data,bins_before,bins_after,bins_current=1):
+def get_spikes_with_history(spike_times,wi,dti,out_edges):
+    """
+    Function that creates the covariate matrix of neural activity
+
+    Parameters
+    ----------
+    spike_times: an array of arrays
+        an array of neurons. within each neuron's array is an array containing all the spike times of that neuron
+    wi: integer
+        How much time (in ms) of neural data prior to the output is  used for decoding
+    dti: integer
+        Width of time bins within 'wi' to chunk the neural data into
+    out_edges: vector of size "number of output time bins" + 1
+        Edges of output time bins, used for determining where to align wi
+
+    Returns
+    -------
+    X: a matrix of size "number of total time bins" x "number of surrounding time bins used for prediction" x "number of neurons"
+        For every time bin, there are the firing rates of all neurons from the 'wi' time window divided into 'dti'-sized bins before/including the concurrent time bin
+    """
+
+    #num_examples=neural_data.shape[0] #Number of total time bins we have neural data for
+    num_neurons=spike_times.shape[0] #Number of neurons
+    num_examples = out_edges.shape[0]-1
+    surrounding_bins = int(wi/dti) #Number of surrounding time bins used for prediction
+
+    X = np.empty([num_examples,surrounding_bins,num_neurons]) #Initialize covariate matrix with NaNs
+    X[:] = np.NaN
+    for i in range(1,out_edges.shape[0]):
+        X[i-1,:,:] = bin_spikes(spike_times,dti,out_edges[i]-wi-1,out_edges[i])
+        
+    return X
+
+###$$ GET_SPIKES_WITH_HISTORY #####
+def get_spikes_with_history_SAMEBINWIDTH(neural_data,bins_before,bins_after,bins_current=1):
     """
     Function that creates the covariate matrix of neural activity
 

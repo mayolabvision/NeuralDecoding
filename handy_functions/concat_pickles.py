@@ -40,13 +40,17 @@ def get_outputs_wTraces(data_folder,conditions,column_names):
     current_direcs = [d for d in direcs if all(c in d for c in conditions)]
     for direc in current_direcs:
         for file in sorted(os.listdir(data_folder+'/'+direc)):
-            if file.endswith('.pickle'):
+            if file.endswith('.pickle') and 'repeat00' in file:
                 with open(data_folder+'/'+direc+'/'+file, 'rb') as f:
                     results,conds,y_test,y_test_predicted = pickle.load(f)
                     conds_all.append(conds)
                     results_all.append(results)
                     yTest_all.append(y_test)
                     yTestPred_all.append(y_test_predicted)
+            elif file.endswith('.pickle'):
+                with open(data_folder+'/'+direc+'/'+file, 'rb') as f:
+                    results = pickle.load(f)
+                    results_all.append(results[0])
                         
     df = pd.DataFrame(results_all,columns=column_names)
     df['R2_x']   = df['R2'].apply(lambda x: x[0])

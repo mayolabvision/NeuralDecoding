@@ -167,7 +167,7 @@ def run_model(m,o,bn,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             return np.mean(get_R2(y_valid,y_valid_predicted_xgb)) 
 
         BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=verb, allow_duplicate_points=True) 
-        BO.maximize(init_points=5, n_iter=5)#, n_jobs=workers)
+        BO.maximize(init_points=3, n_iter=5)#, n_jobs=workers)
 
         params = max(BO.res, key=lambda x:x['target'])
         num_round = int(params['params']['num_round'])

@@ -83,7 +83,7 @@ def mat_to_pickle(filename,dto,wi,dti,downsample_factor):
         
         t2_elapsed = time.time()-t2
 
-        with open(data_folder+'pickles/ins-'+filename[5:-4]+'dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti),'wb') as f:
+        with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti),'wb') as f:
             pickle.dump([neural_data,t2_elapsed],f)
         print('pickled inputs')
 

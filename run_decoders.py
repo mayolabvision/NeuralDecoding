@@ -49,11 +49,19 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
         rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
 
+        # null hypothesis
+        X_test_shuf = X_flat_test
+        np.random.shuffle(X_test_shuf)
+        y_shuf_predicted = model.predict(X_test_shuf)
+        r2mn_shuf,r2_shuf = get_R2(y_test,y_shuf_predicted)
+        rhomn_shuf,rho_shuf = get_rho(y_test,y_shuf_predicted)
+
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test, 'r2_shuf': r2_shuf, 'rho_shuf': rho_shuf}
         coef_dict = {'coef': coeffs, 'intercept': intercept}
-        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
         prms = {'nan': 0}
 
         print("R2 = {}".format(r2mn_test))
+        print("R2 null = {}".format(r2mn_shuf))
 
 ##################### C-WF ###########################
     if m == 1:
@@ -63,7 +71,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model_wc=WienerCascadeDecoder(degree) 
             model_wc.fit(X_flat_train,y_train) 
             y_valid_predicted_wc=model_wc.predict(X_flat_valid) 
-            return np.mean(get_R2(y_valid,y_valid_predicted_wc))
+            return np.mean(get_R2(y_valid,y_valid_predicted_wc)[0])
         
         BO = BayesianOptimization(wc_evaluate, {'degree': (1, 10.01)}, verbose=verb, allow_duplicate_points=True)    
         BO.maximize(init_points=20, n_iter=20)#, n_jobs=workers)
@@ -86,11 +94,19 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
         rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
        
-        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
+        # null hypothesis
+        X_test_shuf = X_flat_test
+        np.random.shuffle(X_test_shuf)
+        y_shuf_predicted = model.predict(X_test_shuf)
+        r2mn_shuf,r2_shuf = get_R2(y_test,y_shuf_predicted)
+        rhomn_shuf,rho_shuf = get_rho(y_test,y_shuf_predicted)
+
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test, 'r2_shuf': r2_shuf, 'rho_shuf': rho_shuf}
         coeffs, intercept = model.get_coefficients_intercepts(0) 
         coef_dict = {'coef': coeffs, 'intercept': intercept}
 
         print("R2 = {}".format(r2mn_test))
+        print("R2 null = {}".format(r2mn_shuf))
 
 ######################### Kalman Filter ############################
     if m == 2:
@@ -191,10 +207,10 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model_xgb=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta, workers=workers) 
             model_xgb.fit(X_flat_train,y_train) 
             y_valid_predicted_xgb=model_xgb.predict(X_flat_valid) 
-            return np.mean(get_R2(y_valid,y_valid_predicted_xgb)) 
+            return np.mean(get_R2(y_valid,y_valid_predicted_xgb)[0]) 
 
         BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=verb, allow_duplicate_points=True) 
-        BO.maximize(init_points=3, n_iter=5)#, n_jobs=workers)
+        BO.maximize(init_points=5, n_iter=5)#, n_jobs=workers)
 
         params = max(BO.res, key=lambda x:x['target'])
         num_round = int(params['params']['num_round'])
@@ -218,11 +234,19 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
         rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
        
-        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
+        # null hypothesis
+        X_test_shuf = X_flat_test
+        np.random.shuffle(X_test_shuf)
+        y_shuf_predicted = model.predict(X_test_shuf)
+        r2mn_shuf,r2_shuf = get_R2(y_test,y_shuf_predicted)
+        rhomn_shuf,rho_shuf = get_rho(y_test,y_shuf_predicted)
+
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test, 'r2_shuf': r2_shuf, 'rho_shuf': rho_shuf}
         weights = model.get_feature_importance(importance_type='weight')
         coef_dict = {'weights': weights}
 
         print("R2 = {}".format(r2mn_test))
+        print("R2 null = {}".format(r2mn_shuf))
 
 ######################## SVR Decoder #########################
     if m == 4:
@@ -233,7 +257,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model_svr=SVRDecoder(C=C, max_iter=max_iter)
             model_svr.fit(X_flat_train,y_zscore_train) 
             y_valid_predicted_svr=model_svr.predict(X_flat_valid)
-            return np.mean(get_R2(y_zscore_valid,y_valid_predicted_svr))
+            return np.mean(get_R2(y_zscore_valid,y_valid_predicted_svr)[0])
 
         BO = BayesianOptimization(svr_evaluate, {'C': (.5, 10)}, verbose=verb, allow_duplicate_points=True)    
         BO.maximize(init_points=5, n_iter=5)#, n_jobs=workers)
@@ -257,11 +281,19 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
         rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
        
-        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
+        # null hypothesis
+        X_test_shuf = X_flat_test
+        np.random.shuffle(X_test_shuf)
+        y_shuf_predicted = model.predict(X_test_shuf)
+        r2mn_shuf,r2_shuf = get_R2(y_test,y_shuf_predicted)
+        rhomn_shuf,rho_shuf = get_rho(y_test,y_shuf_predicted)
+        
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test, 'r2_shuf': r2_shuf, 'rho_shuf': rho_shuf}
         margin_widths = model.get_margin_width
         coef_dict = {'support_vectors': support_vects, 'coefficients': coeffs, 'margin_widths': margin_widths}
 
         print("R2 = {}".format(r2mn_test))
+        print("R2 null = {}".format(r2mn_shuf))
 
 ####################### DNN #######################
     if m == 5:
@@ -275,7 +307,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model_dnn=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers)
             model_dnn.fit(X_flat_train,y_train)
             y_valid_predicted_dnn=model_dnn.predict(X_flat_valid)
-            return np.mean(get_R2(y_valid,y_valid_predicted_dnn))
+            return np.mean(get_R2(y_valid,y_valid_predicted_dnn)[0])
 
         BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True)
         BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
@@ -303,10 +335,18 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
         rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
         
-        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
+        # null hypothesis
+        X_test_shuf = X_flat_test
+        np.random.shuffle(X_test_shuf)
+        y_shuf_predicted = model.predict(X_test_shuf)
+        r2mn_shuf,r2_shuf = get_R2(y_test,y_shuf_predicted)
+        rhomn_shuf,rho_shuf = get_rho(y_test,y_shuf_predicted)
+
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test, 'r2_shuf': r2_shuf, 'rho_shuf': rho_shuf}
         coef_dict = {'weights': weights}  
 
         print("R2 = {}".format(r2mn_test))
+        print("R2 null = {}".format(r2mn_shuf))
         
 ########################## RNN ##############################3
     if m == 6:
@@ -320,10 +360,10 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model_rnn=SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers)
             model_rnn.fit(X_train,y_train)
             y_valid_predicted_rnn=model_rnn.predict(X_valid)
-            return np.mean(get_R2(y_valid,y_valid_predicted_rnn))
+            return np.mean(get_R2(y_valid,y_valid_predicted_rnn)[0])
 
         BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=3, n_iter=3)#, n_jobs=workers)
+        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
         
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -348,10 +388,18 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
         rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
         
-        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
+        # null hypothesis
+        X_test_shuf = X_test
+        np.random.shuffle(X_test_shuf)
+        y_shuf_predicted = model.predict(X_test_shuf)
+        r2mn_shuf,r2_shuf = get_R2(y_test,y_shuf_predicted)
+        rhomn_shuf,rho_shuf = get_rho(y_test,y_shuf_predicted)
+
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test, 'r2_shuf': r2_shuf, 'rho_shuf': rho_shuf}
         coef_dict = {'weights': weights}  
 
         print("R2 = {}".format(r2mn_test))
+        print("R2 null = {}".format(r2mn_shuf))
 
 ######################### GRU Decoder ################################
     if m == 7:
@@ -365,7 +413,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model_gru=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers,verbose=0)
             model_gru.fit(X_train,y_train)
             y_valid_predicted_gru=model_gru.predict(X_valid)
-            return np.mean(get_R2(y_valid,y_valid_predicted_gru))
+            return np.mean(get_R2(y_valid,y_valid_predicted_gru)[0])
 
         BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32, 256),'n_epochs': (2,21)}, allow_duplicate_points=True)
         BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
@@ -393,10 +441,18 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
         rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
         
-        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
+        # null hypothesis
+        X_test_shuf = X_test
+        np.random.shuffle(X_test_shuf)
+        y_shuf_predicted = model.predict(X_test_shuf)
+        r2mn_shuf,r2_shuf = get_R2(y_test,y_shuf_predicted)
+        rhomn_shuf,rho_shuf = get_rho(y_test,y_shuf_predicted)
+
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test, 'r2_shuf': r2_shuf, 'rho_shuf': rho_shuf}
         coef_dict = {'weights': weights}  
 
         print("R2 = {}".format(r2mn_test))
+        print("R2 null = {}".format(r2mn_shuf))
         
 ######################### LSTM Decoder ############################
     if m == 8:
@@ -413,7 +469,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model = LSTMDecoder(units=units, dropout=dropout, batch_size=batch_size, num_epochs=num_epochs, verbose=0)
             model.fit(X_train, y_train)
             y_valid_predicted = model.predict(X_valid)
-            return np.mean(get_R2(y_valid, y_valid_predicted))
+            return np.mean(get_R2(y_valid, y_valid_predicted)[0])
 
         pbounds = {
             'units': (50, 600),
@@ -448,10 +504,18 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
         rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
         
-        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
+        # null hypothesis
+        X_test_shuf = X_test
+        np.random.shuffle(X_test_shuf)
+        y_shuf_predicted = model.predict(X_test_shuf)
+        r2mn_shuf,r2_shuf = get_R2(y_test,y_shuf_predicted)
+        rhomn_shuf,rho_shuf = get_rho(y_test,y_shuf_predicted)
+
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test, 'r2_shuf': r2_shuf, 'rho_shuf': rho_shuf}
         coef_dict = {'weights': weights}  
 
         print("R2 = {}".format(r2mn_test))
+        print("R2 null = {}".format(r2mn_shuf))
     
     return r2mn_train,rhomn_train,r2mn_test,rhomn_test,eval_full,coef_dict,prms,y_test,y_test_predicted,train_time,test_time
 

@@ -517,7 +517,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         print("R2 = {}".format(r2mn_test))
         print("R2 null = {}".format(r2mn_shuf))
     
-    return r2mn_train,rhomn_train,r2mn_test,rhomn_test,eval_full,coef_dict,prms,y_test,y_test_predicted,train_time,test_time
+    return r2mn_train,rhomn_train,r2mn_test,rhomn_test,r2mn_shuf,rhomn_shuf,eval_full,coef_dict,prms,y_test,y_test_predicted,train_time,test_time
 
 
 ######################################################## OTHER MODELS #######################################################3

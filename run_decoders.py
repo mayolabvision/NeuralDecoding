@@ -32,8 +32,9 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
 ##################### WF ############################
     if m == 0:
         from decoders import WienerFilterDecoder
-        t1=time.time()
         model=WienerFilterDecoder()
+        
+        t1=time.time()
         coeffs,intercept = model.fit(X_flat_train,y_train)
         train_time = time.time()-t1
         
@@ -43,7 +44,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         
         t2=time.time()
         y_test_predicted=model.predict(X_flat_test)   
-        test_time = time.time()-t1
+        test_time = (time.time()-t1) / y_test.shape[0]
         
         r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
         rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
@@ -76,20 +77,20 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         
         t2=time.time()
         y_test_predicted=model.predict(X_flat_test)   
-        test_time = time.time()-t1
+        test_time = (time.time()-t1) / y_test.shape[0]
        
         y_train_predicted=model.predict(X_flat_train)
-        r2_train,r2mn_train = get_R2(y_train,y_train_predicted)
-        rho_train,rhomn_train = get_rho(y_train,y_train_predicted)
+        r2mn_train,r2_train = get_R2(y_train,y_train_predicted)
+        rhomn_train,rho_train = get_rho(y_train,y_train_predicted)
 
-        r2_test,r2mn_test = get_R2(y_test,y_test_predicted)
-        rho_test,rhomn_test = get_rho(y_test,y_test_predicted)
+        r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
+        rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
        
         eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
         coeffs, intercept = model.get_coefficients_intercepts(0) 
         coef_dict = {'coef': coeffs, 'intercept': intercept}
 
-        print("R2 = {}".format(r2))
+        print("R2 = {}".format(r2mn_test))
 
 ######################### Kalman Filter ############################
     if m == 2:
@@ -201,21 +202,27 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         eta = params['params']['eta']
        
         prms = {'num_round': num_round, 'max_depth': max_depth, 'eta': eta}
+
+        model=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta, workers=workers) 
+        model.fit(X_flat_train,y_train) 
         train_time = time.time()-t1
 
         t2=time.time()
-        model=XGBoostDecoder(max_depth=max_depth, num_round=num_round, eta=eta, workers=workers) 
-        model.fit(X_flat_train,y_train) 
+        y_test_predicted=model.predict(X_flat_test) 
+        test_time = (time.time()-t1) / y_test.shape[0]
         
+        y_train_predicted=model.predict(X_flat_train) 
+        r2mn_train,r2_train = get_R2(y_train,y_train_predicted)
+        rhomn_train,rho_train = get_rho(y_train,y_train_predicted)
+
+        r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
+        rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
+       
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
         weights = model.get_feature_importance(importance_type='weight')
         coef_dict = {'weights': weights}
 
-        y_test_predicted=model.predict(X_flat_test) 
-        r2 = get_R2(y_test,y_test_predicted)
-        rho = get_rho(y_test,y_test_predicted)
-        test_time = time.time()-t1
-        
-        print("R2 = {}".format(r2))
+        print("R2 = {}".format(r2mn_test))
 
 ######################## SVR Decoder #########################
     if m == 4:
@@ -234,21 +241,27 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         params = max(BO.res, key=lambda x:x['target'])
         C = params['params']['C']
         prms = {'C': C}
-        train_time = time.time()-t1
 
-        t2=time.time()
         model=SVRDecoder(C=C, max_iter=max_iter)
         support_vects, coeffs = model.fit(X_flat_train,y_zscore_train) 
+        train_time = time.time()-t1
+        
+        t2=time.time()
         y_test_predicted=model.predict(X_flat_test) 
-        r2 = get_R2(y_zscore_test,y_test_predicted)
-        rho = get_rho(y_zscore_test,y_test_predicted)
-        test_time = time.time()-t1
+        test_time = (time.time()-t1) / y_test.shape[0]
+
+        y_train_predicted=model.predict(X_flat_train) 
+        r2mn_train,r2_train = get_R2(y_train,y_train_predicted)
+        rhomn_train,rho_train = get_rho(y_train,y_train_predicted)
+
+        r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
+        rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
        
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
         margin_widths = model.get_margin_width
         coef_dict = {'support_vectors': support_vects, 'coefficients': coeffs, 'margin_widths': margin_widths}
 
-        print("R2 = {}".format(r2))
-
+        print("R2 = {}".format(r2mn_test))
 
 ####################### DNN #######################
     if m == 5:
@@ -274,19 +287,26 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         num_units=int(params['params']['num_units'])
         
         prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
+
+        model=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers)
+        weights = model.fit(X_flat_train,y_train) 
         train_time = time.time()-t1
 
         t2=time.time()
-        model=DenseNNDecoder(units=[num_units,num_units],dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers)
-        weights = model.fit(X_flat_train,y_train) 
         y_test_predicted=model.predict(X_flat_test) 
-        r2 = get_R2(y_test,y_test_predicted)
-        rho = get_rho(y_test,y_test_predicted)
-        test_time = time.time()-t1
+        test_time = (time.time()-t1) / y_test.shape[0]
 
+        y_train_predicted=model.predict(X_flat_train) 
+        r2mn_train,r2_train = get_R2(y_train,y_train_predicted)
+        rhomn_train,rho_train = get_rho(y_train,y_train_predicted)
+
+        r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
+        rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
+        
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
         coef_dict = {'weights': weights}  
 
-        print("R2 = {}".format(r2))
+        print("R2 = {}".format(r2mn_test))
         
 ########################## RNN ##############################3
     if m == 6:
@@ -312,19 +332,26 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         num_units=int(params['params']['num_units'])
 
         prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
-        train_time = time.time()-t1
 
-        t2=time.time()
         model=SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers)
         weights = model.fit(X_train,y_train)
+        train_time = time.time()-t1
+        
+        t2=time.time()
         y_test_predicted=model.predict(X_test)
-        r2 = get_R2(y_test,y_test_predicted)
-        rho = get_rho(y_test,y_test_predicted)
-        test_time = time.time()-t1
+        test_time = (time.time()-t1) / y_test.shape[0]
 
+        y_train_predicted=model.predict(X_train) 
+        r2mn_train,r2_train = get_R2(y_train,y_train_predicted)
+        rhomn_train,rho_train = get_rho(y_train,y_train_predicted)
+
+        r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
+        rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
+        
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
         coef_dict = {'weights': weights}  
 
-        print("R2 = {}".format(r2))
+        print("R2 = {}".format(r2mn_test))
 
 ######################### GRU Decoder ################################
     if m == 7:
@@ -352,17 +379,24 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
         train_time = time.time()-t1
 
-        t2=time.time()
         model=GRUDecoder(units=num_units,dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers,verbose=0)
         weights = model.fit(X_train,y_train)
+        
+        t2=time.time()
         y_test_predicted=model.predict(X_test)
-        r2 = get_R2(y_test,y_test_predicted)
-        rho = get_rho(y_test,y_test_predicted)
-        test_time = time.time()-t1
+        test_time = (time.time()-t1) / y_test.shape[0]
 
+        y_train_predicted=model.predict(X_train) 
+        r2mn_train,r2_train = get_R2(y_train,y_train_predicted)
+        rhomn_train,rho_train = get_rho(y_train,y_train_predicted)
+
+        r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
+        rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
+        
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
         coef_dict = {'weights': weights}  
 
-        print("R2 = {}".format(r2))
+        print("R2 = {}".format(r2mn_test))
         
 ######################### LSTM Decoder ############################
     if m == 8:
@@ -400,18 +434,24 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         prms = {'num_units': units, 'frac_dropout': dropout, 'batch_size': batch_size, 'n_epochs': num_epochs}
         train_time = time.time()-t1
 
-        t2=time.time()
         model = LSTMDecoder(units=units, dropout=dropout, batch_size=batch_size, num_epochs=num_epochs, verbose=1)
         weights = model.fit(X_train, y_train)
-
-        y_test_predicted = model.predict(X_test)
-        r2 = get_R2(y_test, y_test_predicted)
-        rho = get_rho(y_test, y_test_predicted)
-        test_time = time.time()-t1
         
+        t2=time.time()
+        y_test_predicted = model.predict(X_test)
+        test_time = (time.time()-t1) / y_test.shape[0]
+
+        y_train_predicted=model.predict(X_train) 
+        r2mn_train,r2_train = get_R2(y_train,y_train_predicted)
+        rhomn_train,rho_train = get_rho(y_train,y_train_predicted)
+
+        r2mn_test,r2_test = get_R2(y_test,y_test_predicted)
+        rhomn_test,rho_test = get_rho(y_test,y_test_predicted)
+        
+        eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test}
         coef_dict = {'weights': weights}  
 
-        print("R2 = {}".format(r2))
+        print("R2 = {}".format(r2mn_test))
     
     return r2mn_train,rhomn_train,r2mn_test,rhomn_test,eval_full,coef_dict,prms,y_test,y_test_predicted,train_time,test_time
 

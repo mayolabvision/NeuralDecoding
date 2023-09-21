@@ -55,12 +55,12 @@ def mat_to_pickle(filename,dto,wi,dti,downsample_factor):
         all_outputs = np.concatenate((pos[wi-dto:,:],vels[wi-dto:,:],acc[wi-dto:,:],conditions[wi-dto:,:]), axis=1)
         outs_binned,out_edges = bin_output(all_outputs,out_times,dto,t_start,t_end,df)
 
+        t1_elapsed = time.time()-t1
+
         pos_binned  =  outs_binned[:,0:2]
         vel_binned  =  outs_binned[:,2:4]
         acc_binned  =  outs_binned[:,4:6]
         cond_binned =  outs_binned[:,6:]
-
-        t1_elapsed = time.time()-t1
 
         with open(data_folder+'pickles/outs-'+filename[5:-4]+'-dto{:03d}-df{}.pickle'.format(dto,df),'wb') as f:
             pickle.dump([pos_binned,vel_binned,acc_binned,cond_binned,out_edges,t1_elapsed],f)

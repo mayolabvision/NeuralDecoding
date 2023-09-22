@@ -1,0 +1,5 @@
+1. Submitting multiple lines (e.g. 53 lines) of jobs to the cluster
+    for job in {0..52}; do echo $job; sbatch h2p_submit.sh $job; done
+
+2. Adding line count to first column of params.txt file
+    let i=0 | '<,'>g/^/ s//\=printf("%03d ",i) / | let i+=1 

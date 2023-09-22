@@ -177,6 +177,8 @@ def get_fold(outer_fold,bins_before,num_examples,m):
     testing_set = test_indices[outer_fold]
     valid_set = validation_indices[outer_fold]
     '''
+    bins_before = int(bins_before)
+
     valid_range_all=[[0,.1],[.1,.2],[.2,.3],[.3,.4],[.4,.5],
                  [.5,.6],[.6,.7],[.7,.8],[.8,.9],[.9,1]]
     testing_range_all=[[.1,.2],[.2,.3],[.3,.4],[.4,.5],[.5,.6],

@@ -147,8 +147,8 @@ def normalize_trainTestKF(X_train,X_test,X_valid,y_train,y_test,y_valid):
     return X_train,X_test,X_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid
 
 def get_fold(outer_fold,fo,fi,num_examples):
-
-    kf = KFold(n_splits=fo, shuffle=True, random_state=42)
+    '''
+    kf = KFold(n_splits=fo, shuffle=False)#, random_state=42)
     validation_split = float(fi/100)
 
     # Lists to store training and testing indices for each fold
@@ -163,7 +163,7 @@ def get_fold(outer_fold,fo,fi,num_examples):
         n_validation = int(n_train * validation_split)
 
         # Randomly shuffle the training indices
-        np.random.shuffle(train_idx)
+        #np.random.shuffle(train_idx)
 
         # Separate into train and validation indices
         train_split_idx = train_idx[:n_train - n_validation]
@@ -176,7 +176,6 @@ def get_fold(outer_fold,fo,fi,num_examples):
     training_set = train_indices[outer_fold]
     testing_set = test_indices[outer_fold]
     valid_set = validation_indices[outer_fold]
-
     '''
     valid_range_all=[[0,.1],[.1,.2],[.2,.3],[.3,.4],[.4,.5],
                  [.5,.6],[.6,.7],[.7,.8],[.8,.9],[.9,1]]
@@ -211,7 +210,7 @@ def get_fold(outer_fold,fo,fi,num_examples):
             if j==1: #If it's the second portion of the training set, concatentate it to the first
                 training_set_temp=np.arange(int(np.round(training_range[0]*num_examples))+1,int(np.round(training_range[1]*num_examples))-1)
                 training_set=np.concatenate((training_set,training_set_temp),axis=0)
-    '''
+    
     return training_set,testing_set,valid_set
 
 def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,fi,outer_fold,bn,m):

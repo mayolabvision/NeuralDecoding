@@ -28,7 +28,6 @@ import helpers
 import neuronsSample
 
 def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid):
-
 ##################### WF ############################
     if m == 0:
         from decoders import WienerFilterDecoder
@@ -64,7 +63,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         print("R2 null = {}".format(r2mn_shuf))
 
 ##################### C-WF ###########################
-    if m == 1:
+    elif m == 1:
         from decoders import WienerCascadeDecoder
         t1=time.time()
         def wc_evaluate(degree):
@@ -73,8 +72,8 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             y_valid_predicted_wc=model_wc.predict(X_flat_valid) 
             return np.mean(get_R2(y_valid,y_valid_predicted_wc)[0])
         
-        BO = BayesianOptimization(wc_evaluate, {'degree': (1, 10.01)}, verbose=verb, allow_duplicate_points=True)    
-        BO.maximize(init_points=20, n_iter=20)#, n_jobs=workers)
+        BO = BayesianOptimization(wc_evaluate, {'degree': (1, 20.01)}, verbose=verb, allow_duplicate_points=True)    
+        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
         params = max(BO.res, key=lambda x:x['target'])
         degree = params['params']['degree']
         prms = {'degree': degree}
@@ -109,7 +108,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         print("R2 null = {}".format(r2mn_shuf))
 
 ######################### Kalman Filter ############################
-    if m == 2:
+    elif m == 2:
         from decoders import KalmanFilterDecoder
         t1=time.time()
        
@@ -197,7 +196,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         print("R2 = {}".format(r2))
 
 ##################### XGBoost Decoder #########################
-    if m == 3:
+    elif m == 3:
         from decoders import XGBoostDecoder
         t1=time.time()
         def xgb_evaluate(max_depth,num_round,eta):
@@ -249,7 +248,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         print("R2 null = {}".format(r2mn_shuf))
 
 ######################## SVR Decoder #########################
-    if m == 4:
+    elif m == 4:
         from decoders import SVRDecoder
         t1=time.time()
         max_iter=2000
@@ -296,7 +295,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         print("R2 null = {}".format(r2mn_shuf))
 
 ####################### DNN #######################
-    if m == 5:
+    elif m == 5:
         from decoders import DenseNNDecoder
         t1=time.time()
         def dnn_evaluate(num_units,frac_dropout,batch_size,n_epochs):
@@ -349,7 +348,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         print("R2 null = {}".format(r2mn_shuf))
         
 ########################## RNN ##############################3
-    if m == 6:
+    elif m == 6:
         from decoders import SimpleRNNDecoder
         t1=time.time()
         def rnn_evaluate(num_units,frac_dropout,batch_size,n_epochs):
@@ -402,7 +401,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         print("R2 null = {}".format(r2mn_shuf))
 
 ######################### GRU Decoder ################################
-    if m == 7:
+    elif m == 7:
         from decoders import GRUDecoder
         t1=time.time()
         def gru_evaluate(num_units,frac_dropout,batch_size,n_epochs):
@@ -455,7 +454,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         print("R2 null = {}".format(r2mn_shuf))
         
 ######################### LSTM Decoder ############################
-    if m == 8:
+    elif m == 8:
         t1=time.time()
         from decoders import LSTMDecoder
 

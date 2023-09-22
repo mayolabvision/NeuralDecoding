@@ -74,6 +74,10 @@ def get_foldneuronPairs(i):
     pairs = list(product(range(fo), range(r)))
     return pairs
 
+def get_foldneuronmodelPairs(fo,r,mdls):
+    pairs = list(product(range(fo), range(r), mdls))
+    return pairs
+
 def get_neuronCombos(i):
     s,t,d,m,o,nm,nf,bn,fo,fi,r = get_params(i)
     if nm>0 & nf>0:

@@ -259,7 +259,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             return np.mean(get_R2(y_zscore_valid,y_valid_predicted_svr)[0])
 
         BO = BayesianOptimization(svr_evaluate, {'C': (.5, 10)}, verbose=verb, allow_duplicate_points=True)    
-        BO.maximize(init_points=5, n_iter=5)#, n_jobs=workers)
+        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
 
         params = max(BO.res, key=lambda x:x['target'])
         C = params['params']['C']

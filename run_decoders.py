@@ -251,7 +251,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
     elif m == 4:
         from decoders import SVRDecoder
         t1=time.time()
-        max_iter=3000
+        max_iter=4000
         def svr_evaluate(C):
             model_svr=SVRDecoder(C=C, max_iter=max_iter)
             model_svr.fit(X_flat_train,y_zscore_train) 
@@ -271,21 +271,21 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         
         t2=time.time()
         y_test_predicted=model.predict(X_flat_test) 
-        test_time = (time.time()-t1) / y_test.shape[0]
+        test_time = (time.time()-t1) / y_zscore_test.shape[0]
 
         y_train_predicted=model.predict(X_flat_train) 
-        r2mn_train,r2_train = get_R2_wShuf(y_train,y_train_predicted)
-        rhomn_train,rho_train = get_rho_wShuf(y_train,y_train_predicted)
+        r2mn_train,r2_train = get_R2_wShuf(y_zscore_train,y_train_predicted)
+        rhomn_train,rho_train = get_rho_wShuf(y_zscore_train,y_train_predicted)
 
-        r2mn_test,r2_test = get_R2_wShuf(y_test,y_test_predicted)
-        rhomn_test,rho_test = get_rho_wShuf(y_test,y_test_predicted)
+        r2mn_test,r2_test = get_R2_wShuf(y_zscore_test,y_test_predicted)
+        rhomn_test,rho_test = get_rho_wShuf(y_zscore_test,y_test_predicted)
        
         # null hypothesis
         X_test_shuf = X_flat_test
         np.random.shuffle(X_test_shuf)
         y_shuf_predicted = model.predict(X_test_shuf)
-        r2mn_shuf,r2_shuf = get_R2_wShuf(y_test,y_shuf_predicted)
-        rhomn_shuf,rho_shuf = get_rho_wShuf(y_test,y_shuf_predicted)
+        r2mn_shuf,r2_shuf = get_R2_wShuf(y_zscore_test,y_shuf_predicted)
+        rhomn_shuf,rho_shuf = get_rho_wShuf(y_zscore_test,y_shuf_predicted)
         
         eval_full = {'r2_train': r2_train, 'rho_train': rho_train, 'r2_test': r2_test, 'rho_test': rho_test, 'r2_shuf': r2_shuf, 'rho_shuf': rho_shuf}
         margin_widths = model.get_margin_width

@@ -31,7 +31,8 @@ from run_decoders import run_model
 from matlab_funcs import mat_to_pickle
 
 line = np.loadtxt(params)[int(sys.argv[1])]
-mdls = [0,1,3,4,5,6,7,8]
+#mdls = [0,1,3,4,5,6,7,8]
+mdls = [4]
 
 print(line)
 s,t,dto,df,o,wi,dti,_,_,_,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
@@ -74,9 +75,6 @@ elif o==2:
     output = 'acceleration'
 
 result = [s,t,dto,df,wi,dti,m,output,nm,nf,repeat,outer_fold,r2mn_train,rhomn_train,r2mn_test,rhomn_test,r2mn_shuf,rhomn_shuf,eval_full,prms,pp_time,train_time,test_time]     
-print(pp_time)
-print(train_time)
-print(test_time)
 
 jobname = helpers.make_name(s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,num_repeats)
 pfile = helpers.make_directory((jobname),0)

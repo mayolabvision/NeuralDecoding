@@ -114,7 +114,7 @@ def get_rho(y_test,y_test_pred):
     rho_array: An array of rho's for each output
     """
     
-    rho_array = np.empty([1,y_test.shape[1])
+    rho_array = np.empty([1,y_test.shape[1]])
     for i in range(y_test.shape[1]): #Loop through outputs
         #Compute rho for each output
         rho_array[0,i]=np.corrcoef(y_test[:,i].T,y_test_pred[:,i].T)[0,1]

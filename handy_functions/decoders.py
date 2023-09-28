@@ -1654,7 +1654,7 @@ class SVRegression(object):
         Penalty parameter of the error term
 
     max_iter: integer, default=-1
-        the maximum number of iteraations to run (to save time)
+        the maximum number of iterations to run (to save time)
         max_iter=-1 means no limit
         Typically in the 1000s takes a short amount of time on a laptop
     """

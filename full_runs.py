@@ -32,7 +32,7 @@ from matlab_funcs import mat_to_pickle
 
 line = np.loadtxt(params)[int(sys.argv[1])]
 #mdls = [0,1,3,4,5,6,7,8]
-mdls = [4]
+mdls = [7]
 
 print(line)
 s,t,dto,df,o,wi,dti,_,_,_,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
@@ -49,6 +49,7 @@ else: # hpc cluster
 outer_fold = neuron_fold_model[0]
 repeat = neuron_fold_model[1]
 m = neuron_fold_model[2]
+print(m)
 
 sess,sess_nodt = helpers.get_session(s,t,dto,df,wi,dti)
 neural_data,pos_binned,vel_binned,acc_binned,cond_binned,pp_time = mat_to_pickle('vars-'+sess_nodt+'.mat',dto,wi,dti,df)

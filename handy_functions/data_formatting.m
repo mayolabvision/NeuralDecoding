@@ -1,5 +1,5 @@
 function [spike_times,pos,contConditions] = data_formatting(session,folder,preint,postint)
-addpath(genpath('/Users/kendranoneman/Projects/mayo/HelperFxns'))
+addpath(genpath('/Users/kendranoneman/Projects/mayo/helperfunctions'))
 % Purpose: takes in raw struct with recording data and converts it into a
 % usable form for the Neural Decoding project
 

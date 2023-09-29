@@ -59,6 +59,12 @@ def get_outputs_wTraces(data_folder,conditions,column_names):
     df['rho_x']  = df['rho'].apply(lambda x: x[0])
     df['rho_y']  = df['rho'].apply(lambda x: x[1])
     df['rho_mn']  = df['rho'].apply(lambda x: x.mean())
+    df['R2sh_x']   = df['R2_shuf'].apply(lambda x: x[0])
+    df['R2sh_y']   = df['R2_shuf'].apply(lambda x: x[1])
+    df['R2sh_mn']  = df['R2_shuf'].apply(lambda x: x.mean())
+    df['R2tr_x']   = df['R2_train'].apply(lambda x: x[0])
+    df['R2tr_y']   = df['R2_train'].apply(lambda x: x[1])
+    df['R2tr_mn']  = df['R2_train'].apply(lambda x: x.mean())
     '''
     df['R2N_x']  = df['R2_null'].apply(lambda x: x[0])
     df['R2N_y']  = df['R2_null'].apply(lambda x: x[1])

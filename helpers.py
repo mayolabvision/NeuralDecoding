@@ -10,7 +10,7 @@ from math import ceil
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
-params = 'params/params_full.txt'
+params = 'params/params_fig4.txt'
 data_folder     = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets/'
 
 import neuronsSample

@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
-params = 'params/params_full.txt'
+params = 'params/params_fig4.txt'
 
 from metrics import get_R2
 from metrics import get_rho
@@ -31,8 +31,8 @@ from run_decoders import run_model
 from matlab_funcs import mat_to_pickle
 
 line = np.loadtxt(params)[int(sys.argv[1])]
-#mdls = [0,1,3,4,5,6,7,8]
-mdls = [7]
+mdls = [0,1,3,4,5,6,7,8]
+#mdls = [7]
 
 print(line)
 s,t,dto,df,o,wi,dti,_,_,_,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))

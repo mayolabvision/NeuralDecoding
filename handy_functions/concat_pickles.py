@@ -65,6 +65,10 @@ def get_outputs_wTraces(data_folder,conditions,column_names):
     df['R2tr_x']   = df['R2_train'].apply(lambda x: x[0])
     df['R2tr_y']   = df['R2_train'].apply(lambda x: x[1])
     df['R2tr_mn']  = df['R2_train'].apply(lambda x: x.mean())
+
+    #df['num_bins'] =
+    #df['inference_time'] = df['preProcess_time'] 
+
     '''
     df['R2N_x']  = df['R2_null'].apply(lambda x: x[0])
     df['R2N_y']  = df['R2_null'].apply(lambda x: x[1])

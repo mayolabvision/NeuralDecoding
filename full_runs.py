@@ -31,8 +31,8 @@ from run_decoders import run_model
 from matlab_funcs import mat_to_pickle
 
 line = np.loadtxt(params)[int(sys.argv[1])]
-mdls = [0,1,3,4,5,6,7,8]
-#mdls = [7]
+#mdls = [0,1,3,4,5,6,7,8]
+mdls = [4]
 
 print(line)
 s,t,dto,df,o,wi,dti,_,_,_,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))

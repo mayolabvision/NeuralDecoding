@@ -32,11 +32,11 @@ from matlab_funcs import mat_to_pickle
 
 line = np.loadtxt(params)[int(sys.argv[1])]
 #mdls = [0,1,3,4,5,6,7,8]
-mdls = [4]
+mdls = [0]
 
 print(line)
-s,t,dto,df,o,wi,dti,_,_,_,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]))
-#foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]))
+s,t,dto,df,o,wi,dti,_,_,_,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]),params)
+#foldneuron_pairs = helpers.get_foldneuronPairs(int(sys.argv[1]),params)
 foldneuronmodel_pairs = helpers.get_foldneuronmodelPairs(fo,num_repeats,mdls)
 
 if int(sys.argv[2])==0: # local computer

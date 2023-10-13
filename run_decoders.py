@@ -209,7 +209,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             return np.mean(get_R2(y_valid,y_valid_predicted_xgb)) 
 
         BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,700), 'eta': (0, 1)}, verbose=verb, allow_duplicate_points=True) 
-        BO.maximize(init_points=5, n_iter=5)#, n_jobs=workers)
+        BO.maximize(init_points=5, n_iter=5)#, n_jobs=workers) 5,5
 
         params = max(BO.res, key=lambda x:x['target'])
         num_round = int(params['params']['num_round'])
@@ -259,7 +259,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             return np.mean(get_R2(y_zscore_valid,y_valid_predicted_svr))
 
         BO = BayesianOptimization(svr_evaluate, {'C': (.5, 10)}, verbose=verb, allow_duplicate_points=True)    
-        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
+        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers), 10,10
 
         params = max(BO.res, key=lambda x:x['target'])
         C = params['params']['C']
@@ -309,7 +309,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             return np.mean(get_R2(y_valid,y_valid_predicted_dnn))
 
         BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
+        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers) 10,10
 
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -362,7 +362,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             return np.mean(get_R2(y_valid,y_valid_predicted_rnn))
 
         BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
+        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers) 10,10
         
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -415,7 +415,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             return np.mean(get_R2(y_valid,y_valid_predicted_gru))
 
         BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32, 256),'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
+        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers) 10,10
         
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -478,7 +478,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         }
 
         BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers)
+        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers) 10,10
         
         best_params = BO.max['params']
         units = int(best_params['units'])

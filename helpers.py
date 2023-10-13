@@ -10,7 +10,6 @@ from math import ceil
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
-params = 'params/params_fig4.txt'
 data_folder     = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets/'
 
 import neuronsSample
@@ -27,7 +26,7 @@ def checkdir(name):
         os.makedirs(name)
     return
 
-def get_params(i):
+def get_params(i,params):
     line = np.loadtxt(params)[i]
     s = int(line[1])
     t = int(line[2])
@@ -69,8 +68,8 @@ def get_bins_fromTime(d,bn):
     binsPost = int(0)
     return binsPre,binsCur,binsPost
 
-def get_foldneuronPairs(i):
-    s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,r = get_params(i)
+def get_foldneuronPairs(i,params):
+    s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,r = get_params(i,params)
     pairs = list(product(range(fo), range(r)))
     return pairs
 
@@ -78,8 +77,8 @@ def get_foldneuronmodelPairs(fo,r,mdls):
     pairs = list(product(range(fo), range(r), mdls))
     return pairs
 
-def get_neuronCombos(i):
-    s,t,d,m,o,nm,nf,bn,fo,fi,r = get_params(i)
+def get_neuronCombos(i,params):
+    s,t,d,m,o,nm,nf,bn,fo,fi,r = get_params(i,params)
     if nm>0 & nf>0:
         pairs = list(product(range(0,nm,2), range(0,nf,2)))
     elif nm==0:

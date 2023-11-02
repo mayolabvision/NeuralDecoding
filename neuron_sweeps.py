@@ -44,7 +44,6 @@ nm = (units['BrainArea'] == 'MT').sum()
 nf = (units['BrainArea'] == 'FEF').sum()
 
 foldneuronmodelrepeat_pairs = helpers.get_foldneuronmodelrepeatPairs(fo,num_repeats,nm,nf,len(mdls))
-print(len(foldneuronmodelrepeat_pairs))
 
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
@@ -57,8 +56,6 @@ outer_fold = fold_nm_nf_repeat_model[0]
 nm = fold_nm_nf_repeat_model[1]
 nf = fold_nm_nf_repeat_model[2]
 repeat = fold_nm_nf_repeat_model[3]-1
-
-print(repeat)
 m = fold_nm_nf_repeat_model[4]
 print(m)
 
@@ -85,7 +82,7 @@ elif o==1:
 elif o==2:
     output = 'acceleration'
 
-result = [s,t,dto,df,wi,dti,m,output,nm,nf,repeat,outer_fold,r2mn_train,rhomn_train,r2mn_test,rhomn_test,r2mn_shuf,rhomn_shuf,eval_full,prms,pp_time,train_time,test_time]     
+result = [s,t,dto,df,wi,dti,m,output,nm,nf,repeat,outer_fold,r2mn_train,rhomn_train,r2mn_test,rhomn_test,r2mn_shuf,rhomn_shuf,eval_full,prms,pp_time,train_time,test_time,these_neurons]     
 
 jobname = helpers.make_name(s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,num_repeats)
 pfile = helpers.make_directory((jobname),0)

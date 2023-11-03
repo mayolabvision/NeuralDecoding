@@ -43,26 +43,35 @@ units = pd.read_csv(cwd+'/datasets/units/units-'+sess_nodt+'.csv')
 nm = (units['BrainArea'] == 'MT').sum() 
 nf = (units['BrainArea'] == 'FEF').sum()
 
-foldneuronmodelrepeat_pairs = helpers.get_foldneuronmodelrepeatPairs(fo,num_repeats,nm,nf,len(mdls))
+foldneuronrepeatmodel_pairs = helpers.get_foldneuronmodelrepeatPairs(fo,num_repeats,nm,nf,len(mdls))
+print(foldneuronrepeatmodel_pairs)
+
+print(len(foldneuronrepeatmodel_pairs))
+
 
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
-    fold_nm_nf_repeat_model = foldneuronmodelrepeat_pairs[int(sys.argv[3])]
+    fold_nn_repeat_mdl = foldneuronrepeatmodel_pairs[int(sys.argv[3])]
 else: # hpc cluster
     workers = int(os.environ['SLURM_CPUS_PER_TASK'])
-    fold_nm_nf_repeat_model = foldneuronmodelrepeat_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
+    fold_nn_repeat_mdl = foldneuronrepeatmodel_pairs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
 
-outer_fold = fold_nm_nf_repeat_model[0]
-nm = fold_nm_nf_repeat_model[1]
-nf = fold_nm_nf_repeat_model[2]
-repeat = fold_nm_nf_repeat_model[3]-1
-m = fold_nm_nf_repeat_model[4]
+outer_fold = fold_nn_repeat_mdl[0]
+nn = fold_nn_repeat_mdl[1]
+repeat = fold_nn_repeat_mdl[2]-1
+mdl = fold_nn_repeat_mdl[3]
+
+m = mdls[mdl]
 print(m)
 
 neural_data,pos_binned,vel_binned,acc_binned,cond_binned,pp_time = mat_to_pickle('vars-'+sess_nodt+'.mat',dto,wi,dti,df)
 
-[neurons_perRepeat,nm,nf] = neuronsSample.get_neuronRepeats(s,t,num_repeats,nm,nf)
+[neurons_perRepeat,_,_] = neuronsSample.get_neuronRepeats(s,t,num_repeats,nn)
+nm = nn
+nf = 0
 these_neurons = neurons_perRepeat[repeat]
+
+print(these_neurons)
 
 X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test = helpers.get_data(neural_data[:,:,these_neurons],o,pos_binned,vel_binned,acc_binned,cond_binned,fo,fi,outer_fold,wi/dti,m)
 

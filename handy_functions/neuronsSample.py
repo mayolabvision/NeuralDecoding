@@ -13,7 +13,8 @@ from sklearn.model_selection import KFold
 import helpers
 
 def get_neuronRepeats(s,t,*args):
-    
+    #[neurons_perRepeat,nm,nf] = neuronsSample.get_neuronRepeats(s,t,num_repeats,nn)
+
     sess,sess_nodt = helpers.get_session(s,t,1,1,1,1)
     units = pd.read_csv(cwd+'/datasets/units/units-'+sess_nodt+'.csv')
 
@@ -25,29 +26,50 @@ def get_neuronRepeats(s,t,*args):
         num_repeats = args[0]
         nm = (units['BrainArea'] == 'MT').sum()
         nf = (units['BrainArea'] == 'FEF').sum()
+    elif len(args) == 2:
+        num_repeats = args[0]
+        nn = args[1]
+        nm = 1000
+        nf = 1000
     elif len(args) == 3:
         num_repeats,nm,nf = args
 
-    if not os.path.isfile(cwd+'/datasets/dsplt/dsplt-'+sess_nodt+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle'):
+    if nm < 1000:
+        if not os.path.isfile(cwd+'/datasets/dsplt/dsplt-'+sess_nodt+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle'):
 
-        neurons_perRepeat = []
-        for r in range(num_repeats):
-            mt_inds = sorted(np.random.choice(units[units['BrainArea'] == 'MT'].index, nm, replace=False))
-            fef_inds = sorted(np.random.choice(units[units['BrainArea'] == 'FEF'].index, nf, replace=False))
+            neurons_perRepeat = []
+            for r in range(num_repeats):
+                mt_inds = sorted(np.random.choice(units[units['BrainArea'] == 'MT'].index, nm, replace=False))
+                fef_inds = sorted(np.random.choice(units[units['BrainArea'] == 'FEF'].index, nf, replace=False))
 
-            if nm==0:
-                neuron_inds = np.array((fef_inds))
-            elif nf==0:
-                neuron_inds = np.array((mt_inds))
-            else:
-                neuron_inds = sorted(np.concatenate((np.array((mt_inds)),np.array((fef_inds)))))
-           
-            neurons_perRepeat.append(neuron_inds)
-        with open(cwd+'/datasets/dsplt/dsplt-'+sess_nodt+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle','wb') as f:
-            pickle.dump(neurons_perRepeat,f)
+                if nm==0:
+                    neuron_inds = np.array((fef_inds))
+                elif nf==0:
+                    neuron_inds = np.array((mt_inds))
+                else:
+                    neuron_inds = sorted(np.concatenate((np.array((mt_inds)),np.array((fef_inds)))))
+               
+                neurons_perRepeat.append(neuron_inds)
+            with open(cwd+'/datasets/dsplt/dsplt-'+sess_nodt+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle','wb') as f:
+                pickle.dump(neurons_perRepeat,f)
+        else:
+            with open(cwd+'/datasets/dsplt/dsplt-'+sess_nodt+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle','rb') as f:
+                neurons_perRepeat = pickle.load(f,encoding='latin1')
     else:
-        with open(cwd+'/datasets/dsplt/dsplt-'+sess_nodt+'-nm'+str(nm)+'-nf'+str(nf)+'-r'+str(num_repeats)+'.pickle','rb') as f:
-            neurons_perRepeat = pickle.load(f,encoding='latin1')
+        if not os.path.isfile(cwd+'/datasets/dsplt/dsplt-'+sess_nodt+'-nn'+str(nn)+'-r'+str(num_repeats)+'.pickle'):
+
+            neurons_perRepeat = []
+            for r in range(num_repeats):
+                nn_inds = sorted(np.random.choice(units.index, nn, replace=False))
+                neuron_inds = np.array((nn_inds))
+               
+                neurons_perRepeat.append(neuron_inds)
+            with open(cwd+'/datasets/dsplt/dsplt-'+sess_nodt+'-nn'+str(nn)+'-r'+str(num_repeats)+'.pickle','wb') as f:
+                pickle.dump(neurons_perRepeat,f)
+        else:
+            with open(cwd+'/datasets/dsplt/dsplt-'+sess_nodt+'-nn'+str(nn)+'-r'+str(num_repeats)+'.pickle','rb') as f:
+                neurons_perRepeat = pickle.load(f,encoding='latin1')
+        
 
     return neurons_perRepeat,nm,nf
 

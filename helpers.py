@@ -77,7 +77,7 @@ def get_foldneuronmodelPairs(fo,r,mdls):
     pairs = list(product(range(fo), range(r), mdls))
     return pairs
 
-def get_foldneuronmodelrepeatPairs(fo,r,nm,nf,mdls):
+def get_foldneuronmodelrepeatPairs_twoBrainAreas(fo,r,nm,nf,mdls):
     if nm>0 and nf>0:
         nPairs = list(product(range(fo), range(0,nm,2), range(0,nf,2), range(1,r+1), range(mdls)))
     elif nm==0:
@@ -87,6 +87,13 @@ def get_foldneuronmodelrepeatPairs(fo,r,nm,nf,mdls):
    
     # Filter out pairs where values in index 1 and 2 both equal 0
     nPairs = [pair for pair in nPairs if not (pair[1] == 0 and pair[2] == 0)]
+
+    return nPairs
+
+def get_foldneuronmodelrepeatPairs(fo,r,nm,nf,mdls):
+    
+    nPairs = list(product(range(fo), range(0,nm+nf+1,5), range(1,r+1), range(mdls)))
+    nPairs = [pair for pair in nPairs if not (pair[1] == 0)]
 
     return nPairs
 

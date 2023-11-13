@@ -109,7 +109,12 @@ def get_spikes_with_history(spike_times,wi,dti,out_edges):
     X[:] = np.NaN
     for i in range(1,out_edges.shape[0]):
         X[i-1,:,:] = bin_spikes(spike_times,dti,out_edges[i]-wi-1,out_edges[i])
-        
+
+        # Print percentage completion for every 1%
+        if i % int(out_edges.shape[0] / 100) == 0:
+            percentage_done = (i / out_edges.shape[0]) * 100
+            print(f"Progress: {i}/{out_edges.shape[0]} ({percentage_done:.2f}%)")
+
     return X
 
 ###$$ GET_SPIKES_WITH_HISTORY #####

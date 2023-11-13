@@ -25,7 +25,7 @@ from preprocessing_funcs import get_spikes_with_history
 cwd = os.getcwd()
 data_folder = cwd+'/datasets/'
 
-def mat_to_pickle(filename,dto,wi,dti,downsample_factor):
+def mat_to_pickle(filename,dto,wi,dti,downsample_factor,slide_ms):
     dto = int(dto)
     dti = int(dti)
     df = int(downsample_factor)
@@ -66,8 +66,8 @@ def mat_to_pickle(filename,dto,wi,dti,downsample_factor):
             pickle.dump([pos_binned,vel_binned,acc_binned,cond_binned,out_edges,t1_elapsed],f)
         print('pickled outputs')
 
-    if os.path.exists(data_folder+'/pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti)):
-        with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti),'rb') as f:
+    if os.path.exists(data_folder+'/pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}-sl{:03d}.pickle'.format(dto,wi,dti,slide_ms)):
+        with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}-sl{:03d}.pickle'.format(dto,wi,dti,slide_ms),'rb') as f:
             neural_data,t2_elapsed=pickle.load(f,encoding='latin1')
         print('loaded inputs')
     
@@ -79,11 +79,12 @@ def mat_to_pickle(filename,dto,wi,dti,downsample_factor):
         for i in range(spike_times.shape[0]):
             spike_times[i]  =  np.squeeze(spike_times[i])
 
-        neural_data = get_spikes_with_history(spike_times,wi,dti,out_edges)
+        out_edges_slided = out_edges - slide_ms
+        neural_data = get_spikes_with_history(spike_times,wi,dti,out_edges_slided)
         
         t2_elapsed = time.time()-t2
 
-        with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti),'wb') as f:
+        with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}-sl{:03d}.pickle'.format(dto,wi,dti,slide_ms),'wb') as f:
             pickle.dump([neural_data,t2_elapsed],f)
         print('pickled inputs')
 

@@ -74,7 +74,7 @@ def get_foldneuronPairs(i,params):
     return pairs
 
 def get_foldneuronmodelPairs(fo,r,mdls):
-    pairs = list(product(range(fo), range(r), mdls))
+    pairs = list(product(range(fo), range(r), range(mdls)))
     return pairs
 
 def get_foldneuronmodelrepeatPairs_twoBrainAreas(fo,r,nm,nf,mdls):

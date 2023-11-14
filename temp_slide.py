@@ -32,8 +32,8 @@ from matlab_funcs import mat_to_pickle
 
 line = np.loadtxt(params)[int(sys.argv[1])]
 #mdls = [0,1,3,4,5,6,7,8]
-mdls = [7]
-slides = np.arange(0,205,5)
+mdls = [4]
+slides = np.arange(0,405,5)
 
 print(line)
 s,t,dto,df,o,wi,dti,_,_,_,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]),params)
@@ -50,7 +50,8 @@ else: # hpc cluster
 
 outer_fold = neuron_fold_model[0]
 repeat = 0
-slide_ms = neuron_fold_model[1]
+sms = neuron_fold_model[1]
+slide_ms = slides[sms]
 mdl = neuron_fold_model[2]
 m = mdls[mdl]
 print(m)

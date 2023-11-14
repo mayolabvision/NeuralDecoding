@@ -9,8 +9,8 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=knoneman@pitt.edu
-#SBATCH --time=0-08:59:59
-#SBATCH --array=0-999
+#SBATCH --time=0-23:59:59
+#SBATCH --array=0-810
 
 echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."
 echo "My SLURM_ARRAY_TASK_ID is $SLURM_ARRAY_TASK_ID"
@@ -20,13 +20,8 @@ module load gcc/8.2.0
 module load python/anaconda3.9-2021.11
 conda activate decoding
 
-#python all_decoders.py $1 1
-#python neuron_sweep.py $1 1
-#python neuron_dropping.py $1 1
-#python neuron_single.py $1 1
-#python cross_decoders.py $1 1
-#python figure2.py $1 1 
 #python full_runs.py $1 1
-python neuron_sweeps.py $1 1
+#python neuron_sweeps.py $1 1
+python temp_slide.py $1 1
 
 echo "DONE"

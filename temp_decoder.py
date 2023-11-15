@@ -28,12 +28,12 @@ from psutil import cpu_count
 import helpers
 import neuronsSample
 from run_decoders import run_model
-from matlab_funcs import mat_to_pickle
+from matlab_funcs import mat_to_pickle,mat_to_pickle_tempDecoder
 
 line = np.loadtxt(params)[int(sys.argv[1])]
 #mdls = [0,1,3,4,5,6,7,8]
 mdls = [7]
-slides = np.arange(0,205,5)
+bins_predict = 10
 
 print(line)
 s,t,dto,df,o,wi,dti,_,_,_,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]),params)
@@ -57,7 +57,7 @@ print(m)
 
 
 sess,sess_nodt = helpers.get_session(s,t,dto,df,wi,dti)
-neural_data,pos_binned,vel_binned,acc_binned,cond_binned,pp_time = mat_to_pickle('vars-'+sess_nodt+'.mat',dto,wi,dti,df,slide_ms)
+neural_data,pos_binned,vel_binned,acc_binned,cond_binned,pp_time = mat_to_pickle_tempDecoder('vars-'+sess_nodt+'.mat',dto,wi,dti,bins_predict=bins_predict)
 
 [neurons_perRepeat,nm,nf] = neuronsSample.get_neuronRepeats(s,t,num_repeats)
 these_neurons = neurons_perRepeat[repeat]

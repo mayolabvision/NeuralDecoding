@@ -68,6 +68,18 @@ def get_bins_fromTime(d,bn):
     binsPost = int(0)
     return binsPre,binsCur,binsPost
 
+def get_jobArray(*args):
+    prep_args = []
+    for i in range(len(args)):
+        if isinstance(args[i], int):
+            prep_args.append(range(args[i]))
+        elif isinstance(args[i], list):
+            prep_args.append(args[i])
+
+    jobs = list(product(*prep_args))
+    
+    return jobs 
+
 def get_foldneuronPairs(i,params):
     s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,r = get_params(i,params)
     pairs = list(product(range(fo), range(r)))
@@ -105,17 +117,6 @@ def get_neuronCombos(i,params):
     elif nf==0:
         pairs = list(product(range(0,nm,2), [0])) 
     return pairs
-
-def get_sessConditions(s):
-    contrasts,speeds,directions = [],[],[]
-    for idx, x in enumerate(glob.glob(data_folder+'vars/vars-pa{:0>2d}dir4A-*-c*.mat'.format(s))):
-        contrasts.append(int(x[-7:-4]))
-    for idx, x in enumerate(glob.glob(data_folder+'vars/vars-pa{:0>2d}dir4A-*-sp*.mat'.format(s))):
-        speeds.append(int(x[-6:-4]))
-    for idx, x in enumerate(glob.glob(data_folder+'vars/vars-pa{:0>2d}dir4A-*-d*.mat'.format(s))):
-        directions.append(int(x[-7:-4]))
-
-    return sorted(contrasts), sorted(speeds), sorted(directions)
 
 def normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid):
     #Z-score "X" inputs. 
@@ -169,36 +170,6 @@ def normalize_trainTestKF(X_train,X_test,X_valid,y_train,y_test,y_valid):
     return X_train,X_test,X_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid
 
 def get_fold(outer_fold,bins_before,num_examples,m):
-    '''
-    kf = KFold(n_splits=fo, shuffle=False)#, random_state=42)
-    validation_split = float(fi/100)
-
-    # Lists to store training and testing indices for each fold
-    train_indices = []
-    validation_indices = []
-    test_indices = []
-
-    # Split the data into folds
-    for train_idx, test_idx in kf.split(range(num_examples)):
-        # Further split each training set into train and validation
-        n_train = len(train_idx)
-        n_validation = int(n_train * validation_split)
-
-        # Randomly shuffle the training indices
-        #np.random.shuffle(train_idx)
-
-        # Separate into train and validation indices
-        train_split_idx = train_idx[:n_train - n_validation]
-        validation_split_idx = train_idx[n_train - n_validation:]
-
-        train_indices.append(train_split_idx)
-        validation_indices.append(validation_split_idx)
-        test_indices.append(test_idx)
-
-    training_set = train_indices[outer_fold]
-    testing_set = test_indices[outer_fold]
-    valid_set = validation_indices[outer_fold]
-    '''
     bins_before = int(bins_before)
 
     valid_range_all=[[0,.1],[.1,.2],[.2,.3],[.3,.4],[.4,.5],
@@ -237,7 +208,62 @@ def get_fold(outer_fold,bins_before,num_examples,m):
     
     return training_set,testing_set,valid_set
 
-def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,fi,outer_fold,bn,m):
+def get_foldX(outer_fold,fo,bins_before,num_examples,cond,condition,trCo,teCo):
+    trCo = int(trCo)
+    teCo = int(teCo)
+    bins_before = int(bins_before)
+
+    num_trls = np.unique(cond[:,0]).shape[0]
+
+    if condition=='speed':
+        spds = [10,20,10000]
+        conds = cond[:,2]
+        
+        c1 = ceil(np.shape(conds[conds==10])[0]/(ceil(cond.shape[0]/num_trls)))
+        c2 = ceil(np.shape(conds[conds==20])[0]/(ceil(cond.shape[0]/num_trls)))
+        csize = np.array([c1,c2]).min()
+        
+        trTrls = np.unique(cond[(conds<=spds[trCo]),0])
+        teTrls = np.unique(cond[(conds<=spds[teCo]),0])
+
+        trTrls = np.array(sorted(np.random.choice(trTrls, size=csize, replace=False)))
+        teTrls = np.array(sorted(np.random.choice(teTrls, size=csize, replace=False)))
+
+    trInds = np.array(np.where(np.isin(cond[:, 0], trTrls))).T
+    teInds = np.array(np.where(np.isin(cond[:, 0], teTrls))).T
+
+    num_examples = trInds.shape[0]
+
+    ##############################################################
+    valid_range_all = [[0, .2], [.2, .4], [.4, .6], [.6, .8], [.8, 1]]
+    testing_range_all = [[.2, .4], [.4, .6], [.6, .8], [.8, 1], [0, .2]]
+    training_range_all = [[[.4, 1]], [[0, .2], [.6, 1]], [[0, .4], [.8, 1]], [[0, .6], [0.2, 1]], [[0, .8]]]
+
+    testing_range=testing_range_all[outer_fold]
+    valid_range=valid_range_all[outer_fold]
+    training_ranges=training_range_all[outer_fold]
+    
+    testing_set=np.arange(int(np.round(testing_range[0]*num_examples))+bins_before,int(np.round(testing_range[1]*num_examples)))
+    valid_set=np.arange(int(np.round(valid_range[0]*num_examples))+bins_before,int(np.round(valid_range[1]*num_examples)))
+
+    for j in range(len(training_ranges)): 
+        training_range=training_ranges[j]
+        if j==0: #If it's the first portion of the training set, make it the training set
+            training_set=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples)))
+        if j==1: #If it's the second portion of the training set, concatentate it to the first
+            training_set_temp=np.arange(int(np.round(training_range[0]*num_examples))+bins_before,int(np.round(training_range[1]*num_examples)))
+            training_set=np.concatenate((training_set,training_set_temp),axis=0)
+
+    training_set = trInds[training_set].squeeze()
+    testing_set = teInds[testing_set].squeeze()
+    valid_set = trInds[valid_set].squeeze()
+
+    return training_set,testing_set,valid_set
+
+def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,fi,outer_fold,bn,m,condition='all',trCo=0,teCo=0):
+    trCo = int(trCo)
+    teCo = int(teCo)
+
     if m!=2:
         if o==0:
             y = pos_binned
@@ -247,10 +273,14 @@ def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,fi,outer_fold,bn,m):
             y = acc_binned
     else: #KF
         y = np.concatenate((pos_binned,vel_binned,acc_binned),axis=1)
-        
+       
     X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
     num_examples=X.shape[0]
-    training_set,testing_set,valid_set =  get_fold(outer_fold,bn,num_examples,m)
+    
+    if condition=='all':
+        training_set,testing_set,valid_set = get_fold(outer_fold,fo,bn,num_examples,m)
+    else:
+        training_set,testing_set,valid_set = get_foldX(outer_fold,fo,bn,num_examples,cond,condition,trCo,teCo)
 
     if m!=2:
         X_train=X[training_set,:,:]
@@ -284,33 +314,6 @@ def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,fi,outer_fold,bn,m):
     return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test 
 
 def get_data_Xconditions(line,repeat,outer_fold,shuffle,condition,trCo,teCo):
-    s = int(line[1])
-    t = int(line[2])
-    d = int(line[3])
-    m = int(line[4])
-    o = int(line[5])
-    nm = int(line[6])
-    nf = int(line[7])
-    bn = int(line[8])
-    fo = int(line[9])
-    fi = int(line[10]) 
-    r = int(line[11])
-
-    neurons_perRepeat = neuronsSample.get_neuronRepeats(line)
-    these_neurons = neurons_perRepeat[repeat]
-
-    sess,sess_nodt = get_session(s,t,d)
-    [bins_before,bins_current,bins_after] = get_bins(bn)
-    with open(cwd+'/datasets/vars/vars-'+sess+'.pickle','rb') as f:
-        neural_data,pos_binned,vel_binned,acc_binned,cond_binned=pickle.load(f,encoding='latin1')
-    
-    neural_data2 = neural_data[:,these_neurons] 
-    if o==0:
-        y=pos_binned
-    elif o==1:
-        y=vel_binned
-    elif o==2:
-        y=acc_binned
 
     if condition=='contrast':
         conds = cond_binned[:,0]

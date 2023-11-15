@@ -25,7 +25,7 @@ from preprocessing_funcs import get_spikes_with_history
 cwd = os.getcwd()
 data_folder = cwd+'/datasets/'
 
-def mat_to_pickle(filename,dto,wi,dti,downsample_factor,slide_ms):
+def mat_to_pickle(filename,dto,wi,dti,downsample_factor=1):
     dto = int(dto)
     dti = int(dti)
     df = int(downsample_factor)
@@ -44,8 +44,9 @@ def mat_to_pickle(filename,dto,wi,dti,downsample_factor,slide_ms):
         with open(data_folder+'pickles/outs-'+filename[5:-4]+'-dto{:03d}-df{}.pickle'.format(dto,df),'rb') as f:
             pos_binned,vel_binned,acc_binned,cond_binned,out_edges,t1_elapsed=pickle.load(f,encoding='latin1')
         print('loaded outputs')
-    
+        
     else:
+        print('pickling outputs')
         t1=time.time()
         pos          =  data['pos'] # x and y eye positions
         vels         =  data['vels'] # x and y eye velocities
@@ -53,7 +54,7 @@ def mat_to_pickle(filename,dto,wi,dti,downsample_factor,slide_ms):
         conditions   =  data['contConditions']
         
         all_outputs = np.concatenate((pos[wi-dto:,:],vels[wi-dto:,:],acc[wi-dto:,:],conditions[wi-dto:,:]), axis=1)
-        outs_binned,out_edges = bin_output(all_outputs,out_times,dto,t_start,t_end,df)
+        outs_binned,out_edges = bin_output(all_outputs,out_times,dto,t_start,t_end,downsample_factor=df,bins_predict=bins_predict)
 
         t1_elapsed = time.time()-t1
 
@@ -66,12 +67,13 @@ def mat_to_pickle(filename,dto,wi,dti,downsample_factor,slide_ms):
             pickle.dump([pos_binned,vel_binned,acc_binned,cond_binned,out_edges,t1_elapsed],f)
         print('pickled outputs')
 
-    if os.path.exists(data_folder+'/pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}-sl{:03d}.pickle'.format(dto,wi,dti,slide_ms)):
-        with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}-sl{:03d}.pickle'.format(dto,wi,dti,slide_ms),'rb') as f:
+    if os.path.exists(data_folder+'/pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti)):
+        with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti),'rb') as f:
             neural_data,t2_elapsed=pickle.load(f,encoding='latin1')
         print('loaded inputs')
     
     else:
+        print('pickling outputs')
         t2=time.time()
         
         spike_times  =  data['spike_times'] # spike times of all neurons
@@ -84,7 +86,7 @@ def mat_to_pickle(filename,dto,wi,dti,downsample_factor,slide_ms):
         
         t2_elapsed = time.time()-t2
 
-        with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}-sl{:03d}.pickle'.format(dto,wi,dti,slide_ms),'wb') as f:
+        with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti,slide_ms),'wb') as f:
             pickle.dump([neural_data,t2_elapsed],f)
         print('pickled inputs')
 
@@ -92,12 +94,4 @@ def mat_to_pickle(filename,dto,wi,dti,downsample_factor,slide_ms):
 
     return neural_data,pos_binned,vel_binned,acc_binned,cond_binned,time_elapsed
 
-def pickle_allFiles(dt):
-    vars_list = glob.glob(data_folder+'vars/vars-*-post300.mat')
-    for i in range(len(vars_list)):
-        print('{}/{}'.format(i,len(vars_list)))
-        if os.path.isfile(vars_list[i][:-4]+'-dt'+str(dt)+'.pickle'):
-            print('bitch it already exists')
-        else:
-            mat_to_pickle(vars_list[i][64:],dt)
 

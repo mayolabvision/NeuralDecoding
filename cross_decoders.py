@@ -31,7 +31,6 @@ from run_decoders import run_model
 from matlab_funcs import mat_to_pickle
 
 line = np.loadtxt(params)[int(sys.argv[1])]
-#mdls = [0,1,3,4,5,6,7,8]
 condition = 'speed'
 if condition=='speed':
     trte = [0,1,2]  #10,20,all
@@ -54,46 +53,46 @@ else: # hpc cluster
     job = jobs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
     jobB = int(os.environ["SLURM_ARRAY_TASK_ID"])
 
-if m==0:
-    for q in range(1000):
-        job = jobs[q+(1000*jobB)]
-        outer_fold = job[0]
-        repeat = job[1]
-        trCo = job[2]
-        teCo = job[3]
+#if m==0:
+#    for q in range(1000):
+#        job = jobs[q+(1000*jobB)]
+outer_fold = job[0]
+repeat = job[1]
+trCo = job[2]
+teCo = job[3]
 
-        print('train: {}, test: {}'.format(trCo,teCo))
+print('train: {}, test: {}'.format(trCo,teCo))
 
-        sess,sess_nodt = helpers.get_session(s,t,dto,df,wi,dti)
-        neural_data,pos_binned,vel_binned,acc_binned,cond_binned,pp_time = mat_to_pickle('vars-'+sess_nodt+'.mat',dto,wi,dti,df)
+sess,sess_nodt = helpers.get_session(s,t,dto,df,wi,dti)
+neural_data,pos_binned,vel_binned,acc_binned,cond_binned,pp_time = mat_to_pickle('vars-'+sess_nodt+'.mat',dto,wi,dti,df)
 
-        [neurons_perRepeat,nm,nf] = neuronsSample.get_neuronRepeats(s,t,num_repeats,nm,nf)
-        these_neurons = neurons_perRepeat[repeat]
+[neurons_perRepeat,nm,nf] = neuronsSample.get_neuronRepeats(s,t,num_repeats,nm,nf)
+these_neurons = neurons_perRepeat[repeat]
 
-        X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test = helpers.get_data(neural_data[:,:,these_neurons],o,pos_binned,vel_binned,acc_binned,cond_binned,fo,fi,outer_fold,wi/dti,m,condition=condition,trCo=trCo,teCo=teCo)
+X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test = helpers.get_data(neural_data[:,:,these_neurons],o,pos_binned,vel_binned,acc_binned,cond_binned,fo,fi,outer_fold,wi/dti,m,condition=condition,trCo=trCo,teCo=teCo)
 
-        t1=time.time()
+t1=time.time()
 #######################################################################################################################################
 
-        r2mn_train,rhomn_train,r2mn_test,rhomn_test,r2mn_shuf,rhomn_shuf,eval_full,coef_dict,prms,y_test,y_test_predicted,train_time,test_time = run_model(m,o,1,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid)
+r2mn_train,rhomn_train,r2mn_test,rhomn_test,r2mn_shuf,rhomn_shuf,eval_full,coef_dict,prms,y_test,y_test_predicted,train_time,test_time = run_model(m,o,1,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid)
 
 #######################################################################################################################################
-        outputs = ['position','velocity','acceleration']
-        if condition=='speed':
-            conditions = ['s10','s20','sAl']
-        elif condition=='contrast':
-            conditions = ['c012','c100','cAll']
-        elif condition=='direction':
-            conditions = ['d000','d090','d180','d270','dAlll']
+outputs = ['position','velocity','acceleration']
+if condition=='speed':
+    conditions = ['s10','s20','sAl']
+elif condition=='contrast':
+    conditions = ['c012','c100','cAll']
+elif condition=='direction':
+    conditions = ['d000','d090','d180','d270','dAlll']
 
-        result = [s,t,dto,df,wi,dti,m,outputs[o],condition,conditions[trCo],conditions[teCo],nm,nf,repeat,outer_fold,r2mn_train,rhomn_train,r2mn_test,rhomn_test,r2mn_shuf,rhomn_shuf,eval_full,prms,pp_time,train_time,test_time,these_neurons]     
+result = [s,t,dto,df,wi,dti,m,outputs[o],condition,conditions[trCo],conditions[teCo],nm,nf,repeat,outer_fold,r2mn_train,rhomn_train,r2mn_test,rhomn_test,r2mn_shuf,rhomn_shuf,eval_full,prms,pp_time,train_time,test_time,these_neurons]     
 
-        jobname = helpers.make_name(s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,num_repeats)
-        pfile = helpers.make_directory((jobname),0)
-        if s==29 and repeat==0:
-            with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>3d}_{}_{}'.format(outer_fold,repeat,conditions[trCo],conditions[teCo])+'.pickle','wb') as p:
-                pickle.dump([result,c_test,y_test,y_test_predicted],p)
-        else:
-            with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>3d}_{}_{}'.format(outer_fold,repeat,conditions[trCo],conditions[teCo])+'.pickle','wb') as p:
-                pickle.dump([result],p)
+jobname = helpers.make_name(s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,num_repeats)
+pfile = helpers.make_directory((jobname),0)
+if s==29 and repeat==0:
+    with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>3d}_{}_{}'.format(outer_fold,repeat,conditions[trCo],conditions[teCo])+'.pickle','wb') as p:
+        pickle.dump([result,c_test,y_test,y_test_predicted],p)
+else:
+    with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>3d}_{}_{}'.format(outer_fold,repeat,conditions[trCo],conditions[teCo])+'.pickle','wb') as p:
+        pickle.dump([result],p)
 

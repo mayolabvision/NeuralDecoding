@@ -47,15 +47,10 @@ print('# of jobs: {}'.format(len(jobs)))
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
     job = jobs[int(sys.argv[3])]
-    jobB = int(sys.argv[3])
 else: # hpc cluster
     workers = int(os.environ['SLURM_CPUS_PER_TASK'])
     job = jobs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
-    jobB = int(os.environ["SLURM_ARRAY_TASK_ID"])
 
-#if m==0:
-#    for q in range(1000):
-#        job = jobs[q+(1000*jobB)]
 outer_fold = job[0]
 repeat = job[1]
 trCo = job[2]

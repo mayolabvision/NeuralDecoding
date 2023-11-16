@@ -465,7 +465,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             batch_size = int(batch_size)
             num_epochs = int(num_epochs)
 
-            model = LSTMDecoder(units=units, dropout=dropout, batch_size=batch_size, num_epochs=num_epochs, verbose=0)
+            model = LSTMDecoder(units=units, dropout=dropout, batch_size=batch_size, num_epochs=num_epochs, workers=workers,verbose=0)
             model.fit(X_train, y_train)
             y_valid_predicted = model.predict(X_valid)
             return np.mean(get_R2(y_valid, y_valid_predicted))
@@ -489,7 +489,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
         prms = {'num_units': units, 'frac_dropout': dropout, 'batch_size': batch_size, 'n_epochs': num_epochs}
         train_time = time.time()-t1
 
-        model = LSTMDecoder(units=units, dropout=dropout, batch_size=batch_size, num_epochs=num_epochs, verbose=1)
+        model = LSTMDecoder(units=units, dropout=dropout, batch_size=batch_size, num_epochs=num_epochs, workers=workers, verbose=1)
         weights = model.fit(X_train, y_train)
         
         t2=time.time()

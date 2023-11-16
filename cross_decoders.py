@@ -84,10 +84,6 @@ result = [s,t,dto,df,wi,dti,m,outputs[o],condition,conditions[trCo],conditions[t
 
 jobname = helpers.make_name(s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,num_repeats)
 pfile = helpers.make_directory((jobname),0)
-if s==29 and repeat==0:
-    with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>3d}_{}_{}'.format(outer_fold,repeat,conditions[trCo],conditions[teCo])+'.pickle','wb') as p:
-        pickle.dump([result,c_test,y_test,y_test_predicted],p)
-else:
-    with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>3d}_{}_{}'.format(outer_fold,repeat,conditions[trCo],conditions[teCo])+'.pickle','wb') as p:
-        pickle.dump([result],p)
+with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>3d}_{}_{}'.format(outer_fold,repeat,conditions[trCo],conditions[teCo])+'.pickle','wb') as p:
+    pickle.dump([result],p)
 

@@ -73,7 +73,7 @@ def mat_to_pickle(filename,dto,wi,dti,downsample_factor=1):
         print('loaded inputs')
     
     else:
-        print('pickling outputs')
+        print('pickling inputs')
         t2=time.time()
         
         spike_times  =  data['spike_times'] # spike times of all neurons

@@ -208,7 +208,7 @@ def get_fold(outer_fold,bins_before,num_examples,m):
     
     return training_set,testing_set,valid_set
 
-def get_foldX(outer_fold,fo,bins_before,num_examples,cond,condition,trCo,teCo):
+def get_foldX(outer_fold,bins_before,num_examples,cond,condition,trCo,teCo):
     trCo = int(trCo)
     teCo = int(teCo)
     bins_before = int(bins_before)
@@ -278,9 +278,9 @@ def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,fi,outer_fold,bn,m,con
     num_examples=X.shape[0]
     
     if condition=='all':
-        training_set,testing_set,valid_set = get_fold(outer_fold,fo,bn,num_examples,m)
+        training_set,testing_set,valid_set = get_fold(outer_fold,bn,num_examples,m)
     else:
-        training_set,testing_set,valid_set = get_foldX(outer_fold,fo,bn,num_examples,cond,condition,trCo,teCo)
+        training_set,testing_set,valid_set = get_foldX(outer_fold,bn,num_examples,cond,condition,trCo,teCo)
 
     if m!=2:
         X_train=X[training_set,:,:]

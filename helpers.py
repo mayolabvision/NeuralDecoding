@@ -327,6 +327,44 @@ def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,fi,outer_fold,bn,m,con
 
     return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test 
 
+def get_data_classifier(X,o,pos_binned,vel_binned,acc_binned,cond,fo,fi,outer_fold,bn,m,condition='all',trCo=0,teCo=0):
+    trCo = int(trCo)
+    teCo = int(teCo)
+
+    if m!=2:
+        if o==0:
+            y = pos_binned
+        elif o==1:
+            y = vel_binned
+        elif o==2:
+            y = acc_binned
+    else: #KF
+        y = np.concatenate((pos_binned,vel_binned,acc_binned),axis=1)
+       
+    X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
+    num_examples=X.shape[0]
+    
+    if condition=='all':
+        training_set,testing_set,valid_set = get_fold(outer_fold,bn,num_examples,m)
+    else:
+        training_set,testing_set,valid_set = get_foldX(outer_fold,bn,num_examples,cond,condition,trCo,teCo)
+
+    X_train=X[training_set,:,:]
+    X_flat_train=X_flat[training_set,:]
+    y_train=cond[training_set,1:4]
+    X_test=X[testing_set,:,:]
+    X_flat_test=X_flat[testing_set,:]
+    y_test=cond[testing_set,1:4]
+    X_valid=X[valid_set,:,:]
+    X_flat_valid=X_flat[valid_set,:]
+    y_valid=cond[valid_set,1:4]
+    c_test=cond[testing_set,1:4]
+
+    X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,_,_,_,_,_,_ = normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid)
+
+    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,c_test 
+
+
 def get_data_Xconditions(line,repeat,outer_fold,shuffle,condition,trCo,teCo):
 
     if condition=='contrast':

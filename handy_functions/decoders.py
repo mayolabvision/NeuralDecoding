@@ -18,6 +18,7 @@ from keras.layers import Dense, LSTM, SimpleRNN, GRU, Activation, Dropout
 from keras.utils import np_utils
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import OrthogonalMatchingPursuit
+from keras.callbacks import EarlyStopping
 
 ##################### DECODER FUNCTIONS ##########################
 

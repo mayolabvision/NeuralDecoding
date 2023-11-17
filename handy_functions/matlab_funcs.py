@@ -84,7 +84,7 @@ def mat_to_pickle(filename,dto,wi,dti,downsample_factor=1):
         neural_data = get_spikes_with_history(spike_times,wi,dti,out_edges)
         t2_elapsed = time.time()-t2
 
-        with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti,slide_ms),'wb') as f:
+        with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti),'wb') as f:
             pickle.dump([neural_data,t2_elapsed],f)
         print('pickled inputs')
 

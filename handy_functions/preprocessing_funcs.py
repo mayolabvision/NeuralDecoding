@@ -33,7 +33,7 @@ def bin_spikes(spike_times,dt,wdw_start,wdw_end):
 
 
 ######## BIN_OUTPUT #######
-def bin_output(outputs,output_times,dt,wdw_start,wdw_end,downsample_factor=1,bins_predict=1):
+def bin_output(outputs,output_times,dt,wdw_start,wdw_end,downsample_factor=1):
     """
     Function that puts outputs into bins
 
@@ -75,11 +75,6 @@ def bin_output(outputs,output_times,dt,wdw_start,wdw_end,downsample_factor=1,bin
     for i in range(num_bins):
         idxs=(np.squeeze(output_times)>=edges[i]) & (np.squeeze(output_times)<edges[i+1])
         outputs_binned[i,:] = outputs[idxs,:].mean(axis=0)
-
-    if bins_predict!=1:
-        print(outputs_binned.shape)
-        print(blah)
-        
 
     return outputs_binned,edges
 

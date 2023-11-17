@@ -54,7 +54,7 @@ def mat_to_pickle(filename,dto,wi,dti,downsample_factor=1):
         conditions   =  data['contConditions']
         
         all_outputs = np.concatenate((pos[wi-dto:,:],vels[wi-dto:,:],acc[wi-dto:,:],conditions[wi-dto:,:]), axis=1)
-        outs_binned,out_edges = bin_output(all_outputs,out_times,dto,t_start,t_end,downsample_factor=df,bins_predict=bins_predict)
+        outs_binned,out_edges = bin_output(all_outputs,out_times,dto,t_start,t_end,downsample_factor=df)
 
         t1_elapsed = time.time()-t1
 
@@ -81,9 +81,7 @@ def mat_to_pickle(filename,dto,wi,dti,downsample_factor=1):
         for i in range(spike_times.shape[0]):
             spike_times[i]  =  np.squeeze(spike_times[i])
 
-        out_edges_slided = out_edges - slide_ms
-        neural_data = get_spikes_with_history(spike_times,wi,dti,out_edges_slided)
-        
+        neural_data = get_spikes_with_history(spike_times,wi,dti,out_edges)
         t2_elapsed = time.time()-t2
 
         with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti,slide_ms),'wb') as f:

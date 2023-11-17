@@ -31,7 +31,7 @@ from run_decoders import run_model
 from matlab_funcs import mat_to_pickle
 
 line = np.loadtxt(params)[int(sys.argv[1])]
-condition = 'contrast'
+condition = 'speed'
 if condition=='speed':
     trte = [0,1,2]  #10,20,all
 elif condition=='contrast':

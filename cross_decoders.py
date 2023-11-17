@@ -31,13 +31,13 @@ from run_decoders import run_model
 from matlab_funcs import mat_to_pickle
 
 line = np.loadtxt(params)[int(sys.argv[1])]
-condition = 'speed'
+condition = 'direction'
 if condition=='speed':
     trte = [0,1,2]  #10,20,all
 elif condition=='contrast':
     trte = [0,1,2] #12,100,all
 elif condition=='direction':
-    trte = [0,1,2,3,4] #0,90,180,270,all
+    trte = [0,1,2] #0,90,180,270,all
 
 print(line)
 s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]),params)
@@ -78,7 +78,7 @@ if condition=='speed':
 elif condition=='contrast':
     conditions = ['c012','c100','cAll']
 elif condition=='direction':
-    conditions = ['d000','d090','d180','d270','dAlll']
+    conditions = ['ipsi','cont','dAll']
 
 result = [s,t,dto,df,wi,dti,m,outputs[o],condition,conditions[trCo],conditions[teCo],nm,nf,repeat,outer_fold,r2mn_train,rhomn_train,r2mn_test,rhomn_test,r2mn_shuf,rhomn_shuf,eval_full,prms,pp_time,train_time,test_time,these_neurons]     
 

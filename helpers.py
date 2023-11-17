@@ -226,9 +226,6 @@ def get_foldX(outer_fold,bins_before,num_examples,cond,condition,trCo,teCo):
         trTrls = np.unique(cond[(conds<=spds[trCo]),0])
         teTrls = np.unique(cond[(conds<=spds[teCo]),0])
 
-        trTrls = np.array(sorted(np.random.choice(trTrls, size=csize, replace=False)))
-        teTrls = np.array(sorted(np.random.choice(teTrls, size=csize, replace=False)))
-
     elif condition=='contrast':
         spds = [12,100,10000]
         conds = cond[:,1]
@@ -240,9 +237,50 @@ def get_foldX(outer_fold,bins_before,num_examples,cond,condition,trCo,teCo):
         trTrls = np.unique(cond[(conds<=spds[trCo]),0])
         teTrls = np.unique(cond[(conds<=spds[teCo]),0])
 
-        trTrls = np.array(sorted(np.random.choice(trTrls, size=csize, replace=False)))
-        teTrls = np.array(sorted(np.random.choice(teTrls, size=csize, replace=False)))
+    elif condition=='direction': 
+        conds = cond[:,3]
+        
+        c1 = ceil(np.shape(conds[conds<=180])[0] / (ceil(cond.shape[0] / num_trls)))
+        c2 = ceil(np.shape(conds[conds>180])[0] / (ceil(cond.shape[0] / num_trls)))
+        csize = np.array([c1,c2]).min()
 
+        if trCo==0:
+            trTrls = np.unique(cond[(conds<=180), 0])
+        elif trCo==1:
+            trTrls = np.unique(cond[(conds>180), 0])
+        else:
+            trTrls = np.unique(cond[(conds < 1000), 0])
+        
+        if teCo==0:
+            teTrls = np.unique(cond[(conds<=180), 0])
+        elif teCo==1:
+            teTrls = np.unique(cond[(conds>180), 0])
+        else:
+            teTrls = np.unique(cond[(conds<1000), 0])
+
+        '''
+        c1 = ceil(np.shape(conds[(conds <= 90) | (conds > 270)])[0] / (ceil(cond.shape[0] / num_trls)))
+        c2 = ceil(np.shape(conds[(conds > 90) & (conds <= 270)])[0] / (ceil(cond.shape[0] / num_trls)))
+        csize = np.array([c1,c2]).min()
+
+        if trCo==0:
+            trTrls = np.unique(cond[(conds <= 90) | (conds > 270), 0])
+        elif trCo==1:
+            trTrls = np.unique(cond[(conds > 90) & (conds <= 270), 0])
+        else:
+            trTrls = np.unique(cond[(conds < 1000), 0])
+        
+        if teCo==0:
+            teTrls = np.unique(cond[(conds <= 90) | (conds > 270), 0])
+        elif teCo==1:
+            teTrls = np.unique(cond[(conds > 90) & (conds <= 270), 0])
+        else:
+            teTrls = np.unique(cond[(conds < 1000), 0])
+
+        '''
+    trTrls = np.array(sorted(np.random.choice(trTrls, size=csize, replace=False)))
+    teTrls = np.array(sorted(np.random.choice(teTrls, size=csize, replace=False)))
+    
     trInds = np.array(np.where(np.isin(cond[:, 0], trTrls))).T
     teInds = np.array(np.where(np.isin(cond[:, 0], teTrls))).T
 

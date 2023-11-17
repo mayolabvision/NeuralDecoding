@@ -20,7 +20,6 @@ sys.path.append(cwd+"/handy_functions") # go to parent dir
 from metrics import get_R2, get_R2_wShuf
 from metrics import get_rho, get_rho_wShuf
 from bayes_opt import BayesianOptimization
-from bayes_opt import UtilityFunction
 from sklearn.model_selection import KFold
 from joblib import Parallel, delayed
 import multiprocessing
@@ -31,8 +30,8 @@ import neuronsSample
 def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid):
 ##################### WF ############################
     if m == 0:
-        from decoders import WienerFilterDecoder
-        model=WienerFilterDecoder()
+        from decoders import WienerFilterClassification
+        model=WienerFilterClassification()
         
         t1=time.time()
         coeffs,intercept = model.fit(X_flat_train,y_train)
@@ -478,9 +477,8 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             'num_epochs': (2, 21)
         }
 
-        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        BO.maximize(init_points=10, n_iter=10)#, n_jobs=workers) 10,10
         
         best_params = BO.max['params']
         units = int(best_params['units'])

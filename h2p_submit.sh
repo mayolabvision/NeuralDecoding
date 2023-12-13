@@ -6,11 +6,11 @@
 #SBATCH --output=outfiles/out_%A_%a.out
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=4
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=knoneman@pitt.edu
-#SBATCH --time=0-03:59:59
-#SBATCH --array=0-450
+#SBATCH --time=0-05:59:59
+#SBATCH --array=0-999
 
 echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."
 echo "My SLURM_ARRAY_TASK_ID is $SLURM_ARRAY_TASK_ID"
@@ -21,7 +21,7 @@ module load python/anaconda3.9-2021.11
 conda activate decoding
 
 #python full_runs.py $1 1
-#python neuron_sweeps.py $1 1
-python cross_decoders.py $1 1 
+python neuron_sweeps.py $1 1
+#python cross_decoders.py $1 1 
 
 echo "DONE"

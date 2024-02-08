@@ -1,0 +1,2 @@
+000 29 0 050 1 0 400 050 3 24 41 10 15 001   #lineID,session,timesPrePost,outputBinWidth,downsampleFactor,output,inputTimeWindow,inputBinWidth,model,numMT,numFEF,outerFolds,innerFolds,numRepeats 
+000 29 0 050 1 0 400 050 0 24 41 10 15 001   

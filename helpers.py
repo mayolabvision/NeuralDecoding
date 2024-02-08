@@ -1,7 +1,7 @@
 import os
 import numpy as np
-#import decodingSetup
 import sys
+import matplotlib.pyplot as plt
 import pickle
 import itertools
 from itertools import product
@@ -10,7 +10,6 @@ from math import ceil
 
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
-data_folder     = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/datasets/'
 
 import neuronsSample
 from preprocessing_funcs import get_spikes_with_history
@@ -18,30 +17,175 @@ from sklearn.model_selection import KFold
 from random import shuffle
 import glob 
 
-def make_name(s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,r):
-    return "s{:02d}-t{}-dto{:03d}-df{}-o{}-wi{:03d}-dti{:03d}-m{:02d}-nm{:02d}-nf{:02d}-fo{:02d}-fi{:02d}-r{:04d}".format(s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,r)
+def get_params(i,params):
+    line = np.loadtxt(params)[i]
+    print(line)
+    s   = int(line[1])          # session number
+    t   = int(line[2])          # time configuration around target motion onset 
+    dto = int(line[3])          # output bin width
+    df  = int(line[4])          # downsample factor
+    wi  = int(line[5])          # input time window
+    dti = int(line[6])          # input bin width
+    nn  = int(line[7])          # number of total neurons
+    nm  = int(line[8])          # number of MT neurons
+    nf  = int(line[9])          # number of FEF neurons
+    fo  = int(line[10])          # number of outer cross-validation folds 
+    tp  = float(line[11])/100   # proportion of training data to train model on
+    o   = int(line[12])         # output type (0 = pos, 1 = vel, 2 = acc)
+    m   = int(line[13])         # model type
+    r   = int(line[14])         # number of repeats
+    return s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r
+
+def get_jobArray(*args):
+    prep_args = []
+    for i in range(len(args)):
+        if isinstance(args[i], int):
+            prep_args.append(range(args[i]))
+        elif isinstance(args[i], list):
+            prep_args.append(args[i])
+
+    jobs = list(product(*prep_args))
+    return jobs 
+
+def get_session(j,t,dto,df,wi,dti):
+    session = 'pa'+str(j)+'dir4A'
+    times = [[500,300]]
+    return session+'-pre{}-post{}-dto{:03d}-df{}-wi{:03d}-dti{:03d}'.format(times[t][0],times[t][1],dto,df,wi,dti), session+'-pre{}-post{}'.format(times[t][0],times[t][1])
+
+def remove_overlapBins(cond,wi,dto):
+    num_bins = round(int(wi)/int(dto))
+    trials = np.unique(cond[:, 0])
+
+    inbt_trials = np.where(np.modf(cond[:, 0])[0] != 0)[0]
+
+    toss_inds = []
+    for t,trial in enumerate(trials[1:]):
+        if trial.is_integer():
+            ind_thisTrial = np.where(cond[:, 0] == trial)[0]
+            toss_inds.append(ind_thisTrial[:num_bins-1])
+
+    toss_inds = np.array(toss_inds).flatten()
+    if inbt_trials.size != 0:
+        toss_inds = np.sort(np.concatenate((toss_inds,inbt_trials)))
+        print('bitch')
+
+    return toss_inds
+
+def plot_first_column_lines(*arrays):
+    # Take the first 100 rows of the first column of each array
+    data = [arr[:100, 0] for arr in arrays]
+        
+    # Create a plot
+    plt.figure(figsize=(10, 6)) 
+        
+    # Plot the first column of each array as lines with specified colors
+    plt.plot(data[0], label='Array 1', color='black')
+    for i, arr_data in enumerate(data[1:], start=2):
+        plt.plot(arr_data, label=f'Array {i}', color=f'C{i}')
+        
+    # Add labels and legend
+    plt.xlabel('Index')
+    plt.ylabel('Value')
+    plt.title('First Column of Arrays (First 100 Rows)')
+    plt.legend()
+        
+    # Show the plot
+    plt.show()
+
+def avgEye_perCondition(train_cond,train_kin,test_cond,test_kin):
+    tbs = np.sort(np.unique(train_cond[:,4]))
+    unique_conditions = np.sort(np.unique(train_cond[:, 5])).astype(int)
+    
+#plot_first_column_lines(train_kin)
+
+    # Find the average trace for each condition
+    train_kin_matrices = [] 
+    for condition in unique_conditions:
+        condition_mask = train_cond[:, 5] == condition
+        condition_trials = np.unique(train_cond[condition_mask, 0].astype(int))
+
+        condition_matrix = np.full((len(condition_trials), len(tbs), train_kin.shape[1]), np.nan)
+        for i, trial in enumerate(condition_trials):
+            trial_mask = train_cond[:,0] == trial
+            trial_tbs = train_cond[trial_mask, 4]
+            condition_matrix[i,np.where(np.isin(tbs,trial_tbs))[0],:] = train_kin[trial_mask,:]
+            
+        train_kin_matrices.append(np.nanmean(condition_matrix,axis=0))
+
+    # Create test trace made up of the average kin for each condition
+    avg_trace = np.zeros_like(test_kin)
+    for trl in np.unique(test_cond[:,0]):
+        trl_mask = test_cond[:, 0] == trl
+        trl_cond = test_cond[trl_mask,:]
+        avg_eye = train_kin_matrices[trl_cond[0,5].astype(int)-1]
+       
+        avg_trace[trl_mask,:] = avg_eye[np.where(np.isin(tbs, trl_cond[:,4])),:]
+    
+    return avg_trace
+
+def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,outer_fold,bn,m,condition='all',trCo=0,teCo=0):
+    if m!=2:
+        if o==0:
+            y = pos_binned
+        elif o==1:
+            y = vel_binned
+        elif o==2:
+            y = acc_binned
+    else: #KF
+        y = np.concatenate((pos_binned,vel_binned,acc_binned),axis=1)
+       
+    X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
+    num_examples=X.shape[0]
+    
+    if condition=='all':
+        training_set,testing_set,valid_set = get_fold(outer_fold,bn,num_examples,m)
+    else:
+        training_set,testing_set,valid_set = get_foldX(outer_fold,bn,num_examples,cond,condition,int(trCo),int(teCo))
+
+    if m!=2:
+        X_train=X[training_set,:,:]
+        X_flat_train=X_flat[training_set,:]
+        y_train=y[training_set,:]
+        X_test=X[testing_set,:,:]
+        X_flat_test=X_flat[testing_set,:]
+        y_test=y[testing_set,:]
+        X_valid=X[valid_set,:,:]
+        X_flat_valid=X_flat[valid_set,:]
+        y_valid=y[valid_set,:]
+        c_train=cond[training_set,:].astype(int)
+        c_test=cond[testing_set,:].astype(int)
+
+        X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid)
+
+    else:
+        X_train=X[training_set,:]
+        y_train=y[training_set,:]
+        X_valid=X[valid_set,:]
+        y_valid=y[valid_set,:]
+        X_test=X[testing_set,:]
+        y_test=y[testing_set,:]
+        c_test = cond[testing_set,:]
+
+        X_train,X_test,X_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTestKF(X_train,X_test,X_valid,y_train,y_test,y_valid)
+
+        X_flat_train=X_train
+        X_flat_test=X_test
+        X_flat_valid=X_valid
+
+    
+    # calculate baseline eye traces (averaged within each condition)
+    y_test_avg = avgEye_perCondition(c_train,y_train,c_test,y_test)
+    y_test_zscore_avg = avgEye_perCondition(c_train,y_zscore_train,c_test,y_zscore_test)
+
+    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test,y_test_avg,y_test_zscore_avg 
+
+def make_name(l,s,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r):
+    return "l{:05d}-s{:02d}-dto{:03d}-df{}-wi{:03d}-dti{:03d}-nn{:02d}-nm{:02d}-nf{:02d}-fo{:02d}-tp{:03d}-o{}-m{:02d}-r{:04d}".format(l,s,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r)
 
 def checkdir(name):
     if not os.path.exists(name):
         os.makedirs(name)
     return
-
-def get_params(i,params):
-    line = np.loadtxt(params)[i]
-    s = int(line[1])
-    t = int(line[2])
-    dto = int(line[3])
-    df = int(line[4])
-    o = int(line[5])
-    wi = int(line[6])
-    dti = int(line[7])
-    m = int(line[8])
-    nm = int(line[9])
-    nf = int(line[10])
-    fo = int(line[11]) 
-    fi = int(line[12])
-    r = int(line[13])
-    return s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,r
 
 def make_directory(jobname,nameOnly):
     cwd = os.getcwd()
@@ -50,11 +194,6 @@ def make_directory(jobname,nameOnly):
         if not os.path.isdir(cwd+f):
            os.makedirs(cwd+f,exist_ok=True)
     return f
-
-def get_session(j,t,dto,df,wi,dti):
-    session = 'pa'+str(j)+'dir4A'
-    times = [[500,300]]
-    return session+'-pre{}-post{}-dto{:03d}-df{}-wi{:03d}-dti{:03d}'.format(times[t][0],times[t][1],dto,df,wi,dti), session+'-pre{}-post{}'.format(times[t][0],times[t][1])
 
 def get_bins(bn):
     #bins = [[6,1,6],[3,1,0],[0,1,0]]#,[6,1,0],[0,1,6],[1,1,0],[2,1,0],[3,1,0],[1,0,0],[2,0,0],[3,0,0]]
@@ -67,18 +206,6 @@ def get_bins_fromTime(d,bn):
     binsCur = int(1)
     binsPost = int(0)
     return binsPre,binsCur,binsPost
-
-def get_jobArray(*args):
-    prep_args = []
-    for i in range(len(args)):
-        if isinstance(args[i], int):
-            prep_args.append(range(args[i]))
-        elif isinstance(args[i], list):
-            prep_args.append(args[i])
-
-    jobs = list(product(*prep_args))
-    
-    return jobs 
 
 def get_foldneuronPairs(i,params):
     s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,r = get_params(i,params)
@@ -313,59 +440,6 @@ def get_foldX(outer_fold,bins_before,num_examples,cond,condition,trCo,teCo):
     valid_set = trInds[valid_set].squeeze()
 
     return training_set,testing_set,valid_set
-
-def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,fi,outer_fold,bn,m,condition='all',trCo=0,teCo=0):
-    trCo = int(trCo)
-    teCo = int(teCo)
-
-    if m!=2:
-        if o==0:
-            y = pos_binned
-        elif o==1:
-            y = vel_binned
-        elif o==2:
-            y = acc_binned
-    else: #KF
-        y = np.concatenate((pos_binned,vel_binned,acc_binned),axis=1)
-       
-    X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
-    num_examples=X.shape[0]
-    
-    if condition=='all':
-        training_set,testing_set,valid_set = get_fold(outer_fold,bn,num_examples,m)
-    else:
-        training_set,testing_set,valid_set = get_foldX(outer_fold,bn,num_examples,cond,condition,trCo,teCo)
-
-    if m!=2:
-        X_train=X[training_set,:,:]
-        X_flat_train=X_flat[training_set,:]
-        y_train=y[training_set,:]
-        X_test=X[testing_set,:,:]
-        X_flat_test=X_flat[testing_set,:]
-        y_test=y[testing_set,:]
-        X_valid=X[valid_set,:,:]
-        X_flat_valid=X_flat[valid_set,:]
-        y_valid=y[valid_set,:]
-        c_test=cond[testing_set,:]
-
-        X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid)
-
-    else:
-        X_train=X[training_set,:]
-        y_train=y[training_set,:]
-        X_valid=X[valid_set,:]
-        y_valid=y[valid_set,:]
-        X_test=X[testing_set,:]
-        y_test=y[testing_set,:]
-        c_test = cond[testing_set,:]
-
-        X_train,X_test,X_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTestKF(X_train,X_test,X_valid,y_train,y_test,y_valid)
-
-        X_flat_train=X_train
-        X_flat_test=X_test
-        X_flat_valid=X_valid
-
-    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test 
 
 def get_data_classifier(X,o,pos_binned,vel_binned,acc_binned,cond,fo,fi,outer_fold,bn,m,condition='all',trCo=0,teCo=0):
     trCo = int(trCo)

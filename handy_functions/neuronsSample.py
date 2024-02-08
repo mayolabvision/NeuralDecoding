@@ -29,8 +29,8 @@ def get_neuronRepeats(s,t,*args):
     elif len(args) == 2:
         num_repeats = args[0]
         nn = args[1]
-        nm = 1000
-        nf = 1000
+        nm = 99
+        nf = 99
     elif len(args) == 3:
         num_repeats,nm,nf = args
 

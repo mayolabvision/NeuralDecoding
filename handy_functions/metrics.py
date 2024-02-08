@@ -61,6 +61,10 @@ def get_R2(y_test,y_test_pred):
 
     return R2  #Return an array of R2s
 
+def adjust_R2(R2,num_observations,num_predictors):
+
+    adjusted_R2 = 1 - (1 - R2) * (num_observations - 1) / (num_observations - num_predictors - 1)
+
 ########## Pearson's correlation (rho) ##########
 
 def get_rho_wShuf(y_test,y_test_pred):

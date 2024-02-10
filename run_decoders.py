@@ -55,9 +55,9 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             y_valid_predicted_wc=model_wc.predict(Xva) 
             return np.mean(get_metric(yva,y_valid_predicted_wc,em))
         
-        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(wc_evaluate, {'degree': (1, 20.01)}, verbose=verb, allow_duplicate_points=True,random_state=m)    
-        BO.maximize(init_points=5, n_iter=25,acquisition_function=acquisition_function)#, n_jobs=workers)
+        BO.maximize(init_points=20, n_iter=20,acquisition_function=acquisition_function)#, n_jobs=workers)
         params = max(BO.res, key=lambda x:x['target'])
         degree = params['params']['degree']
         prms = {'degree': degree}
@@ -76,9 +76,9 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             y_valid_predicted_xgb=model_xgb.predict(Xva) 
             return np.mean(get_metric(yva,y_valid_predicted_xgb,em))
 
-        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,500), 'eta': (0.01, 0.3), 'subsample': (0.5,1.0)}, verbose=verb, allow_duplicate_points=True,random_state=m) 
-        BO.maximize(init_points=5, n_iter=25, acquisition_function=acquisition_function)#, n_jobs=workers) 5,5
+        BO.maximize(init_points=10, n_iter=10, acquisition_function=acquisition_function)#, n_jobs=workers) 5,5
 
         params = max(BO.res, key=lambda x:x['target'])
         num_round = int(params['params']['num_round'])
@@ -104,9 +104,9 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             y_valid_predicted_svr=model_svr.predict(Xva)
             return np.mean(get_metric(yva,y_valid_predicted_svr,em))
         
-        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(svr_evaluate, {'C': (0, 10), 'kernel': (0, 2.5)}, verbose=verb, allow_duplicate_points=True,random_state=m)    
-        BO.maximize(init_points=5, n_iter=25,acquisition_function=acquisition_function)#, n_jobs=workers), 10,10
+        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers), 10,10
 
         params = max(BO.res, key=lambda x:x['target'])
         C = params['params']['C']
@@ -129,9 +129,9 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             y_valid_predicted_dnn=model_dnn.predict(Xva)
             return np.mean(get_metric(yva,y_valid_predicted_dnn,em))
 
-        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True,random_state=m)
-        BO.maximize(init_points=5, n_iter=25,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
 
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -154,9 +154,9 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             y_valid_predicted_rnn=model_rnn.predict(Xva)
             return np.mean(get_metric(yva,y_valid_predicted_rnn,em))
 
-        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True,random_state=m)
-        BO.maximize(init_points=5, n_iter=25,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -179,9 +179,9 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             y_valid_predicted_gru=model_gru.predict(Xva)
             return np.mean(get_metric(yva,y_valid_predicted_gru,em))
 
-        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32, 256),'n_epochs': (2,21)}, allow_duplicate_points=True,random_state=m)
-        BO.maximize(init_points=5, n_iter=25,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -210,9 +210,9 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             'batch_size': (32, 256),
             'num_epochs': (2, 21)
         }
-        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-        BO.maximize(init_points=5, n_iter=25,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         best_params = BO.max['params']
         units = int(best_params['units'])

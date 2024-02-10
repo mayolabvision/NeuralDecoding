@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
 # Get job parameters
-PARAMS = 'params/params.txt'
+PARAMS = 'params.txt'
 s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,em,num_repeats,j = helpers.get_params(int(sys.argv[1]),PARAMS)
 
 jobs = helpers.get_jobArray(fo,num_repeats)
@@ -25,7 +25,7 @@ if int(sys.argv[2])==0: # local computer
     jobID = int(sys.argv[3])
 else: # hpc cluster
     workers = int(os.environ['SLURM_CPUS_PER_TASK'])
-    job = int(os.environ["SLURM_ARRAY_TASK_ID"])
+    jobID = int(os.environ["SLURM_ARRAY_TASK_ID"])
 
 job = jobs[jobID + (j*1000)]
 outer_fold = job[0]

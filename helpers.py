@@ -11,7 +11,7 @@ from math import ceil
 cwd = os.getcwd()
 sys.path.append(cwd+"/handy_functions") # go to parent dir
 
-import neuronsSample
+from handy_functions import dataSampling
 from preprocessing_funcs import get_spikes_with_history
 from sklearn.model_selection import KFold
 from random import shuffle
@@ -34,7 +34,19 @@ def get_params(i,params):
     o   = int(line[12])         # output type (0 = pos, 1 = vel, 2 = acc)
     m   = int(line[13])         # model type
     r   = int(line[14])         # number of repeats
-    return s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r
+    j   = int(line[15])
+    return s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r,j
+
+def make_name(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r):
+    return "{:05d}-s{:02d}-t{}-dto{:03d}-df{}-wi{:03d}-dti{:03d}-nn{:02d}-nm{:02d}-nf{:02d}-fo{:02d}-tp{:03d}-o{}-m{:02d}-r{:04d}".format(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,int(tp*100),o,m,r)
+
+def make_directory(jobname,nameOnly):
+    cwd = os.getcwd()
+    f="/runs/"+jobname
+    if nameOnly==0:
+        if not os.path.isdir(cwd+f):
+           os.makedirs(cwd+f,exist_ok=True)
+    return f
 
 def get_jobArray(*args):
     prep_args = []
@@ -123,7 +135,7 @@ def avgEye_perCondition(train_cond,train_kin,test_cond,test_kin):
     
     return avg_trace
 
-def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,outer_fold,bn,m,condition='all',trCo=0,teCo=0):
+def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,outer_fold,bn,m,tp,condition='all',trCo=0,teCo=0):
     if m!=2:
         if o==0:
             y = pos_binned
@@ -172,28 +184,12 @@ def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,outer_fold,bn,m,condit
         X_flat_test=X_test
         X_flat_valid=X_valid
 
-    
-    # calculate baseline eye traces (averaged within each condition)
-    y_test_avg = avgEye_perCondition(c_train,y_train,c_test,y_test)
-    y_test_zscore_avg = avgEye_perCondition(c_train,y_zscore_train,c_test,y_zscore_test)
-
-    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test,y_test_avg,y_test_zscore_avg 
-
-def make_name(l,s,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r):
-    return "l{:05d}-s{:02d}-dto{:03d}-df{}-wi{:03d}-dti{:03d}-nn{:02d}-nm{:02d}-nf{:02d}-fo{:02d}-tp{:03d}-o{}-m{:02d}-r{:04d}".format(l,s,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r)
+    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_train,c_test 
 
 def checkdir(name):
     if not os.path.exists(name):
         os.makedirs(name)
     return
-
-def make_directory(jobname,nameOnly):
-    cwd = os.getcwd()
-    f="/runs/"+jobname
-    if nameOnly==0:
-        if not os.path.isdir(cwd+f):
-           os.makedirs(cwd+f,exist_ok=True)
-    return f
 
 def get_bins(bn):
     #bins = [[6,1,6],[3,1,0],[0,1,0]]#,[6,1,0],[0,1,6],[1,1,0],[2,1,0],[3,1,0],[1,0,0],[2,0,0],[3,0,0]]

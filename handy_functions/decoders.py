@@ -57,13 +57,8 @@ class WienerFilterRegression(object):
         # Apply the Wiener filter to the input data
         X_filtered_train = self.apply_wiener_filter(X_flat_train)
 
-        # Initialize linear regression model
-        self.model = linear_model.LinearRegression()
-
-        # Train the model
-        self.model.fit(X_filtered_train, y_train)
-
-        return self.model.coef_, self.model.intercept_
+        self.model = linear_model.LinearRegression() # initialize linear regression model
+        self.model.fit(X_filtered_train, y_train) # train the model
 
     def predict(self, X_flat_test):
         """
@@ -160,8 +155,6 @@ class LinearRegression(object):
         self.model=linear_model.LinearRegression() #Initialize linear regression model
         self.model.fit(X_flat_train, y_train) #Train the model
         
-        return self.model.coef_,self.model.intercept_
-
     def predict(self,X_flat_test):
 
         """
@@ -217,18 +210,18 @@ class WienerCascadeRegression(object):
             This is the outputs that are being predicted
         """
 
+        X_filtered_train = self.apply_wiener_filter(X_flat_train)
+
         num_outputs = y_train.shape[1]  # Number of outputs
         for i in range(num_outputs):  # Loop through outputs
             # Fit linear portion of model
             regr = linear_model.LinearRegression()  # Call the linear portion of the model "regr"
-            regr.fit(X_flat_train, y_train[:, i])  # Fit linear
-            y_train_predicted_linear = regr.predict(X_flat_train)  # Get outputs of linear portion of model
 
-            # Apply the Wiener filter to the linear predictions
-            y_train_filtered_linear = self.apply_wiener_filter(y_train_predicted_linear)
+            regr.fit(X_filtered_train, y_train[:, i])  # Fit linear
+            y_train_predicted_linear = regr.predict(X_filtered_train)  # Get outputs of linear portion of model
 
             # Fit nonlinear portion of model on the filtered linear predictions
-            p = np.polyfit(y_train_filtered_linear, y_train[:, i], self.degree)
+            p = np.polyfit(y_train_predicted_linear, y_train[:, i], self.degree)
 
             # Add model for this output (both linear and nonlinear parts) to the list "models"
             self.models.append([regr, p])
@@ -257,6 +250,7 @@ class WienerCascadeRegression(object):
             The predicted outputs
         """
 
+        X_filtered_test = self.apply_wiener_filter(X_flat_test)
         num_outputs = len(self.models)  # Number of outputs being predicted
 
         y_test_predicted = np.empty([X_flat_test.shape[0], num_outputs])  # Initialize matrix that contains predicted outputs
@@ -264,19 +258,35 @@ class WienerCascadeRegression(object):
             [regr, p] = self.models[i]  # Get the linear (regr) and nonlinear (p) portions of the trained model
 
             # Predictions on test set
-            y_test_predicted_linear = regr.predict(X_flat_test)  # Get predictions on the linear portion of the model
-
-            # Apply the Wiener filter to the linear predictions
-            y_test_filtered_linear = self.apply_wiener_filter(y_test_predicted_linear)
+            y_test_predicted_linear = regr.predict(X_filtered_test)  # Get predictions on the linear portion of the model
 
             # Run the linear predictions through the nonlinearity to get the final predictions
-            y_test_predicted[:, i] = np.polyval(p, y_test_filtered_linear)
+            y_test_predicted[:, i] = np.polyval(p, y_test_predicted_linear)
 
         return y_test_predicted
 
-    def apply_wiener_filter(self, x):
+    def apply_wiener_filter(self, X):
         """
         Apply the Wiener filter to the input data
+
+        Parameters
+        ----------
+        X: numpy 2d array of shape [n_samples, n_features]
+            This is the neural data.
+
+        Returns
+        -------
+        X_filtered: numpy 2d array of shape [n_samples, n_features]
+            The filtered neural data using the Wiener filter
+        """
+        # Apply the Wiener filter to each feature independently
+        X_filtered = np.apply_along_axis(self.wiener_with_warnings, axis=0, arr=X)
+
+        return X_filtered
+
+    def wiener_with_warnings(self, x):
+        """
+        Apply the Wiener filter to a single feature with warnings handling
 
         Parameters
         ----------
@@ -288,9 +298,8 @@ class WienerCascadeRegression(object):
         x_filtered: numpy 1d array
             The filtered feature using the Wiener filter
         """
-        # Apply the Wiener filter to the input feature
-        x_filtered = wiener(x)
-
+        with np.errstate(divide='ignore', invalid='ignore'):
+            x_filtered = wiener(x)
         return x_filtered
 
 
@@ -1177,15 +1186,6 @@ class DenseNNRegression(object):
         model.fit(X_flat_train,y_train,batch_size=self.batch_size,epochs=self.num_epochs,verbose=self.verbose,workers=self.workers,use_multiprocessing=True) #Fit the model
         self.model=model
 
-        # Retrieve the model's weights and biases
-        model_weights = []
-        for layer in model.layers:
-            layer_weights = layer.get_weights()
-            if layer_weights:
-                model_weights.append(layer_weights)
-
-        return model_weights
-
     def predict(self,X_flat_test):
 
         """
@@ -1270,15 +1270,6 @@ class SimpleRNNRegression(object):
         #else:
         model.fit(X_train,y_train,batch_size=self.batch_size,epochs=self.num_epochs,verbose=self.verbose,workers=self.workers,use_multiprocessing=True) #Fit the model
         self.model=model
-
-        # Retrieve the model's weights and biases
-        model_weights = []
-        for layer in model.layers:
-            layer_weights = layer.get_weights()
-            if layer_weights:
-                model_weights.append(layer_weights)
-
-        return model_weights
 
     def predict(self,X_test):
 
@@ -1365,15 +1356,6 @@ class GRURegression(object):
         #else:
         model.fit(X_train,y_train,batch_size=self.batch_size,epochs=self.num_epochs,verbose=self.verbose,workers=self.workers,use_multiprocessing=True) #Fit the model
         self.model=model
-
-        # Retrieve the model's weights and biases
-        model_weights = []
-        for layer in model.layers:
-            layer_weights = layer.get_weights()
-            if layer_weights:
-                model_weights.append(layer_weights)
-
-        return model_weights
 
     def predict(self,X_test):
 
@@ -1466,15 +1448,6 @@ class LSTMRegression(object):
 
         self.model = model
         
-        # Retrieve the model's weights and biases
-        model_weights = []
-        for layer in model.layers:
-            layer_weights = layer.get_weights()
-            if layer_weights:
-                model_weights.append(layer_weights)
-
-        return model_weights
-
     def predict(self, X_test):
         """
         Predict outcomes using trained LFADS Decoder
@@ -1518,14 +1491,15 @@ class XGBoostRegression(object):
         for negative values (default), the gpu is not used
     """
 
-    def __init__(self,max_depth=3,num_round=300,eta=0.3,gpu=-1,workers=-1):
+    def __init__(self,max_depth=3,num_round=300,eta=0.3,subsample=1,gpu=-1,workers=-1):
         self.max_depth=max_depth
         self.num_round=num_round
         self.eta=eta
+        self.subsample=subsample
         self.gpu=gpu
         self.nthread=workers
 
-    def fit(self,X_flat_train,y_train):
+    def fit(self,X_flat_train,y_train,X_flat_valid,y_valid):
 
         """
         Train XGBoost Decoder
@@ -1538,6 +1512,12 @@ class XGBoostRegression(object):
 
         y_train: numpy 2d array of shape [n_samples, n_outputs]
             This is the outputs that are being predicted
+
+        X_flat_valid: numpy 2d array of shape [n_samples_valid, n_features]
+            Validation set for neural data
+        
+        y_valid: numpy 2d array of shape [n_samples_valid, n_outputs]
+            Validation set for outputs
         """
 
 
@@ -1548,6 +1528,7 @@ class XGBoostRegression(object):
             'eval_metric': "logloss", #loglikelihood loss
             'max_depth': self.max_depth, #this is the only parameter we have set, it's one of the way or regularizing
             'eta': self.eta,
+            'subsample': self.subsample,
             'seed': 2925, #for reproducibility
             'silent': True,
             'verbosity' : 0,
@@ -1562,7 +1543,10 @@ class XGBoostRegression(object):
         models=[] #Initialize list of models (there will be a separate model for each output)
         for y_idx in range(num_outputs): #Loop through outputs
             dtrain = xgb.DMatrix(X_flat_train, label=y_train[:,y_idx]) #Put in correct format for XGB
-            bst = xgb.train(param, dtrain, self.num_round) #Train model
+            dvalid = xgb.DMatrix(X_flat_valid, label=y_valid[:, y_idx])
+
+            evals = [(dtrain, 'train'), (dvalid, 'validation')]
+            bst = xgb.train(param, dtrain, self.num_round, evals=evals, early_stopping_rounds=10, verbose_eval=False) #Train model
             models.append(bst) #Add fit model to list of models
 
         self.model=models
@@ -1642,6 +1626,7 @@ class XGBoostRegression(object):
         return {feature_name: score for feature_name, score in zip(X_test.columns, result.importances_mean)}
 
 ##################### SUPPORT VECTOR REGRESSION ##########################
+from sklearn.preprocessing import StandardScaler
 
 class SVRegression(object):
 
@@ -1660,9 +1645,11 @@ class SVRegression(object):
         Typically in the 1000s takes a short amount of time on a laptop
     """
 
-    def __init__(self,max_iter=-1,C=3.0):
+    def __init__(self,max_iter=-1,C=3.0,kernel='rbf'):
         self.max_iter=max_iter
         self.C=C
+        self.kernel=kernel
+        self.scaler = StandardScaler()
         return
 
 
@@ -1684,17 +1671,16 @@ class SVRegression(object):
         num_outputs = y_train.shape[1]  # Number of outputs
         models, support_vectors, coefficients = [],[],[]  # Initialize list of models (there will be a separate model for each output)
 
+        X_scaled_train = self.scaler.fit_transform(X_flat_train)
         for y_idx in range(num_outputs):  # Loop through outputs
-            model = SVR(C=self.C, max_iter=self.max_iter)  # Initialize SVR model
-            model.fit(X_flat_train, y_train[:, y_idx])  # Train the model
+            model = SVR(C=self.C, max_iter=self.max_iter, kernel=self.kernel)  # Initialize SVR model
+            model.fit(X_scaled_train, y_train[:, y_idx])  # Train the model
             models.append(model)  # Add fit model to list of models
-            support_vectors.append(model.support_vectors_)
-            coefficients.append(model.dual_coef_)
+            #support_vectors.append(model.support_vectors_)
+            #coefficients.append(model.dual_coef_)
 
         self.model = models
         
-        return support_vectors, coefficients 
-
     def predict(self,X_flat_test):
 
         """

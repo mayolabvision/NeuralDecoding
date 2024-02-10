@@ -1,87 +1,95 @@
-import numpy as np
-import sys
-from scipy import io
-from scipy import stats
-import pickle
-import time
-import pandas as pd
-import os.path
-import os
-import random
-from sklearn.utils import shuffle
-from scipy.stats import ttest_1samp
-import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning) 
-warnings.filterwarnings('ignore', 'Solver terminated early.*')
-
-cwd = os.getcwd()
-sys.path.append(cwd+"/handy_functions") # go to parent dir
-params = 'params/params_allSess.txt'
-
-from metrics import get_R2
-from metrics import get_rho
-from bayes_opt import BayesianOptimization
-from sklearn.model_selection import KFold
+import numpy as np, sys, warnings
+from scipy import io, stats
+import pickle, time, pandas as pd, os.path, os
 from joblib import Parallel, delayed
-import multiprocessing
 from psutil import cpu_count
+import multiprocessing
 import helpers
-import neuronsSample
+from handy_functions import dataSampling
 from run_decoders import run_model
 from matlab_funcs import mat_to_pickle
+from metrics import get_R2, get_rho
 
-line = np.loadtxt(params)[int(sys.argv[1])]
-#mdls = [0,1,3,4,5,6,7,8]
-mdls = [0]
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
-print(line)
-s,t,dto,df,o,wi,dti,_,_,_,fo,fi,num_repeats = helpers.get_params(int(sys.argv[1]),params)
-jobs = helpers.get_jobArray(fo,num_repeats,mdls)
+# Get job parameters
+PARAMS = 'params/params.txt'
+s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,num_repeats,j = helpers.get_params(int(sys.argv[1]),PARAMS)
+
+jobs = helpers.get_jobArray(fo,num_repeats)
 print('# of jobs: {}'.format(len(jobs)))
 
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
-    job = jobs[int(sys.argv[3])]
+    jobID = int(sys.argv[3])
 else: # hpc cluster
     workers = int(os.environ['SLURM_CPUS_PER_TASK'])
-    job = jobs[int(os.environ["SLURM_ARRAY_TASK_ID"])]
+    job = int(os.environ["SLURM_ARRAY_TASK_ID"])
 
+job = jobs[jobID + (j*1000)]
 outer_fold = job[0]
 repeat = job[1]
-m = job[2]
-print(m)
 
+#######################################################################################################################################
+# Do some preprocessing first
 sess,sess_nodt = helpers.get_session(s,t,dto,df,wi,dti)
 neural_data,pos_binned,vel_binned,acc_binned,cond_binned,pp_time = mat_to_pickle('vars-'+sess_nodt+'.mat',dto,wi,dti,df)
 
-[neurons_perRepeat,nm,nf] = neuronsSample.get_neuronRepeats(s,t,num_repeats)
-these_neurons = neurons_perRepeat[repeat]
+toss_inds = helpers.remove_overlapBins(cond_binned, wi, dto)  # Remove bins of overlapping trials
+neural_data, pos_binned, vel_binned, acc_binned, cond_binned = (
+    np.delete(arr, toss_inds, axis=0) for arr in [neural_data, pos_binned, vel_binned, acc_binned, cond_binned])
 
-X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test = helpers.get_data(neural_data[:,:,these_neurons],o,pos_binned,vel_binned,acc_binned,cond_binned,fo,fi,outer_fold,wi/dti,m)
+# Determine which 'regime' we are in
+neuron_repeats = num_repeats if tp == 1.0 or (tp == 1.0 and nn == 99 and nm == 99) else 1
+neuron_repeat = repeat if tp == 1.0 else 0
+tp_repeats = num_repeats if tp == 1.0 or (tp == 1.0 and nn == 99 and nm == 99) else 1
+tp_repeat = repeat if tp == 1.0 else 0
 
-t1=time.time()
-#if m==2:
-#X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_test = helpers.get_data(neural_data,these_neurons,o,pos_binned,vel_binned,acc_binned,cond_binned,outer_fold,bn,m)
+# Pull out neurons, either all of them or randomly sampled
+neurons_perRepeat, nn, nm, nf = dataSampling.get_neuronRepeats(sess_nodt,nn=nn,nm=nm,nf=nf,num_repeats=neuron_repeats)
+these_neurons = neurons_perRepeat[neuron_repeat]
+
+# Split the data into train:valid:test sets and normalize
+result = helpers.get_data(neural_data[:,:,these_neurons],o,pos_binned,vel_binned,acc_binned,cond_binned,fo,outer_fold,wi/dti,m,tp)
+X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_train,c_test = result  
+
+# Train on a subset of the observations, based on tp
+if tp != 1.0: 
+    obs_perRepeat = dataSampling.get_trainSection(sess_nodt,y_train.shape[0],outer_fold,tp=tp,num_repeats=tp_repeats)
+    these_obs = obs_perRepeat[tp_repeat]
+    X_train = X_train[these_obs,:,:]
+    X_flat_train, y_train, y_zscore_train, c_train = [arr[these_obs, :] for arr in (X_flat_train, y_train, y_zscore_train, c_train)]
+
+# calculate baseline eye traces (averaged within each condition)
+#y_test_avg = helpers.avgEye_perCondition(c_train,y_train,c_test,y_test)
+#y_test_zscore_avg = helpers.avgEye_perCondition(c_train,y_zscore_train,c_test,y_zscore_test)
 
 #######################################################################################################################################
+result,prms = run_model(m,o,1,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid)
 
-r2mn_train,rhomn_train,r2mn_test,rhomn_test,r2mn_shuf,rhomn_shuf,eval_full,coef_dict,prms,y_test,y_test_predicted,train_time,test_time = run_model(m,o,1,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid)
+y_train_predicted, y_test_predicted, train_time, test_time = result
+#y_train_predicted, y_test_predicted, y_shuf_predicted, y_mean_predicted, y_base_predicted, r2_train, rho_train, r2_test, rho_test, r2_shuf, rho_shuf, r2_mean, rho_mean, r2_base, rho_base, train_time, test_time = result
+
+R2_test = get_R2(y_test,y_test_predicted)
+print("R2 = {}".format(R2_test))
+#helpers.plot_first_column_lines(y_test, y_test_predicted)
 
 #######################################################################################################################################
-if o==0:
-    output = 'position'
-elif o==1:
-    output = 'velocity'
-elif o==2:
-    output = 'acceleration'
-
-result = [s,t,dto,df,wi,dti,m,output,nm,nf,repeat,outer_fold,r2mn_train,rhomn_train,r2mn_test,rhomn_test,r2mn_shuf,rhomn_shuf,eval_full,prms,pp_time,train_time,test_time]     
-
-jobname = helpers.make_name(s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,num_repeats)
+cwd = os.getcwd()
+jobname = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,num_repeats)
 pfile = helpers.make_directory((jobname),0)
-if s==29 and repeat==0:
-    with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
-        pickle.dump([result,c_test,y_test,y_test_predicted],p)
-else:
-    with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>2d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
-        pickle.dump([result],p)
+
+output = {0: 'position', 1: 'velocity', 2: 'acceleration'}.get(o)
+result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,prms,pp_time,train_time,test_time,R2_test]     
+
+truth_file = "actual-s{:02d}-t{}-dto{:03d}-df{}-o{}-fold{:0>1d}".format(s, t, dto, df, fo, o, outer_fold)
+file_path = os.path.join(cwd, 'runs', truth_file + '.pickle')
+if not os.path.isfile(file_path):
+    print('saving recorded eye traces')
+    with open(file_path, 'wb') as p:
+        pickle.dump([y_test, c_test], p)
+
+with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
+    pickle.dump([result,y_test_predicted],p)
+

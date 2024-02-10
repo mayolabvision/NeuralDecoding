@@ -43,7 +43,7 @@ def get_outputs_wTraces(data_folder,conditions,column_names):
         for file in files:
             file_path = os.path.join(data_folder, direc, file)
             if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-                if file.endswith('.pickle') and ('repeat000.' in file or 'repeat00.' in file):
+                if file.endswith('.pickle') and ('s29' in file) and ('repeat000.' in file or 'repeat00.' in file):
                     with open(file_path, 'rb') as f:
                         results,conds,y_test,y_test_predicted = pickle.load(f)
                         conds_all.append(conds)

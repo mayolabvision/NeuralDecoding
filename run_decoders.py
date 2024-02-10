@@ -1,7 +1,7 @@
 import numpy as np, sys, pickle, time, pandas as pd, os.path, os, random
 from scipy import io, stats
 import warnings
-from metrics import get_R2, get_rho
+from metrics import get_R2, get_rho, get_RMSE
 from bayes_opt import BayesianOptimization, UtilityFunction
 
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
@@ -20,8 +20,18 @@ def fitModel(model,Xtr,ytr,t1,Xte,yte):
    
     return y_train_predicted, y_test_predicted, train_time, test_time
 
+def get_metric(yTrue,yPred,em):
+    if em==0:
+        out = get_R2(yTrue,yPred)
+    elif em==1:
+        out = get_rho(yTrue,yPred)
+    elif em==2:
+        out = -1*get_RMSE(yTrue,yPred) # making this negative, since bayes_opt wants to maximize during hyperparameterization
+
+    return out
+
 ####################################################################################################################################################################################
-def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid):
+def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid):
     t1=time.time()
 ##################### WF ############################
     if m == 0:
@@ -43,11 +53,11 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model_wc=WienerCascadeDecoder(degree) 
             model_wc.fit(Xtr,ytr) 
             y_valid_predicted_wc=model_wc.predict(Xva) 
-            return np.mean(get_R2(yva,y_valid_predicted_wc))
+            return np.mean(get_metric(yva,y_valid_predicted_wc,em))
         
-        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(wc_evaluate, {'degree': (1, 20.01)}, verbose=verb, allow_duplicate_points=True)    
-        BO.maximize(init_points=20, n_iter=20,acquisition_function=acquisition_function)#, n_jobs=workers)
+        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        BO = BayesianOptimization(wc_evaluate, {'degree': (1, 20.01)}, verbose=verb, allow_duplicate_points=True,random_state=m)    
+        BO.maximize(init_points=5, n_iter=25,acquisition_function=acquisition_function)#, n_jobs=workers)
         params = max(BO.res, key=lambda x:x['target'])
         degree = params['params']['degree']
         prms = {'degree': degree}
@@ -64,11 +74,11 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model_xgb=XGBoostDecoder(max_depth=int(max_depth), num_round=int(num_round), eta=float(eta), subsample=float(subsample), workers=workers) 
             model_xgb.fit(Xtr,ytr,Xva,yva) 
             y_valid_predicted_xgb=model_xgb.predict(Xva) 
-            return np.mean(get_R2(yva,y_valid_predicted_xgb)) 
+            return np.mean(get_metric(yva,y_valid_predicted_xgb,em))
 
-        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,500), 'eta': (0.01, 0.3), 'subsample': (0.5,1.0)}, verbose=verb, allow_duplicate_points=True) 
-        BO.maximize(init_points=10, n_iter=10, acquisition_function=acquisition_function)#, n_jobs=workers) 5,5
+        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,500), 'eta': (0.01, 0.3), 'subsample': (0.5,1.0)}, verbose=verb, allow_duplicate_points=True,random_state=m) 
+        BO.maximize(init_points=5, n_iter=25, acquisition_function=acquisition_function)#, n_jobs=workers) 5,5
 
         params = max(BO.res, key=lambda x:x['target'])
         num_round = int(params['params']['num_round'])
@@ -92,11 +102,11 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model_svr=SVRDecoder(C=C, kernel=kernel_str, max_iter=2000)
             model_svr.fit(Xtr,ytr) 
             y_valid_predicted_svr=model_svr.predict(Xva)
-            return np.mean(get_R2(yva,y_valid_predicted_svr))
+            return np.mean(get_metric(yva,y_valid_predicted_svr,em))
         
-        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(svr_evaluate, {'C': (0, 10), 'kernel': (0, 2.5)}, verbose=verb, allow_duplicate_points=True)    
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers), 10,10
+        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        BO = BayesianOptimization(svr_evaluate, {'C': (0, 10), 'kernel': (0, 2.5)}, verbose=verb, allow_duplicate_points=True,random_state=m)    
+        BO.maximize(init_points=5, n_iter=25,acquisition_function=acquisition_function)#, n_jobs=workers), 10,10
 
         params = max(BO.res, key=lambda x:x['target'])
         C = params['params']['C']
@@ -117,11 +127,11 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model_dnn=DenseNNDecoder(units=[int(num_units),int(num_units)],dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),workers=workers)
             model_dnn.fit(Xtr,ytr)
             y_valid_predicted_dnn=model_dnn.predict(Xva)
-            return np.mean(get_R2(yva,y_valid_predicted_dnn))
+            return np.mean(get_metric(yva,y_valid_predicted_dnn,em))
 
-        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True,random_state=m)
+        BO.maximize(init_points=5, n_iter=25,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
 
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -142,11 +152,11 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model_rnn=SimpleRNNDecoder(units=int(num_units),dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),workers=workers)
             model_rnn.fit(Xtr,ytr)
             y_valid_predicted_rnn=model_rnn.predict(Xva)
-            return np.mean(get_R2(yva,y_valid_predicted_rnn))
+            return np.mean(get_metric(yva,y_valid_predicted_rnn,em))
 
-        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True,random_state=m)
+        BO.maximize(init_points=5, n_iter=25,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -167,11 +177,11 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model_gru=GRUDecoder(units=int(num_units),dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),workers=workers)
             model_gru.fit(Xtr,ytr)
             y_valid_predicted_gru=model_gru.predict(Xva)
-            return np.mean(get_R2(yva,y_valid_predicted_gru))
+            return np.mean(get_metric(yva,y_valid_predicted_gru,em))
 
-        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32, 256),'n_epochs': (2,21)}, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32, 256),'n_epochs': (2,21)}, allow_duplicate_points=True,random_state=m)
+        BO.maximize(init_points=5, n_iter=25,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         params = max(BO.res, key=lambda x:x['target'])
         frac_dropout=float(params['params']['frac_dropout'])
@@ -192,7 +202,7 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             model_lstm=LSTMDecoder(units=int(num_units),dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),workers=workers)
             model_lstm.fit(Xtr, ytr)
             y_valid_predicted_lstm = model_lstm.predict(Xva)
-            return np.mean(get_R2(yva, y_valid_predicted_lstm))
+            return np.mean(get_metric(yva,y_valid_predicted_lstm,em))
 
         pbounds = {
             'units': (50, 600),
@@ -200,9 +210,9 @@ def run_model(m,o,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X
             'batch_size': (32, 256),
             'num_epochs': (2, 21)
         }
-        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True)
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        acquisition_function = UtilityFunction(kind="ucb", kappa=5)
+        BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
+        BO.maximize(init_points=5, n_iter=25,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         best_params = BO.max['params']
         units = int(best_params['units'])

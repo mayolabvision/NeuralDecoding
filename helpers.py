@@ -137,15 +137,12 @@ def avgEye_perCondition(train_cond,train_kin,test_cond,test_kin):
     return avg_trace
 
 def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,outer_fold,bn,m,tp,condition='all',trCo=0,teCo=0):
-    if m!=2:
-        if o==0:
-            y = pos_binned
-        elif o==1:
-            y = vel_binned
-        elif o==2:
-            y = acc_binned
-    else: #KF
-        y = np.concatenate((pos_binned,vel_binned,acc_binned),axis=1)
+    if o==0:
+        y = pos_binned
+    elif o==1:
+        y = vel_binned
+    elif o==2:
+        y = acc_binned
        
     X_flat=X.reshape(X.shape[0],(X.shape[1]*X.shape[2]))
     num_examples=X.shape[0]
@@ -155,35 +152,19 @@ def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,outer_fold,bn,m,tp,con
     else:
         training_set,testing_set,valid_set = get_foldX(outer_fold,bn,num_examples,cond,condition,int(trCo),int(teCo))
 
-    if m!=2:
-        X_train=X[training_set,:,:]
-        X_flat_train=X_flat[training_set,:]
-        y_train=y[training_set,:]
-        X_test=X[testing_set,:,:]
-        X_flat_test=X_flat[testing_set,:]
-        y_test=y[testing_set,:]
-        X_valid=X[valid_set,:,:]
-        X_flat_valid=X_flat[valid_set,:]
-        y_valid=y[valid_set,:]
-        c_train=cond[training_set,:].astype(int)
-        c_test=cond[testing_set,:].astype(int)
+    X_train=X[training_set,:,:]
+    X_flat_train=X_flat[training_set,:]
+    y_train=y[training_set,:]
+    X_test=X[testing_set,:,:]
+    X_flat_test=X_flat[testing_set,:]
+    y_test=y[testing_set,:]
+    X_valid=X[valid_set,:,:]
+    X_flat_valid=X_flat[valid_set,:]
+    y_valid=y[valid_set,:]
+    c_train=cond[training_set,:].astype(int)
+    c_test=cond[testing_set,:].astype(int)
 
-        X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid)
-
-    else:
-        X_train=X[training_set,:]
-        y_train=y[training_set,:]
-        X_valid=X[valid_set,:]
-        y_valid=y[valid_set,:]
-        X_test=X[testing_set,:]
-        y_test=y[testing_set,:]
-        c_test = cond[testing_set,:]
-
-        X_train,X_test,X_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTestKF(X_train,X_test,X_valid,y_train,y_test,y_valid)
-
-        X_flat_train=X_train
-        X_flat_test=X_test
-        X_flat_valid=X_valid
+    X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid)
 
     return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_train,c_test 
 

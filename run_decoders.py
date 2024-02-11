@@ -99,13 +99,13 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             kernel_mapping = {0: 'linear', 1: 'poly', 2: 'rbf'}
             kernel_str = kernel_mapping[int(kernel)]
             
-            model_svr=SVRDecoder(C=C, kernel=kernel_str, max_iter=2000)
+            model_svr=SVRDecoder(C=C, kernel=kernel_str, max_iter=3000)
             model_svr.fit(Xtr,ytr) 
             y_valid_predicted_svr=model_svr.predict(Xva)
             return np.mean(get_metric(yva,y_valid_predicted_svr,em))
         
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(svr_evaluate, {'C': (0, 10), 'kernel': (0, 2.5)}, verbose=verb, allow_duplicate_points=True,random_state=m)    
+        BO = BayesianOptimization(svr_evaluate, {'C': (0.5, 10), 'kernel': (0, 2.5)}, verbose=verb, allow_duplicate_points=True,random_state=m)    
         BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers), 10,10
 
         params = max(BO.res, key=lambda x:x['target'])
@@ -115,7 +115,7 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         kernel_mapping = {0: 'linear', 1: 'poly', 2: 'rbf'}
         kernel_str = kernel_mapping[int(kernel)]
 
-        model=SVRDecoder(C=C, kernel=kernel_str, max_iter=2000)
+        model=SVRDecoder(C=C, kernel=kernel_str, max_iter=3000)
         result = fitModel(model, Xtr, ytr, t1, Xte, yte)
         
 ####################### DNN #######################

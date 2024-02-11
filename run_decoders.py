@@ -72,13 +72,13 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         
         def xgb_evaluate(max_depth,num_round,eta,subsample):
             model_xgb=XGBoostDecoder(max_depth=int(max_depth), num_round=int(num_round), eta=float(eta), subsample=float(subsample), workers=workers) 
-            model_xgb.fit(Xtr,ytr,Xva,yva) 
+            model_xgb.fit(Xtr,ytr) 
             y_valid_predicted_xgb=model_xgb.predict(Xva) 
             return np.mean(get_metric(yva,y_valid_predicted_xgb,em))
 
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,500), 'eta': (0.01, 0.3), 'subsample': (0.5,1.0)}, verbose=verb, allow_duplicate_points=True,random_state=m) 
-        BO.maximize(init_points=10, n_iter=10, acquisition_function=acquisition_function)#, n_jobs=workers) 5,5
+        BO.maximize(init_points=1, n_iter=1, acquisition_function=acquisition_function)#, n_jobs=workers) 5,5
 
         params = max(BO.res, key=lambda x:x['target'])
         num_round = int(params['params']['num_round'])
@@ -198,30 +198,30 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         from decoders import LSTMDecoder
         Xtr, Xva, Xte, ytr, yva, yte = X_train, X_valid, X_test, y_train, y_valid, y_test
 
-        def lstm_evaluate(units, dropout, batch_size, num_epochs):
+        def lstm_evaluate(num_units, frac_dropout, batch_size, n_epochs):
             model_lstm=LSTMDecoder(units=int(num_units),dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),workers=workers)
             model_lstm.fit(Xtr, ytr)
             y_valid_predicted_lstm = model_lstm.predict(Xva)
             return np.mean(get_metric(yva,y_valid_predicted_lstm,em))
 
         pbounds = {
-            'units': (50, 600),
-            'dropout': (0, 0.5),
+            'num_units': (50, 600),
+            'frac_dropout': (0, 0.5),
             'batch_size': (32, 256),
-            'num_epochs': (2, 21)
+            'n_epochs': (2, 21)
         }
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        BO.maximize(init_points=1, n_iter=1,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         best_params = BO.max['params']
-        units = int(best_params['units'])
-        dropout = float(best_params['dropout'])
+        num_units = int(best_params['num_units'])
+        frac_dropout = float(best_params['frac_dropout'])
         batch_size = int(best_params['batch_size'])
-        num_epochs = int(best_params['num_epochs'])
-        prms = {'num_units': units, 'frac_dropout': dropout, 'batch_size': batch_size, 'n_epochs': num_epochs}
+        n_epochs = int(best_params['n_epochs'])
+        prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
 
-        model = LSTMDecoder(units=units, dropout=dropout, batch_size=batch_size, num_epochs=num_epochs, workers=workers, verbose=1)
+        model = LSTMDecoder(units=num_units, dropout=frac_dropout, batch_size=batch_size, num_epochs=n_epochs, workers=workers, verbose=1)
         result = fitModel(model, Xtr, ytr, t1, Xte, yte)
     
     return result, prms 

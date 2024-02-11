@@ -1499,7 +1499,7 @@ class XGBoostRegression(object):
         self.gpu=gpu
         self.nthread=workers
 
-    def fit(self,X_flat_train,y_train,X_flat_valid,y_valid):
+    def fit(self,X_flat_train,y_train):
 
         """
         Train XGBoost Decoder
@@ -1543,10 +1543,8 @@ class XGBoostRegression(object):
         models=[] #Initialize list of models (there will be a separate model for each output)
         for y_idx in range(num_outputs): #Loop through outputs
             dtrain = xgb.DMatrix(X_flat_train, label=y_train[:,y_idx]) #Put in correct format for XGB
-            dvalid = xgb.DMatrix(X_flat_valid, label=y_valid[:, y_idx])
 
-            evals = [(dtrain, 'train'), (dvalid, 'validation')]
-            bst = xgb.train(param, dtrain, self.num_round, evals=evals, early_stopping_rounds=10, verbose_eval=False) #Train model
+            bst = xgb.train(param, dtrain, self.num_round) #Train model
             models.append(bst) #Add fit model to list of models
 
         self.model=models

@@ -95,6 +95,6 @@ if not os.path.isfile(file_path):
     with open(file_path, 'wb') as p:
         pickle.dump([y_test, c_test], p)
 
-with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
-    pickle.dump([result,y_test_predicted],p)
+#with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
+#    pickle.dump([result,y_test_predicted],p)
 

@@ -106,7 +106,7 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(svr_evaluate, {'C': (0.5, 10), 'kernel': (0, 2.5)}, verbose=verb, allow_duplicate_points=True,random_state=m)    
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers), 10,10
+        BO.maximize(init_points=1, n_iter=2,acquisition_function=acquisition_function)#, n_jobs=workers), 10,10
 
         params = max(BO.res, key=lambda x:x['target'])
         C = params['params']['C']

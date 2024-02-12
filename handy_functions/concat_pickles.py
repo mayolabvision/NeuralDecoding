@@ -3,36 +3,65 @@ import numpy as np
 from scipy import io
 import os
 import pickle
-from scipy.stats import circstd
 
-def get_outputs(data_folder,conditions,column_names):
-    results_all,conds_all,yTest_all,yTestPred_all = [],[],[],[]
+def get_outputs(data_folder, conditions, column_names):
+    results_all, y_pred_all = [], []
+
+    # Get sorted list of directories in data_folder
     direcs = sorted(os.listdir(data_folder))
+
+    # Filter directories based on conditions
     current_direcs = [d for d in direcs if all(c in d for c in conditions)]
+
+    # Iterate over filtered directories
     for direc in current_direcs:
         files = sorted(os.listdir(os.path.join(data_folder, direc)))
         for file in files:
             file_path = os.path.join(data_folder, direc, file)
+            # Check if file exists and is non-empty
             if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
                 with open(file_path, 'rb') as f:
-                    results = pickle.load(f)
+                    # Load data from file
+                    results, y_pred = pickle.load(f)
+                    # Append to lists
                     results_all.append(results[0])
-                        
-    df = pd.DataFrame(results_all,columns=column_names)
-    df['R2_x']   = df['R2'].apply(lambda x: x[0])
-    df['R2_y']   = df['R2'].apply(lambda x: x[1])
-    df['R2_mn']  = df['R2'].apply(lambda x: x.mean())
-    df['rho_x']  = df['rho'].apply(lambda x: x[0])
-    df['rho_y']  = df['rho'].apply(lambda x: x[1])
-    df['rho_mn']  = df['rho'].apply(lambda x: x.mean())
-    df['R2sh_x']   = df['R2_shuf'].apply(lambda x: x[0])
-    df['R2sh_y']   = df['R2_shuf'].apply(lambda x: x[1])
-    df['R2sh_mn']  = df['R2_shuf'].apply(lambda x: x.mean())
-    df['R2tr_x']   = df['R2_train'].apply(lambda x: x[0])
-    df['R2tr_y']   = df['R2_train'].apply(lambda x: x[1])
-    df['R2tr_mn']  = df['R2_train'].apply(lambda x: x.mean())
+                    y_pred_all.append(y_pred)
 
-    return df
+    # Create DataFrame from results_all list
+    df = pd.DataFrame(results_all, columns=column_names)
+
+    return df, y_pred_all
+
+
+
+#def get_outputs(data_folder,conditions,column_names):
+#    results_all,conds_all,yTest_all,yTestPred_all = [],[],[],[]
+#    direcs = sorted(os.listdir(data_folder))
+#    current_direcs = [d for d in direcs if all(c in d for c in conditions)]
+#    for direc in current_direcs:
+#        files = sorted(os.listdir(os.path.join(data_folder, direc)))
+#        for file in files:
+#            file_path = os.path.join(data_folder, direc, file)
+#            if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+#                with open(file_path, 'rb') as f:
+#                    results = pickle.load(f)
+#                    results_all.append(results[0])
+#                        
+#    df = pd.DataFrame(results_all,columns=column_names)
+#    df['R2_x']   = df['R2'].apply(lambda x: x[0])
+#    df['R2_y']   = df['R2'].apply(lambda x: x[1])
+#    df['R2_mn']  = df['R2'].apply(lambda x: x.mean())
+#    df['rho_x']  = df['rho'].apply(lambda x: x[0])
+#    df['rho_y']  = df['rho'].apply(lambda x: x[1])
+#    df['rho_mn']  = df['rho'].apply(lambda x: x.mean())
+#    df['R2sh_x']   = df['R2_shuf'].apply(lambda x: x[0])
+#    df['R2sh_y']   = df['R2_shuf'].apply(lambda x: x[1])
+#    df['R2sh_mn']  = df['R2_shuf'].apply(lambda x: x.mean())
+#    df['R2tr_x']   = df['R2_train'].apply(lambda x: x[0])
+#    df['R2tr_y']   = df['R2_train'].apply(lambda x: x[1])
+#    df['R2tr_mn']  = df['R2_train'].apply(lambda x: x.mean())
+#
+#    return df
 
 def get_outputs_wTraces(data_folder,conditions,column_names):
     results_all,conds_all,yTest_all,yTestPred_all = [],[],[],[]

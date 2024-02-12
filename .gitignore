@@ -11,5 +11,6 @@ outfiles/
 datasets/
 analyses/out.csv
 runs/
+runs2/
 .DS_Store
 figures/

@@ -72,10 +72,16 @@ y_train_predicted, y_test_predicted, train_time, test_time = result
 #y_train_predicted, y_test_predicted, y_shuf_predicted, y_mean_predicted, y_base_predicted, r2_train, rho_train, r2_test, rho_test, r2_shuf, rho_shuf, r2_mean, rho_mean, r2_base, rho_base, train_time, test_time = result
 
 if m!=3:
+    R2_train = get_R2(y_train,y_train_predicted)
+    rho_train = get_rho(y_train,y_train_predicted)
+    rmse_train = get_RMSE(y_train,y_train_predicted)
     R2_test = get_R2(y_test,y_test_predicted)
     rho_test = get_rho(y_test,y_test_predicted)
     rmse_test = get_RMSE(y_test,y_test_predicted)
 else:
+    R2_train = get_R2(y_zscore_train,y_train_predicted)
+    rho_train = get_rho(y_zscore_train,y_train_predicted)
+    rmse_train = get_RMSE(y_zscore_train,y_train_predicted)
     R2_test = get_R2(y_zscore_test,y_test_predicted)
     rho_test = get_rho(y_zscore_test,y_test_predicted)
     rmse_test = get_RMSE(y_zscore_test,y_test_predicted)
@@ -94,12 +100,12 @@ output = {0: 'position', 1: 'velocity', 2: 'acceleration'}.get(o)
 metric = {0: 'R2', 1: 'rho', 2: 'RMSE'}.get(em)
 result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,metric,prms,pp_time,train_time,test_time,R2_test,rho_test,rmse_test]     
 
-truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-o{:d}-fold{:0>1d}".format(s, t, dto, df, o, outer_fold)
+truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-tp{:03d}-o{:d}-fold{:0>1d}".format(s, t, dto, df, tp, o, outer_fold)
 file_path = os.path.join(cwd, 'runs', truth_file + '.pickle')
 if not os.path.isfile(file_path):
     print('saving recorded eye traces')
     with open(file_path, 'wb') as p:
-        pickle.dump([y_test, c_test], p)
+        pickle.dump([y_train, c_train, y_test, c_test], p)
 
 #with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
 #    pickle.dump([result,y_test_predicted],p)

@@ -9,7 +9,7 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=knoneman@pitt.edu
-#SBATCH --time=0-00:29:59
+#SBATCH --time=0-09:29:59
 #SBATCH --array=0-9
 
 echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."

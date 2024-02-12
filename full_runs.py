@@ -35,6 +35,7 @@ repeat = job[1]
 # Do some preprocessing first
 sess,sess_nodt = helpers.get_session(s,t,dto,df,wi,dti)
 neural_data,pos_binned,vel_binned,acc_binned,cond_binned,pp_time = mat_to_pickle('vars-'+sess_nodt+'.mat',dto,wi,dti,df)
+pp_time = pp_time/pos_binned.shape[0]
 
 toss_inds = helpers.remove_overlapBins(cond_binned, wi, dto)  # Remove bins of overlapping trials
 neural_data, pos_binned, vel_binned, acc_binned, cond_binned = (

@@ -89,6 +89,9 @@ rmse_test = get_RMSE(y_test_data, y_test_predicted)
 print("R2   = {}".format(R2_test))
 print("rho  = {}".format(rho_test))
 print("RMSE = {}".format(rmse_test))
+print("R2   = {}".format(R2_train))
+print("rho  = {}".format(rho_train))
+print("RMSE = {}".format(rmse_train))
 #helpers.plot_first_column_lines(y_test, y_test_predicted)
 
 #######################################################################################################################################

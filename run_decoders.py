@@ -103,7 +103,7 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             model_svr.fit(Xtr,ytr) 
             y_valid_predicted_svr=model_svr.predict(Xva)
             return np.mean(get_metric(yva,y_valid_predicted_svr,em))
-        
+            
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(svr_evaluate, {'C': (0.5, 10), 'kernel': (0, 2.5)}, verbose=verb, allow_duplicate_points=True,random_state=m)    
         BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers), 10,10

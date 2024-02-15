@@ -72,24 +72,26 @@ result,prms = run_model(m,o,em,1,workers,X_train,X_test,X_valid,X_flat_train,X_f
 y_train_predicted, y_test_predicted, train_time, test_time = result
 #y_train_predicted, y_test_predicted, y_shuf_predicted, y_mean_predicted, y_base_predicted, r2_train, rho_train, r2_test, rho_test, r2_shuf, rho_shuf, r2_mean, rho_mean, r2_base, rho_base, train_time, test_time = result
 
-if m!=3:
-    R2_train = get_R2(y_train,y_train_predicted)
-    rho_train = get_rho(y_train,y_train_predicted)
-    rmse_train = get_RMSE(y_train,y_train_predicted)
-    R2_test = get_R2(y_test,y_test_predicted)
-    rho_test = get_rho(y_test,y_test_predicted)
-    rmse_test = get_RMSE(y_test,y_test_predicted)
+if m != 3:
+    y_train_data = y_train
+    y_test_data = y_test
 else:
-    R2_train = get_R2(y_zscore_train,y_train_predicted)
-    rho_train = get_rho(y_zscore_train,y_train_predicted)
-    rmse_train = get_RMSE(y_zscore_train,y_train_predicted)
-    R2_test = get_R2(y_zscore_test,y_test_predicted)
-    rho_test = get_rho(y_zscore_test,y_test_predicted)
-    rmse_test = get_RMSE(y_zscore_test,y_test_predicted)
+    y_train_data = y_zscore_train
+    y_test_data = y_zscore_test
+
+R2_train = get_R2(y_train_data, y_train_predicted)
+rho_train = get_rho(y_train_data, y_train_predicted)
+rmse_train = get_RMSE(y_train_data, y_train_predicted)
+R2_test = get_R2(y_test_data, y_test_predicted)
+rho_test = get_rho(y_test_data, y_test_predicted)
+rmse_test = get_RMSE(y_test_data, y_test_predicted)
 
 print("R2   = {}".format(R2_test))
 print("rho  = {}".format(rho_test))
 print("RMSE = {}".format(rmse_test))
+print("R2   = {}".format(R2_train))
+print("rho  = {}".format(rho_train))
+print("RMSE = {}".format(rmse_train))
 #helpers.plot_first_column_lines(y_test, y_test_predicted)
 
 #######################################################################################################################################
@@ -99,7 +101,7 @@ pfile = helpers.make_directory((jobname),0)
 
 output = {0: 'position', 1: 'velocity', 2: 'acceleration'}.get(o)
 metric = {0: 'R2', 1: 'rho', 2: 'RMSE'}.get(em)
-result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,metric,prms,pp_time,train_time,test_time,R2_test,rho_test,rmse_test]     
+result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,metric,prms,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     
 
 truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-tp{:03d}-o{:d}-fold{:0>1d}".format(s, t, dto, df, int(tp*100), o, outer_fold)
 file_path = os.path.join(cwd, 'runs', truth_file + '.pickle')

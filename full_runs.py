@@ -103,8 +103,8 @@ output = {0: 'position', 1: 'velocity', 2: 'acceleration'}.get(o)
 metric = {0: 'R2', 1: 'rho', 2: 'RMSE'}.get(em)
 result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,metric,prms,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     
 
-truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-tp{:03d}-o{:d}-fold{:0>1d}".format(s, t, dto, df, int(tp*100), o, outer_fold)
-file_path = os.path.join(cwd, 'runs', truth_file + '.pickle')
+truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-o{:d}-fold{:0>1d}".format(s, t, dto, df, o, outer_fold)
+file_path = os.path.join(cwd, 'runs/actual', truth_file + '.pickle')
 if not os.path.isfile(file_path):
     print('saving recorded eye traces')
     with open(file_path, 'wb') as p:

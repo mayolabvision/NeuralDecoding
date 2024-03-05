@@ -205,10 +205,10 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             return np.mean(get_metric(yva,y_valid_predicted_lstm,em))
 
         pbounds = {
-            'num_units': (50, 600),
-            'frac_dropout': (0, 0.5),
-            'batch_size': (32, 256),
-            'n_epochs': (2, 21)
+            'num_units': (50, 300),
+            'frac_dropout': (0.1, 0.5),
+            'batch_size': (32, 128),
+            'n_epochs': (2, 15)
         }
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)

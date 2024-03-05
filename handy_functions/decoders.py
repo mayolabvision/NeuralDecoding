@@ -19,6 +19,8 @@ from keras.utils import np_utils
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import OrthogonalMatchingPursuit
 from keras.callbacks import EarlyStopping
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
 
 ##################### DECODER FUNCTIONS ##########################
 
@@ -121,60 +123,6 @@ class WienerFilterRegression(object):
         return x_filtered
 
 
-##################### LINEAR REGRESSION ##########################
-
-class LinearRegression(object):
-
-    """
-    Class for the Linear Regression Decoder
-
-    There are no parameters to set.
-
-    This simply leverages the scikit-learn linear regression.
-    """
-
-    def __init__(self):
-        return
-
-
-    def fit(self,X_flat_train,y_train):
-
-        """
-        Train Linear Regression Decoder
-
-        Parameters
-        ----------
-        X_flat_train: numpy 2d array of shape [n_samples,n_features]
-            This is the neural data.
-            See example file for an example of how to format the neural data correctly
-
-        y_train: numpy 2d array of shape [n_samples, n_outputs]
-            This is the outputs that are being predicted
-        """
-
-        self.model=linear_model.LinearRegression() #Initialize linear regression model
-        self.model.fit(X_flat_train, y_train) #Train the model
-        
-    def predict(self,X_flat_test):
-
-        """
-        Predict outcomes using trained Linear Regression Decoder
-
-        Parameters
-        ----------
-        X_flat_test: numpy 2d array of shape [n_samples,n_features]
-            This is the neural data being used to predict outputs.
-
-        Returns
-        -------
-        y_test_predicted: numpy 2d array of shape [n_samples,n_outputs]
-            The predicted outputs
-        """
-
-        y_test_predicted=self.model.predict(X_flat_test) #Make predictions
-
-        return y_test_predicted
-
 ##################### WIENER CASCADE ##########################
 
 from scipy.signal import wiener
@@ -196,7 +144,7 @@ class WienerCascadeRegression(object):
          self.degree = degree
          self.models = []
 
-    def fit(self, X_flat_train, y_train):
+    def fit(self, X_flat, y, test_size=0.1, patience=5):
         """
         Train Wiener Cascade Decoder
 
@@ -208,20 +156,49 @@ class WienerCascadeRegression(object):
 
         y_train: numpy 2d array of shape [n_samples, n_outputs]
             This is the outputs that are being predicted
+
+        test_size: float or int, optional, default 0.2
+            Represents the proportion of the dataset to include in the test split. 
+            If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split. 
+            If int, represents the absolute number of test samples.
+
+        patience: int, optional, default 5
+            Number of epochs to wait before early stopping if validation loss doesn't improve
         """
 
-        X_filtered_train = self.apply_wiener_filter(X_flat_train)
+        X_flat_train, X_flat_val, y_train, y_val = train_test_split(X_flat, y, test_size=test_size, random_state=42)
 
+        X_filtered_train = self.apply_wiener_filter(X_flat_train)
+        X_filtered_val = self.apply_wiener_filter(X_flat_val)
+        
         num_outputs = y_train.shape[1]  # Number of outputs
         for i in range(num_outputs):  # Loop through outputs
             # Fit linear portion of model
             regr = linear_model.LinearRegression()  # Call the linear portion of the model "regr"
 
-            regr.fit(X_filtered_train, y_train[:, i])  # Fit linear
-            y_train_predicted_linear = regr.predict(X_filtered_train)  # Get outputs of linear portion of model
+            # Perform early stopping based on validation loss
+            best_val_loss = float('inf')
+            epochs_without_improvement = 0
 
-            # Fit nonlinear portion of model on the filtered linear predictions
-            p = np.polyfit(y_train_predicted_linear, y_train[:, i], self.degree)
+            while epochs_without_improvement < patience:
+                regr.fit(X_filtered_train, y_train[:, i])  # Fit linear
+                y_train_predicted_linear = regr.predict(X_filtered_train)  # Get outputs of linear portion of model
+
+                # Fit nonlinear portion of model on the filtered linear predictions
+                p = np.polyfit(y_train_predicted_linear, y_train[:, i], self.degree)
+
+                # Predict on validation set
+                y_val_predicted_linear = regr.predict(X_filtered_val)  # Get predictions on the linear portion of the model
+                y_val_predicted = np.polyval(p, y_val_predicted_linear)
+
+                # Calculate validation loss
+                val_loss = mean_squared_error(y_val[:, i], y_val_predicted)
+
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    epochs_without_improvement = 0
+                else:
+                    epochs_without_improvement += 1
 
             # Add model for this output (both linear and nonlinear parts) to the list "models"
             self.models.append([regr, p])
@@ -1890,7 +1867,7 @@ class NaiveBayesRegression(object):
 
 ######### ALIASES for Regression ########
 
-LinearDecoder = LinearRegression
+#LinearDecoder = LinearRegression
 LinearCascadeDecoder = LinearCascadeRegression
 WienerFilterDecoder = WienerFilterRegression
 WienerCascadeDecoder = WienerCascadeRegression

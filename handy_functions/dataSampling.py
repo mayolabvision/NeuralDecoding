@@ -61,8 +61,8 @@ def get_neuronRepeats(sess_nodt,nn=99,nm=99,nf=99,num_repeats=1):
 
     return neurons_perRepeat,nn,nm,nf
 
-def get_trainSection(sess_nodt, num_observations, fold, tp=1.0, num_repeats=1):
-    file_path = os.path.join(cwd, 'datasets', 'dsplt', f"tsplt-{sess_nodt}-tp{int(tp*100)}-fo{fold}-r{num_repeats}.pickle")
+def get_trainSection(sess_nodt, num_observations, outfold, tp=1.0, num_repeats=1):
+    file_path = os.path.join(cwd, 'datasets', 'dsplt', f"tsplt-{sess_nodt}-tp{int(tp*100)}-fo{outfold}-r{num_repeats}.pickle")
   
     if not os.path.isfile(file_path):
         print('sampling observations')

@@ -52,7 +52,7 @@ neurons_perRepeat, nn, nm, nf = dataSampling.get_neuronRepeats(sess_nodt,nn=nn,n
 these_neurons = neurons_perRepeat[neuron_repeat]
 
 # Split the data into train:valid:test sets and normalize
-result = helpers.get_data(neural_data[:,:,these_neurons],o,pos_binned,vel_binned,acc_binned,cond_binned,fo,outer_fold,wi/dti,m,tp)
+result = helpers.get_data(neural_data[:,:,these_neurons],o,pos_binned,vel_binned,acc_binned,cond_binned,fo,outer_fold,wi/dti)
 X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_train,c_test = result  
 
 # Train on a subset of the observations, based on tp
@@ -68,7 +68,6 @@ if tp != 1.0:
 
 #######################################################################################################################################
 result,prms = run_model(m,o,em,1,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid)
-
 y_train_predicted, y_test_predicted, train_time, test_time = result
 #y_train_predicted, y_test_predicted, y_shuf_predicted, y_mean_predicted, y_base_predicted, r2_train, rho_train, r2_test, rho_test, r2_shuf, rho_shuf, r2_mean, rho_mean, r2_base, rho_base, train_time, test_time = result
 
@@ -92,6 +91,8 @@ print("RMSE (test)  =  {}".format(rmse_test))
 print("R2 (train)   =  {}".format(R2_train))
 print("rho (train)  =  {}".format(rho_train))
 print("RMSE (train) =  {}".format(rmse_train))
+
+print(blah)
 #helpers.plot_first_column_lines(y_test, y_test_predicted)
 
 #######################################################################################################################################

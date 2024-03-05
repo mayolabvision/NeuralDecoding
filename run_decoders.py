@@ -56,7 +56,7 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             return np.mean(get_metric(yva,y_valid_predicted_wc,em))
         
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(wc_evaluate, {'degree': (1, 20.01)}, verbose=verb, allow_duplicate_points=True,random_state=m)    
+        BO = BayesianOptimization(wc_evaluate, {'degree': (1, 10.01)}, verbose=verb, allow_duplicate_points=True,random_state=m)    
         BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers)
         params = max(BO.res, key=lambda x:x['target'])
         degree = params['params']['degree']
@@ -99,7 +99,7 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             kernel_mapping = {0: 'linear', 1: 'poly', 2: 'rbf'}
             kernel_str = kernel_mapping[int(kernel)]
             
-            model_svr=SVRDecoder(C=C, kernel=kernel_str, max_iter=3000)
+            model_svr=SVRDecoder(C=C, kernel=kernel_str, max_iter=2000)
             model_svr.fit(Xtr,ytr) 
             y_valid_predicted_svr=model_svr.predict(Xva)
             return np.mean(get_metric(yva,y_valid_predicted_svr,em))
@@ -115,7 +115,7 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         kernel_mapping = {0: 'linear', 1: 'poly', 2: 'rbf'}
         kernel_str = kernel_mapping[int(kernel)]
 
-        model=SVRDecoder(C=C, kernel=kernel_str, max_iter=3000)
+        model=SVRDecoder(C=C, kernel=kernel_str, max_iter=2000)
         result = fitModel(model, Xtr, ytr, t1, Xte, yte)
         
 ####################### DNN #######################
@@ -130,7 +130,7 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             return np.mean(get_metric(yva,y_valid_predicted_dnn,em))
 
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True,random_state=m)
+        BO = BayesianOptimization(dnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0.1,.5), 'batch_size': (32,128), 'n_epochs': (2,21)}, allow_duplicate_points=True,random_state=m)
         BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
 
         params = max(BO.res, key=lambda x:x['target'])
@@ -155,7 +155,7 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             return np.mean(get_metric(yva,y_valid_predicted_rnn,em))
 
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32,256), 'n_epochs': (2,21)}, allow_duplicate_points=True,random_state=m)
+        BO = BayesianOptimization(rnn_evaluate, {'num_units': (50, 300), 'frac_dropout': (0.1,.5), 'batch_size': (32,128), 'n_epochs': (2,15)}, allow_duplicate_points=True,random_state=m)
         BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         params = max(BO.res, key=lambda x:x['target'])
@@ -180,7 +180,7 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             return np.mean(get_metric(yva,y_valid_predicted_gru,em))
 
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 600), 'frac_dropout': (0,.5), 'batch_size': (32, 256),'n_epochs': (2,21)}, allow_duplicate_points=True,random_state=m)
+        BO = BayesianOptimization(gru_evaluate, {'num_units': (50, 300), 'frac_dropout': (0.1,.5), 'batch_size': (32, 128),'n_epochs': (2,15)}, allow_duplicate_points=True,random_state=m)
         BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         params = max(BO.res, key=lambda x:x['target'])

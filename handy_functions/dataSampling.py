@@ -61,16 +61,17 @@ def get_neuronRepeats(sess_nodt,nn=99,nm=99,nf=99,num_repeats=1):
 
     return neurons_perRepeat,nn,nm,nf
 
-def get_trainSection(sess_nodt, num_observations, outfold, tp=1.0, num_repeats=1):
+def get_trainSection(cond, sess_nodt, outfold, tp=1.0, num_repeats=1):
     file_path = os.path.join(cwd, 'datasets', 'dsplt', f"tsplt-{sess_nodt}-tp{int(tp*100)}-fo{outfold}-r{num_repeats}.pickle")
   
     if not os.path.isfile(file_path):
         print('sampling observations')
-        inds = np.arange(num_observations)
+        trials = sorted(np.unique(cond[:,0]))
 
         observations_perRepeat = []
         for r in range(num_repeats):
-            sampled_indices = sorted(np.random.choice(inds, int(num_observations*tp), replace=False))
+            sampled_trials = sorted(np.random.choice(trials, int(len(trials)*tp), replace=False))
+            sampled_indices = np.where(np.isin(cond[:, 0], sampled_trials))[0]
             observations_perRepeat.append(sampled_indices)
 
         with open(file_path, 'wb') as f:

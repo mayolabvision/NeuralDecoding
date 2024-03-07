@@ -80,7 +80,6 @@ def remove_overlapBins(cond,wi,dto):
     toss_inds = np.array(toss_inds).flatten()
     if inbt_trials.size != 0:
         toss_inds = np.sort(np.concatenate((toss_inds,inbt_trials)))
-        print('bitch')
 
     return toss_inds
 
@@ -148,9 +147,9 @@ def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,outer_fold,bn,conditio
     num_examples=X.shape[0]
     
     if condition=='all':
-        training_set,testing_set,valid_set = get_fold(outer_fold,bn,num_examples)
+        training_set,valid_set,testing_set = get_fold(outer_fold,bn,cond)
     else:
-        training_set,testing_set,valid_set = get_foldX(outer_fold,bn,num_examples,cond,condition,int(trCo),int(teCo))
+        training_set,valid_set,testing_set = get_foldX(outer_fold,bn,num_examples,cond,condition,int(trCo),int(teCo))
 
     X_train=X[training_set,:,:]
     X_flat_train=X_flat[training_set,:]
@@ -168,20 +167,27 @@ def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,outer_fold,bn,conditio
 
     return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_train,c_test 
 
-def get_fold(outer_fold, bins_before, num_examples):
-    bins_before = int(bins_before)
-    testing_range_all = [[.1, .2], [.2, .3], [.3, .4], [.4, .5], [.5, .6],
-                         [.6, .7], [.7, .8], [.8, .9], [.9, 1], [0, .1]]
-    
-    testing_range = testing_range_all[outer_fold]
-    testing_set = np.arange(int(np.round(testing_range[0] * num_examples)) + bins_before,
-                            int(np.round(testing_range[1] * num_examples)))
+def get_fold(outer_fold, bins_before, cond):
+    trials = np.unique(cond[:,0])
 
-    # Create indices for the remaining data (not used during testing)
-    remaining_indices = np.delete(np.arange(num_examples), testing_set)
-    training_set, validation_set = train_test_split(remaining_indices, test_size=0.2, random_state=42)
-    
-    return training_set, validation_set, testing_set
+    fold_size = len(trials) // 10
+    fold_rem = len(trials) % 10  # Determine the remainder
+
+    training_set, validation_set, testing_set = [], [], []
+    order = [1,2,3,4,5,6,7,8,9,0]
+    for i in order:
+        fold_start = i * fold_size + min(i, fold_rem)
+        fold_end = (i + 1) * fold_size + min(i + 1, fold_rem)
+        
+        test_trls = [int(num) for num in trials[fold_start:fold_end]]
+        remaining_trls =  [int(num) for num in list(set(trials) - set(test_trls))] 
+        train_trls, valid_trls = train_test_split(remaining_trls, test_size=0.111111, random_state=42)
+        
+        training_set.append(np.where(np.isin(cond[:,0], train_trls))[0]) 
+        validation_set.append(np.where(np.isin(cond[:,0], valid_trls))[0]) 
+        testing_set.append(np.where(np.isin(cond[:,0], test_trls))[0]) 
+
+    return training_set[outer_fold], validation_set[outer_fold], testing_set[outer_fold]
 
 def normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid):
     #Z-score "X" inputs. 

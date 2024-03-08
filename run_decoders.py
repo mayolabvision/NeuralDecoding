@@ -57,7 +57,7 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
         
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(wc_evaluate, {'degree': (1, 10.01)}, verbose=verb, allow_duplicate_points=True,random_state=m)    
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers)
+        BO.maximize(init_points=20, n_iter=20,acquisition_function=acquisition_function)#, n_jobs=workers)
         params = max(BO.res, key=lambda x:x['target'])
         degree = params['params']['degree']
         prms = {'degree': degree}
@@ -77,7 +77,7 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             return np.mean(get_metric(yva,y_valid_predicted_xgb,em))
 
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 10.01), 'num_round': (100,500), 'eta': (0.01, 0.3), 'subsample': (0.5,1.0)}, verbose=verb, allow_duplicate_points=True,random_state=m) 
+        BO = BayesianOptimization(xgb_evaluate, {'max_depth': (2, 8.01), 'num_round': (200,1000), 'eta': (0.01, 0.3), 'subsample': (0.25,0.75)}, verbose=verb, allow_duplicate_points=True,random_state=m) 
         BO.maximize(init_points=10, n_iter=10, acquisition_function=acquisition_function)#, n_jobs=workers) 5,5
 
         params = max(BO.res, key=lambda x:x['target'])
@@ -106,7 +106,7 @@ def run_model(m,o,em,verb,workers,X_train,X_test,X_valid,X_flat_train,X_flat_tes
             
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(svr_evaluate, {'C': (0.5, 10), 'kernel': (0, 2.5)}, verbose=verb, allow_duplicate_points=True,random_state=m)    
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers), 10,10
+        BO.maximize(init_points=5, n_iter=5,acquisition_function=acquisition_function)#, n_jobs=workers), 10,10
 
         params = max(BO.res, key=lambda x:x['target'])
         C = params['params']['C']

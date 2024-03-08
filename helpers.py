@@ -181,7 +181,7 @@ def get_fold(outer_fold, bins_before, cond):
         
         test_trls = [int(num) for num in trials[fold_start:fold_end]]
         remaining_trls =  [int(num) for num in list(set(trials) - set(test_trls))] 
-        train_trls, valid_trls = train_test_split(remaining_trls, test_size=0.111111, random_state=42)
+        train_trls, valid_trls = train_test_split(remaining_trls, test_size=0.111111, shuffle=False)
         
         training_set.append(np.where(np.isin(cond[:,0], train_trls))[0]) 
         validation_set.append(np.where(np.isin(cond[:,0], valid_trls))[0]) 

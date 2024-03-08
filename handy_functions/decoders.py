@@ -169,7 +169,7 @@ class WienerCascadeRegression(object):
             Number of epochs to wait before early stopping if validation loss doesn't improve
         """
 
-        X_flat_train, X_flat_val, y_train, y_val = train_test_split(X_flat, y, test_size=test_size, random_state=42)
+        X_flat_train, X_flat_val, y_train, y_val = train_test_split(X_flat, y, test_size=test_size, shuffle=False)
 
         X_filtered_train = self.apply_wiener_filter(X_flat_train)
         X_filtered_val = self.apply_wiener_filter(X_flat_val)
@@ -327,7 +327,7 @@ class XGBoostRegression(object):
             Validation set for outputs
         """
 
-        X_flat_train, X_flat_val, y_train, y_val = train_test_split(X_flat, y, test_size=test_size, random_state=42)
+        X_flat_train, X_flat_val, y_train, y_val = train_test_split(X_flat, y, test_size=test_size, shuffle=False)
         num_outputs=y_train.shape[1] #Number of outputs
 
         #Set parameters for XGBoost
@@ -427,7 +427,7 @@ class SVRegression(object):
             This is the outputs that are being predicted
         """
         
-        X_flat_train, X_flat_val, y_train, y_val = train_test_split(X_flat, y, test_size=test_size, random_state=42)
+        X_flat_train, X_flat_val, y_train, y_val = train_test_split(X_flat, y, test_size=test_size, shuffle=False)
 
         num_outputs = y_train.shape[1]  # Number of outputs
         models = []  # Initialize list of models (there will be a separate model for each output)
@@ -550,7 +550,7 @@ class DenseNNRegression(object):
         y_train: numpy 2d array of shape [n_samples, n_outputs]
             This is the outputs that are being predicted
         """
-        X_flat_train, X_flat_val, y_train, y_val = train_test_split(X_flat, y, test_size=test_size, random_state=42)
+        X_flat_train, X_flat_val, y_train, y_val = train_test_split(X_flat, y, test_size=test_size, shuffle=False)
 
         model=Sequential() #Declare model
         #Add first hidden layer
@@ -650,7 +650,7 @@ class SimpleRNNRegression(object):
             This is the outputs that are being predicted
         """
 
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, random_state=42)
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, shuffle=False)
         
         model=Sequential() #Declare model
         model.add(SimpleRNN(self.units,input_shape=(X_train.shape[1],X_train.shape[2]),dropout=self.dropout,recurrent_dropout=self.dropout,activation='relu')) #Within recurrent layer, include dropout
@@ -738,7 +738,7 @@ class GRURegression(object):
         y_train: numpy 2d array of shape [n_samples, n_outputs]
             This is the outputs that are being predicted
         """
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, random_state=42)
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, shuffle=False)
 
         model=Sequential() #Declare model
         #Add recurrent layer
@@ -837,7 +837,7 @@ class LSTMRegression(object):
         y_train: numpy 2d array of shape [n_samples, n_outputs]
             This is the outputs that are being predicted
         """
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, random_state=42)
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, shuffle=False)
 
         # Define the LFADS model
         input_layer = Input(shape=(X_train.shape[1], X_train.shape[2]))

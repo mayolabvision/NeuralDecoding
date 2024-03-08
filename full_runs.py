@@ -86,8 +86,6 @@ else:
     y_train_data = y_zscore_train
     y_test_data = y_zscore_test
 
-    y_test_predicted = y_test_predicted*np.std(y_train, axis=0)
-
 R2_train = get_R2(y_train_data, y_train_predicted)
 rho_train = get_rho(y_train_data, y_train_predicted)
 rmse_train = get_RMSE(y_train_data, y_train_predicted)
@@ -103,6 +101,9 @@ print("rho (train)  =  {}".format(rho_train))
 print("RMSE (train) =  {}".format(rmse_train))
 
 #helpers.plot_first_column_lines(y_test, y_test_predicted)
+
+if m==3:
+    y_test_predicted = y_test_predicted*np.std(y_train, axis=0)
 
 #######################################################################################################################################
 cwd = os.getcwd()

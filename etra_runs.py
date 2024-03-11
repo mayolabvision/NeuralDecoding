@@ -19,10 +19,10 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
 # Get job parameters
 PARAMS = 'params_etra.txt'
-s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,em,num_repeats,_ = helpers.get_params(int(sys.argv[1]),PARAMS)
+s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,em,num_repeats,j = helpers.get_params(int(sys.argv[1]),PARAMS)
 print(wi)
 
-jobs = helpers.get_jobArray(fo,num_repeats,2)
+jobs = helpers.get_jobArray(fo,num_repeats,1)
 print('# of jobs: {}'.format(len(jobs)))
 
 if int(sys.argv[2])==0: # local computer
@@ -32,7 +32,7 @@ else: # hpc cluster
     workers = int(os.environ['SLURM_CPUS_PER_TASK'])
     jobID = int(os.environ["SLURM_ARRAY_TASK_ID"])
 
-job = jobs[jobID]
+job = jobs[jobID + (j*1000)]
 outer_fold = job[0]
 repeat = job[1]
 style = job[2]

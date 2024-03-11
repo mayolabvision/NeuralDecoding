@@ -13,5 +13,8 @@ analyses/out.csv
 runs/
 runs2/
 runs3/
+runs4/
+logs/
+*.png
 .DS_Store
 figures/

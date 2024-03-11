@@ -21,8 +21,10 @@ from sklearn.linear_model import OrthogonalMatchingPursuit
 from keras.callbacks import EarlyStopping
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
 from keras.regularizers import l2
+from tensorflow.keras.models import Model
+from tensorflow.keras.utils import plot_model
 
 ##################### DECODER FUNCTIONS ##########################
 
@@ -625,7 +627,7 @@ class SimpleRNNRegression(object):
         Whether to show progress of the fit after each epoch
     """
 
-    def __init__(self,units=400,dropout=0,batch_size=128,num_epochs=10,verbose=0,workers=1,patience=5):
+    def __init__(self,units=400,dropout=0,batch_size=128,num_epochs=10,verbose=0,workers=1,patience=3):
          self.units=units
          self.dropout=dropout
          self.batch_size=batch_size
@@ -635,7 +637,7 @@ class SimpleRNNRegression(object):
          self.patience=patience
 
 
-    def fit(self,X,y,test_size=0.1):
+    def fit(self,X,y,tb=0,test_size=0.1):
 
         """
         Train SimpleRNN Decoder
@@ -662,12 +664,23 @@ class SimpleRNNRegression(object):
         #Fit model (and set fitting parameters)
         model.compile(loss='mse',optimizer='rmsprop',metrics=['accuracy']) #Set loss function and optimizer
         
+        # Plot model architecture
+        plot_model(model, to_file='RNNDecoder.png', show_shapes=True)
+        
         # Early stopping callback
         early_stopping = EarlyStopping(monitor='val_loss', patience=self.patience, verbose=self.verbose, mode='min')
+        
+        if tb==1:
+            tensorboard_callback = TensorBoard(log_dir='./logs', histogram_freq=1)
+            model.fit(X_train, y_train, batch_size=self.batch_size, epochs=self.num_epochs,
+                      validation_data=(X_val, y_val), verbose=self.verbose, workers=self.workers, use_multiprocessing=True,
+                      callbacks=[early_stopping,tensorboard_callback])
+            model.summary()
+        else:
+            model.fit(X_train, y_train, batch_size=self.batch_size, epochs=self.num_epochs,
+                      validation_data=(X_val, y_val), verbose=self.verbose, workers=self.workers, use_multiprocessing=True,
+                      callbacks=[early_stopping])
 
-        model.fit(X_train, y_train, batch_size=self.batch_size, epochs=self.num_epochs,
-                  validation_data=(X_val, y_val), verbose=self.verbose, workers=self.workers, use_multiprocessing=True,
-                  callbacks=[early_stopping])
         self.model=model
 
     def predict(self,X_test):
@@ -814,7 +827,7 @@ class LSTMRegression(object):
         Number of workers for data loading during training
     """
 
-    def __init__(self, units=400, dropout=0, num_epochs=10, verbose=0, batch_size=128, workers=1,patience=5):
+    def __init__(self, units=400, dropout=0, num_epochs=10, verbose=0, batch_size=128, workers=1,patience=3):
         self.units = units
         self.dropout = dropout
         self.num_epochs = num_epochs
@@ -824,7 +837,7 @@ class LSTMRegression(object):
         self.patience = patience
         self.model = None
 
-    def fit(self, X, y, test_size=0.1):
+    def fit(self, X, y, tb=0, test_size=0.1):
         """
         Train LFADS Decoder
 
@@ -837,7 +850,7 @@ class LSTMRegression(object):
         y_train: numpy 2d array of shape [n_samples, n_outputs]
             This is the outputs that are being predicted
         """
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, shuffle=False)
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, random_state=42)
 
         # Define the LFADS model
         input_layer = Input(shape=(X_train.shape[1], X_train.shape[2]))
@@ -849,12 +862,22 @@ class LSTMRegression(object):
         # Compile the model
         model.compile(loss='mse', optimizer='rmsprop', metrics=['accuracy'])
 
+        # Plot model architecture
+        plot_model(model, to_file='LSTMDecoder.png', show_shapes=True)
+        
         # Fit the model
         early_stopping = EarlyStopping(monitor='val_loss', patience=self.patience, verbose=self.verbose, mode='min')
-
-        model.fit(X_train, y_train, batch_size=self.batch_size, epochs=self.num_epochs,
-                  validation_data=(X_val, y_val), verbose=self.verbose, workers=self.workers, use_multiprocessing=True,
-                  callbacks=[early_stopping])
+        if tb==1:
+            tensorboard_callback = TensorBoard(log_dir='./logs', histogram_freq=1)
+            model.fit(X_train, y_train, batch_size=self.batch_size, epochs=self.num_epochs,
+                      validation_data=(X_val, y_val), verbose=self.verbose, workers=self.workers, use_multiprocessing=True,
+                      callbacks=[early_stopping,tensorboard_callback])
+            model.summary()
+        else:
+            model.fit(X_train, y_train, batch_size=self.batch_size, epochs=self.num_epochs,
+                      validation_data=(X_val, y_val), verbose=self.verbose, workers=self.workers, use_multiprocessing=True,
+                      callbacks=[early_stopping])
+            
 
         self.model = model
         

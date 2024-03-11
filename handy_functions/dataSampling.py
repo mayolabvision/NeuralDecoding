@@ -15,23 +15,24 @@ import helpers
 def get_neuronRepeats(sess_nodt,nn=99,nm=99,nf=99,num_repeats=1):
     units = pd.read_csv(cwd+'/datasets/units/units-'+sess_nodt+'.csv')
 
-    if nn==99 and nm==99:
-        nm = (units['BrainArea'] == 'MT').sum()
-        nf = (units['BrainArea'] == 'FEF').sum()
-        nn = nm + nf
-    elif nn==99 and nm!=99:
-        nn = nm + nf
-    elif nn!=99 and nm==99:
-        nm = 99
-        nf = 99
+    if nn==99:
+        if nm==99:
+            nm = (units['BrainArea'] == 'MT').sum()
+        else:
+            nm = nm
+        if nf==99:
+            nf = (units['BrainArea'] == 'FEF').sum()
+        else:
+            nf = nf
 
-    if nm < 99:
+        nn = nm + nf
         file_path = os.path.join(cwd, 'datasets', 'dsplt', f"dsplt-{sess_nodt}-nm{nm}-nf{nf}-r{num_repeats}.pickle")
         condition = 'nm'
+
     else:
         file_path = os.path.join(cwd, 'datasets', 'dsplt', f"dsplt-{sess_nodt}-nn{nn}-r{num_repeats}.pickle")
         condition = 'nn'
-
+        
     if not os.path.isfile(file_path):
         print('sampling neurons')
         neurons_perRepeat = []

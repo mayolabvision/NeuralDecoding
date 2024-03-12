@@ -19,9 +19,9 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
 # Get job parameters
 PARAMS = 'params_etra.txt'
-s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,em,num_repeats,j = helpers.get_params(int(sys.argv[1]),PARAMS)
+s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,num_repeats,j = helpers.get_params(int(sys.argv[1]),PARAMS)
 
-jobs = helpers.get_jobArray(fo,num_repeats,1)
+jobs = helpers.get_jobArray(fo,num_repeats)
 print('# of jobs: {}'.format(len(jobs)))
 
 if int(sys.argv[2])==0: # local computer
@@ -34,7 +34,6 @@ else: # hpc cluster
 job = jobs[jobID + (j*1000)]
 outer_fold = job[0]
 repeat = job[1]
-style = job[2]
 
 print(f'fo{outer_fold}-re{repeat}-st{style}')
 
@@ -66,17 +65,18 @@ if style==0: #SISO
     pbounds = {
         'bins_before': (1, 8),
         'num_units': (50, 600),
-        'frac_dropout': (0.1, 0.75),
-        'batch_size': (64, 256),
-        'n_epochs': (2, 21)
+        'learning_rate':(0.01, 1),
+        'frac_dropout': (0.1, 0.5),
+        'batch_size': (128, 512),
+        'n_epochs': (15, 51)
     }
     
     if m==5:
         from decoders import SimpleRNNDecoder
         Xtr, Xva, Xte, ytr, yva, yte = X_train, X_valid, X_test, y_train, y_valid, y_test
         
-        def rnn_evaluate(bins_before,num_units,frac_dropout,batch_size,n_epochs):
-            model_rnn=SimpleRNNDecoder(units=int(num_units),dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),workers=workers)
+        def rnn_evaluate(bins_before,num_units,learning_rate,frac_dropout,batch_size,n_epochs):
+            model_rnn=SimpleRNNDecoder(units=int(num_units),learning_rate=float(learning_rate),dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),workers=workers)
             model_rnn.fit(Xtr[:,int(-bins_before):,:], ytr)
             y_valid_predicted_rnn=model_rnn.predict(Xva[:,int(-bins_before):,:])
             return np.mean(get_R2(yva,y_valid_predicted_rnn))
@@ -88,12 +88,13 @@ if style==0: #SISO
         best_params = BO.max['params']
         bins_before = int(best_params['bins_before'])
         num_units = int(best_params['num_units'])
+        learning_rate = float(best_params['learning_rate'])
         frac_dropout = float(best_params['frac_dropout'])
         batch_size = int(best_params['batch_size'])
         n_epochs = int(best_params['n_epochs'])
-        prms = {'bins_before':bins_before,'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
+        prms = {'bins_before':bins_before,'num_units': num_units, 'learning_rate': learning_rate, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
 
-        model = SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers, verbose=1)
+        model = SimpleRNNDecoder(units=num_units,learning_rate=learning_rate,dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers, verbose=1)
         
     if m==7:
         from decoders import LSTMDecoder
@@ -205,18 +206,16 @@ print("RMSE (train) =  {}".format(rmse_train))
 
 #helpers.plot_first_column_lines(y_test, y_test_predicted)
 
-print(blah)
-
 if m==3:
     y_test_predicted = y_test_predicted*np.std(y_train, axis=0)
 
 #######################################################################################################################################
 cwd = os.getcwd()
-jobname = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,em,num_repeats)
+jobname = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,num_repeats)
 pfile = helpers.make_directory((jobname),0)
 
 output = {0: 'position', 1: 'velocity', 2: 'acceleration'}.get(o)
-metric = {0: 'R2', 1: 'rho', 2: 'RMSE'}.get(em)
+metric = {0: 'siso', 1: 'miso', 2: 'mtl'}.get(style)
 result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,metric,prms,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     
 
 truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-o{:d}-fold{:0>1d}".format(s, t, dto, df, o, outer_fold)

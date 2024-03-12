@@ -627,8 +627,9 @@ class SimpleRNNRegression(object):
         Whether to show progress of the fit after each epoch
     """
 
-    def __init__(self,units=400,dropout=0,batch_size=128,num_epochs=10,verbose=0,workers=1,patience=3):
+    def __init__(self,units=400,lr=0.01,dropout=0,batch_size=128,num_epochs=10,verbose=0,workers=1,patience=3):
          self.units=units
+         self.lr = lr
          self.dropout=dropout
          self.batch_size=batch_size
          self.num_epochs=num_epochs
@@ -662,7 +663,7 @@ class SimpleRNNRegression(object):
         model.add(Dense(y_train.shape[1]))
 
         #Fit model (and set fitting parameters)
-        model.compile(loss='mse',optimizer='rmsprop',metrics=['accuracy']) #Set loss function and optimizer
+        model.compile(loss='mse',optimizer=keras.optimizers.Adam(learning_rate=self.lr),metrics=['accuracy']) #Set loss function and optimizer
         
         # Plot model architecture
         plot_model(model, to_file='RNNDecoder.png', show_shapes=True)

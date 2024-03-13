@@ -30,6 +30,7 @@ if int(sys.argv[2])==0: # local computer
 else: # hpc cluster
     workers = int(os.environ['SLURM_CPUS_PER_TASK'])
     jobID = int(os.environ["SLURM_ARRAY_TASK_ID"])
+    blah = 0
 
 job = jobs[jobID + (j*1000)]
 outer_fold = job[0]
@@ -47,6 +48,8 @@ toss_inds = helpers.remove_overlapBins(cond_binned, 400, dto)  # Remove bins of 
 neural_data, pos_binned, vel_binned, acc_binned, cond_binned = (
     np.delete(arr, toss_inds, axis=0) for arr in [neural_data, pos_binned, vel_binned, acc_binned, cond_binned])
 
+helpers.get_possibleOuts(pos_binned,vel_binned,acc_binned,cond_binned)
+
 # Pull out neurons, either all of them or randomly sampled
 neurons_perRepeat, _, _, _ = dataSampling.get_neuronRepeats(sess_nodt,nm=99,nf=0)
 mt_neurons = neurons_perRepeat[repeat]
@@ -63,9 +66,8 @@ if style==0: #SISO
     
     t1=time.time()
     pbounds = {
-        'bins_before': (1, 8),
+        'bins_before': (2, 8),
         'num_units': (50, 600),
-        'learning_rate':(0.01, 1),
         'frac_dropout': (0.1, 0.5),
         'batch_size': (128, 512),
         'n_epochs': (15, 51)
@@ -75,26 +77,25 @@ if style==0: #SISO
         from decoders import SimpleRNNDecoder
         Xtr, Xva, Xte, ytr, yva, yte = X_train, X_valid, X_test, y_train, y_valid, y_test
         
-        def rnn_evaluate(bins_before,num_units,learning_rate,frac_dropout,batch_size,n_epochs):
-            model_rnn=SimpleRNNDecoder(units=int(num_units),learning_rate=float(learning_rate),dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),workers=workers)
+        def rnn_evaluate(bins_before,num_units,frac_dropout,batch_size,n_epochs):
+            model_rnn=SimpleRNNDecoder(units=int(num_units),dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),workers=workers)
             model_rnn.fit(Xtr[:,int(-bins_before):,:], ytr)
             y_valid_predicted_rnn=model_rnn.predict(Xva[:,int(-bins_before):,:])
             return np.mean(get_R2(yva,y_valid_predicted_rnn))
 
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(rnn_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        BO.maximize(init_points=10, n_iter=20,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         best_params = BO.max['params']
         bins_before = int(best_params['bins_before'])
         num_units = int(best_params['num_units'])
-        learning_rate = float(best_params['learning_rate'])
         frac_dropout = float(best_params['frac_dropout'])
         batch_size = int(best_params['batch_size'])
         n_epochs = int(best_params['n_epochs'])
-        prms = {'bins_before':bins_before,'num_units': num_units, 'learning_rate': learning_rate, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
+        prms = {'bins_before':bins_before,'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
 
-        model = SimpleRNNDecoder(units=num_units,learning_rate=learning_rate,dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers, verbose=1)
+        model = SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers, verbose=1)
         
     if m==7:
         from decoders import LSTMDecoder
@@ -107,15 +108,15 @@ if style==0: #SISO
             return np.mean(get_R2(yva,y_valid_predicted_lstm))
 
         pbounds = {
-            'bins_before': (1, 8),
-            'num_units': (50, 300),
-            'frac_dropout': (0.25, 0.75),
-            'batch_size': (64, 256),
-            'n_epochs': (2, 21)
+            'bins_before': (2, 8),
+            'num_units': (50, 600),
+            'frac_dropout': (0.1, 0.5),
+            'batch_size': (128, 512),
+            'n_epochs': (15, 51)
         }
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        BO.maximize(init_points=10, n_iter=20,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         best_params = BO.max['params']
         bins_before = int(best_params['bins_before'])
@@ -209,6 +210,7 @@ print("RMSE (train) =  {}".format(rmse_train))
 if m==3:
     y_test_predicted = y_test_predicted*np.std(y_train, axis=0)
 
+print(blah)
 #######################################################################################################################################
 cwd = os.getcwd()
 jobname = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,num_repeats)

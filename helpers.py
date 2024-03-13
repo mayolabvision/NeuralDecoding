@@ -65,6 +65,25 @@ def get_session(j,t,dto,df,wi,dti):
     times = [[500,300]]
     return session+'-pre{}-post{}-dto{:03d}-df{}-wi{:03d}-dti{:03d}'.format(times[t][0],times[t][1],dto,df,wi,dti), session+'-pre{}-post{}'.format(times[t][0],times[t][1])
 
+def cart2pol(x, y):
+    rho = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y, x)
+    return(rho, phi)
+
+def get_possibleOuts(pos,vel,acc,cond):
+    r_eye,p_eye = cart2pol(pos[:,0],pos[:,1])
+    pos_pol = np.concatenate((r_eye[:,np.newaxis],p_eye[:,np.newaxis]), axis=1)
+    rr_eye,pp_eye = cart2pol(vel[:,0],vel[:,1])
+    vel_pol = np.concatenate((rr_eye[:,np.newaxis],pp_eye[:,np.newaxis]), axis=1)
+    rrr_eye,ppp_eye = cart2pol(acc[:,0],acc[:,1])
+    acc_pol = np.concatenate((rrr_eye[:,np.newaxis],ppp_eye[:,np.newaxis]), axis=1)
+    
+    print(cond[0:10,:])
+
+
+    print(pos_pol.shape)
+    print(blah)
+
 def remove_overlapBins(cond,wi,dto):
     num_bins = round(int(wi)/int(dto))
     trials = np.unique(cond[:, 0])

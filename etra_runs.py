@@ -86,7 +86,7 @@ if style==0: #SISO
         }
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-        BO.maximize(init_points=1, n_iter=1,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        BO.maximize(init_points=10, n_iter=20,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         best_params = BO.max['params']
         num_units = int(best_params['num_units'])
@@ -132,7 +132,7 @@ elif style==1: #MISO
     }
     acquisition_function = UtilityFunction(kind="ucb", kappa=10)
     BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-    BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+    BO.maximize(init_points=10, n_iter=20,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
     
     best_params = BO.max['params']
     mt_units = int(best_params['mt_units'])

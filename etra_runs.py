@@ -19,7 +19,7 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
 # Get job parameters
 PARAMS = 'params_etra.txt'
-s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,num_repeats,j = helpers.get_params(int(sys.argv[1]),PARAMS)
+s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,pcType,num_repeats,j = helpers.get_params(int(sys.argv[1]),PARAMS)
 
 jobs = helpers.get_jobArray(fo,num_repeats)
 print('# of jobs: {}'.format(len(jobs)))
@@ -36,7 +36,7 @@ job = jobs[jobID + (j*1000)]
 outer_fold = job[0]
 repeat = job[1]
 
-print(f'fo{outer_fold}-re{repeat}-st{style}')
+print(f'fo{outer_fold}-re{repeat}')
 
 #######################################################################################################################################
 # Do some preprocessing first
@@ -47,8 +47,6 @@ pp_time = pp_time/pos_binned.shape[0]
 toss_inds = helpers.remove_overlapBins(cond_binned, 400, dto)  # Remove bins of overlapping trials
 neural_data, pos_binned, vel_binned, acc_binned, cond_binned = (
     np.delete(arr, toss_inds, axis=0) for arr in [neural_data, pos_binned, vel_binned, acc_binned, cond_binned])
-
-helpers.get_possibleOuts(pos_binned,vel_binned,acc_binned,cond_binned)
 
 # Pull out neurons, either all of them or randomly sampled
 neurons_perRepeat, _, _, _ = dataSampling.get_neuronRepeats(sess_nodt,nm=99,nf=0)
@@ -62,78 +60,49 @@ verb = 1
 
 if style==0: #SISO
     result = helpers.get_data(neural_data[:,:,all_neurons],o,pos_binned,vel_binned,acc_binned,cond_binned,fo,outer_fold,wi/dti)
-    X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_train,c_test = result  
-    
+    X_train,X_test,X_valid,_,_,_,y_train,y_test,y_valid,_,_,_,c_train,c_test = result  
+  
+    if pcType==1:
+        print(blasdoifjds)
+    elif pcType==2:
+        print(bljkadfkjdsf)
+
     t1=time.time()
-    pbounds = {
-        'bins_before': (2, 8),
-        'num_units': (50, 600),
-        'frac_dropout': (0.1, 0.5),
-        'batch_size': (128, 512),
-        'n_epochs': (15, 51)
-    }
-    
-    if m==5:
-        from decoders import SimpleRNNDecoder
-        Xtr, Xva, Xte, ytr, yva, yte = X_train, X_valid, X_test, y_train, y_valid, y_test
-        
-        def rnn_evaluate(bins_before,num_units,frac_dropout,batch_size,n_epochs):
-            model_rnn=SimpleRNNDecoder(units=int(num_units),dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),workers=workers)
-            model_rnn.fit(Xtr[:,int(-bins_before):,:], ytr)
-            y_valid_predicted_rnn=model_rnn.predict(Xva[:,int(-bins_before):,:])
-            return np.mean(get_R2(yva,y_valid_predicted_rnn))
-
-        acquisition_function = UtilityFunction(kind="ucb", kappa=10)
-        BO = BayesianOptimization(rnn_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-        BO.maximize(init_points=10, n_iter=20,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
-        
-        best_params = BO.max['params']
-        bins_before = int(best_params['bins_before'])
-        num_units = int(best_params['num_units'])
-        frac_dropout = float(best_params['frac_dropout'])
-        batch_size = int(best_params['batch_size'])
-        n_epochs = int(best_params['n_epochs'])
-        prms = {'bins_before':bins_before,'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
-
-        model = SimpleRNNDecoder(units=num_units,dropout=frac_dropout,batch_size=batch_size,num_epochs=n_epochs,workers=workers, verbose=1)
-        
     if m==7:
         from decoders import LSTMDecoder
         Xtr, Xva, Xte, ytr, yva, yte = X_train, X_valid, X_test, y_train, y_valid, y_test
 
-        def lstm_evaluate(bins_before, num_units, frac_dropout, batch_size, n_epochs):
+        def lstm_evaluate(num_units, frac_dropout, batch_size, n_epochs):
             model_lstm=LSTMDecoder(units=int(num_units),dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),workers=workers)
-            model_lstm.fit(Xtr[:,int(-bins_before):,:], ytr)
-            y_valid_predicted_lstm = model_lstm.predict(Xva[:,int(-bins_before):,:])
+            model_lstm.fit(Xtr, ytr)
+            y_valid_predicted_lstm = model_lstm.predict(Xva)
             return np.mean(get_R2(yva,y_valid_predicted_lstm))
 
         pbounds = {
-            'bins_before': (2, 8),
             'num_units': (50, 600),
-            'frac_dropout': (0.1, 0.5),
-            'batch_size': (128, 512),
-            'n_epochs': (15, 51)
+            'frac_dropout': (0.1, 0.75),
+            'batch_size': (64, 512),
+            'n_epochs': (5, 21)
         }
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-        BO.maximize(init_points=10, n_iter=20,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        BO.maximize(init_points=1, n_iter=1,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         best_params = BO.max['params']
-        bins_before = int(best_params['bins_before'])
         num_units = int(best_params['num_units'])
         frac_dropout = float(best_params['frac_dropout'])
         batch_size = int(best_params['batch_size'])
         n_epochs = int(best_params['n_epochs'])
-        prms = {'bins_before':bins_before,'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
+        prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
 
         model = LSTMDecoder(units=num_units, dropout=frac_dropout, batch_size=batch_size, num_epochs=n_epochs, workers=workers, verbose=1)
     
-    model.fit(Xtr[:,int(-bins_before):,:],ytr,tb=1) 
+    model.fit(Xtr,ytr,tb=1) 
     train_time = time.time()-t1
-    y_train_predicted=model.predict(Xtr[:,int(-bins_before):,:]) # train accuracy 
+    y_train_predicted=model.predict(Xtr) # train accuracy 
    
     t2=time.time()
-    y_test_predicted=model.predict(Xte[:,int(-bins_before):,:])   
+    y_test_predicted=model.predict(Xte)   
     test_time = (time.time()-t2) / yte.shape[0]
 
 elif style==1: #MISO
@@ -210,15 +179,17 @@ print("RMSE (train) =  {}".format(rmse_train))
 if m==3:
     y_test_predicted = y_test_predicted*np.std(y_train, axis=0)
 
-print(blah)
+#print(blah)
 #######################################################################################################################################
 cwd = os.getcwd()
-jobname = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,num_repeats)
+jobname = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,pcType,num_repeats)
 pfile = helpers.make_directory((jobname),0)
 
 output = {0: 'position', 1: 'velocity', 2: 'acceleration'}.get(o)
-metric = {0: 'siso', 1: 'miso', 2: 'mtl'}.get(style)
-result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,metric,prms,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     
+metric = {0: 'siso', 1: 'miso'}.get(style)
+pcaFlag = {0: 'none', 1: 'sep', 2: 'tog'}.get(pcType)
+
+result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,metric,pcaFlag,prms,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     
 
 truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-o{:d}-fold{:0>1d}".format(s, t, dto, df, o, outer_fold)
 file_path = os.path.join(cwd, 'runs/actual', truth_file + '.pickle')

@@ -34,12 +34,13 @@ def get_params(i,params):
     o   = int(line[12])         # output type (0 = pos, 1 = vel, 2 = acc)
     m   = int(line[13])         # model type
     st  = int(line[14])         # evaluation metric
-    r   = int(line[15])         # number of repeats
-    j   = int(line[16])         # jobID multiplier
-    return s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,st,r,j
+    pc  = int(line[15])         # whether PCA is done to input data (0 = none, 1 = seperate, 2 = together)
+    r   = int(line[16])         # number of repeats
+    j   = int(line[17])         # jobID multiplier
+    return s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,st,pc,r,j
 
-def make_name(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,st,r):
-    return "{:05d}-s{:02d}-t{}-dto{:03d}-df{}-wi{:03d}-dti{:03d}-nn{:02d}-nm{:02d}-nf{:02d}-fo{:02d}-tp{:03d}-o{}-m{:02d}-stl{}-r{:04d}".format(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,int(tp*100),o,m,st,r)
+def make_name(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,st,pc,r):
+    return "{:05d}-s{:02d}-t{}-dto{:03d}-df{}-wi{:03d}-dti{:03d}-nn{:02d}-nm{:02d}-nf{:02d}-fo{:02d}-tp{:03d}-o{}-m{:02d}-stl{}-pc{}-r{:04d}".format(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,int(tp*100),o,m,st,pc,r)
 
 def make_directory(jobname,nameOnly):
     cwd = os.getcwd()
@@ -200,7 +201,7 @@ def get_fold(outer_fold, bins_before, cond):
         
         test_trls = [int(num) for num in trials[fold_start:fold_end]]
         remaining_trls =  [int(num) for num in list(set(trials) - set(test_trls))] 
-        train_trls, valid_trls = train_test_split(remaining_trls, test_size=0.111111, shuffle=False)
+        train_trls, valid_trls = train_test_split(remaining_trls, test_size=0.24, shuffle=True, random_state=42)
         
         training_set.append(np.where(np.isin(cond[:,0], train_trls))[0]) 
         validation_set.append(np.where(np.isin(cond[:,0], valid_trls))[0]) 

@@ -828,7 +828,7 @@ class LSTMRegression(object):
         Number of workers for data loading during training
     """
 
-    def __init__(self, units=400, lr=0.001, dropout=0, num_epochs=10, verbose=0, batch_size=128, workers=1,patience=5):
+    def __init__(self, units=400, lr=0.001, dropout=0, num_epochs=10, verbose=0, batch_size=128, workers=1,patience=3):
         self.units = units
         self.lr = lr
         self.dropout = dropout
@@ -839,7 +839,7 @@ class LSTMRegression(object):
         self.patience = patience
         self.model = None
 
-    def fit(self, X, y, tb=0, test_size=0.1):
+    def fit(self, X, y, tb=0, test_size=0.2):
         """
         Train LFADS Decoder
 
@@ -852,7 +852,7 @@ class LSTMRegression(object):
         y_train: numpy 2d array of shape [n_samples, n_outputs]
             This is the outputs that are being predicted
         """
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, random_state=42)
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, shuffle=True)
 
         # Define the LFADS model
         input_layer = Input(shape=(X_train.shape[1], X_train.shape[2]))

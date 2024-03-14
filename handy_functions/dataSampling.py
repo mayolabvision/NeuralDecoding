@@ -15,6 +15,8 @@ import helpers
 def get_neuronRepeats(sess_nodt,nn=99,nm=99,nf=99,num_repeats=1):
     units = pd.read_csv(cwd+'/datasets/units/units-'+sess_nodt+'.csv')
 
+    print(f'nn{nn}-nm{nm}-nf{nf}')
+
     if nn==99:
         if nm==99:
             nm = (units['BrainArea'] == 'MT').sum()
@@ -32,6 +34,8 @@ def get_neuronRepeats(sess_nodt,nn=99,nm=99,nf=99,num_repeats=1):
     else:
         file_path = os.path.join(cwd, 'datasets', 'dsplt', f"dsplt-{sess_nodt}-nn{nn}-r{num_repeats}.pickle")
         condition = 'nn'
+    
+    print(f'nn{nn}-nm{nm}-nf{nf}')
         
     if not os.path.isfile(file_path):
         print('sampling neurons')

@@ -21,6 +21,8 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 PARAMS = 'params_etra.txt'
 s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,pcType,num_repeats,j = helpers.get_params(int(sys.argv[1]),PARAMS)
 
+print(f'nn{nn}-nm{nm}-nf{nf}')
+
 jobs = helpers.get_jobArray(fo,num_repeats)
 print('# of jobs: {}'.format(len(jobs)))
 
@@ -51,6 +53,9 @@ neural_data, pos_binned, vel_binned, acc_binned, cond_binned = (
 # Pull out neurons, either all of them or randomly sampled
 neurons_perRepeat, nn, nm, nf = dataSampling.get_neuronRepeats(sess_nodt,nm=nm,nf=nf,num_repeats=num_repeats)
 these_neurons = neurons_perRepeat[repeat]
+
+print(f'nn{nn}-nm{nm}-nf{nf}')
+
 
 verb = 1
 
@@ -175,7 +180,7 @@ print("RMSE (train) =  {}".format(rmse_train))
 if m==3:
     y_test_predicted = y_test_predicted*np.std(y_train, axis=0)
 
-#print(blah)
+print(blah)
 #######################################################################################################################################
 cwd = os.getcwd()
 jobname = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,pcType,num_repeats)

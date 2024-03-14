@@ -49,17 +49,13 @@ neural_data, pos_binned, vel_binned, acc_binned, cond_binned = (
     np.delete(arr, toss_inds, axis=0) for arr in [neural_data, pos_binned, vel_binned, acc_binned, cond_binned])
 
 # Pull out neurons, either all of them or randomly sampled
-neurons_perRepeat, _, _, _ = dataSampling.get_neuronRepeats(sess_nodt,nm=99,nf=0)
-mt_neurons = neurons_perRepeat[repeat]
-neurons_perRepeat, _, _, _ = dataSampling.get_neuronRepeats(sess_nodt,nm=0,nf=99)
-fef_neurons = neurons_perRepeat[repeat]
-neurons_perRepeat, nn, nm, nf = dataSampling.get_neuronRepeats(sess_nodt,nm=99,nf=99)
-all_neurons = neurons_perRepeat[repeat]
+neurons_perRepeat, nn, nm, nf = dataSampling.get_neuronRepeats(sess_nodt,nm=nm,nf=nf,num_repeats=num_repeats)
+these_neurons = neurons_perRepeat[repeat]
 
 verb = 1
 
 if style==0: #SISO
-    result = helpers.get_data(neural_data[:,:,all_neurons],o,pos_binned,vel_binned,acc_binned,cond_binned,fo,outer_fold,wi/dti)
+    result = helpers.get_data(neural_data[:,:,these_neurons],o,pos_binned,vel_binned,acc_binned,cond_binned,fo,outer_fold,wi/dti)
     X_train,X_test,X_valid,_,_,_,y_train,y_test,y_valid,_,_,_,c_train,c_test = result  
   
     if pcType==1:

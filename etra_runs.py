@@ -187,7 +187,7 @@ print("RMSE (train) =  {}".format(rmse_train))
 
 #helpers.plot_first_column_lines(y_test, y_test_predicted)
 
-print(blah)
+#print(blah)
 #######################################################################################################################################
 cwd = os.getcwd()
 jobname = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,pcType,num_repeats)

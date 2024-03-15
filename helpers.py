@@ -16,6 +16,8 @@ from preprocessing_funcs import get_spikes_with_history
 from sklearn.model_selection import KFold, train_test_split
 from random import shuffle
 import glob 
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 
 def get_params(i,params):
     line = np.loadtxt(params)[i]
@@ -70,6 +72,51 @@ def cart2pol(x, y):
     rho = np.sqrt(x**2 + y**2)
     phi = np.arctan2(y, x)
     return(rho, phi)
+
+def do_pca(X_train, X_valid, X_test, explain_var=0.9):
+    # Reshape X_train to flatten the time bins
+    X_train_flat = np.reshape(X_train, (X_train.shape[0], -1))
+
+    # Standardize the data using the scaler fitted on X_train
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train_flat)
+    X_valid_scaled = scaler.transform(np.reshape(X_valid, (X_valid.shape[0], -1)))
+    X_test_scaled = scaler.transform(np.reshape(X_test, (X_test.shape[0], -1)))
+
+    # Perform PCA
+    pca = PCA()
+    pca.fit(X_train_scaled)
+
+    # Determine the number of components explaining the specified variance
+    explained_variance_ratio_cumsum = np.cumsum(pca.explained_variance_ratio_)
+    n_components = np.argmax(explained_variance_ratio_cumsum >= explain_var) + 1
+
+    # Project X_train onto the selected number of principal components
+    X_train_pca = pca.transform(X_train_scaled)[:, :n_components]
+
+    # Reconstruct X_train from the projected principal components
+    X_train_reconstructed = np.dot(X_train_pca, pca.components_[:n_components, :])
+    X_train_reconstructed += pca.mean_
+
+    # Reshape X_train_reconstructed back to the original shape
+    X_train_reconstructed = np.reshape(X_train_reconstructed, X_train.shape)
+
+    # Project X_valid and X_test using the same PCA instance
+    X_valid_pca = pca.transform(X_valid_scaled)[:, :n_components]
+    X_test_pca = pca.transform(X_test_scaled)[:, :n_components]
+
+    # Reconstruct X_valid and X_test from the projected principal components
+    X_valid_reconstructed = np.dot(X_valid_pca, pca.components_[:n_components, :])
+    X_valid_reconstructed += pca.mean_
+    X_valid_reconstructed = np.reshape(X_valid_reconstructed, X_valid.shape)
+
+    X_test_reconstructed = np.dot(X_test_pca, pca.components_[:n_components, :])
+    X_test_reconstructed += pca.mean_
+    X_test_reconstructed = np.reshape(X_test_reconstructed, X_test.shape)
+
+    # Return the results
+    return X_train_reconstructed, X_valid_reconstructed, X_test_reconstructed, n_components, explained_variance_ratio_cumsum
+
 
 def get_possibleOuts(pos,vel,acc,cond):
     r_eye,p_eye = cart2pol(pos[:,0],pos[:,1])

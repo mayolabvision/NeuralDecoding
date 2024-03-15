@@ -65,9 +65,15 @@ if style==0: #SISO
     X_train,X_test,X_valid,_,_,_,y_train,y_test,y_valid,_,_,_,c_train,c_test = result  
   
     if pcType==1:
-        print(blasdoifjds)
+        Xmt_train_pca, Xmt_valid_pca, Xmt_test_pca, nmt_components, pve_mt = helpers.do_pca(X_train[:,:,mt_neurons],X_valid[:,:,mt_neurons],X_test[:,:,mt_neurons],explain_var=0.9)
+        Xfef_train_pca, Xfef_valid_pca, Xfef_test_pca, nfef_components, pve_fef = helpers.do_pca(X_train[:,:,fef_neurons],X_valid[:,:,fef_neurons],X_test[:,:,fef_neurons],explain_var=0.9)
+
+        X_train = np.concatenate((Xmt_train_pca, Xfef_train_pca), axis=2)
+        X_valid = np.concatenate((Xmt_valid_pca, Xfef_valid_pca), axis=2)
+        X_test = np.concatenate((Xmt_test_pca, Xfef_test_pca), axis=2)
+
     elif pcType==2:
-        print(bljkadfkjdsf)
+        X_train, X_valid, X_test, n_components, pve = helpers.do_pca(X_train[:,:,these_neurons],X_valid[:,:,these_neurons],X_test[:,:,these_neurons],explain_var=0.9)
 
     t1=time.time()
     if m==7:
@@ -95,7 +101,13 @@ if style==0: #SISO
         frac_dropout = float(best_params['frac_dropout'])
         batch_size = int(best_params['batch_size'])
         n_epochs = int(best_params['n_epochs'])
-        prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
+        
+        if pcType==0:
+            prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
+        elif pcType==1:
+            prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs, 'ncomps_mt': nmt_components, 'ncomps_fef': nfef_components, 'pve_mt': pve_mt, 'pve_fef': pve_fef}
+        else:
+            prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs, 'ncomps': n_components, 'pve': pve}
 
         model = LSTMDecoder(units=num_units, dropout=frac_dropout, batch_size=batch_size, num_epochs=n_epochs, workers=workers, verbose=1)
     

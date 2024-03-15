@@ -147,11 +147,12 @@ class LSTMRegression_multiInput_singleOutput(object):
         Number of workers for data loading during training
     """
 
-    def __init__(self, mt_units=400, fef_units=400, mt_dropout=0, fef_dropout=0, num_epochs=10, verbose=0, batch_size=128, workers=1, patience=5):
+    def __init__(self, mt_units=400, fef_units=400, mt_dropout=0, fef_dropout=0, lr=0.001, num_epochs=10, verbose=0, batch_size=128, workers=1, patience=3):
         self.mt_units = mt_units
         self.fef_units = fef_units
         self.mt_dropout = mt_dropout
         self.fef_dropout = fef_dropout
+        self.lr = lr
         self.num_epochs = num_epochs
         self.verbose = verbose
         self.batch_size = batch_size
@@ -159,7 +160,7 @@ class LSTMRegression_multiInput_singleOutput(object):
         self.patience = patience
         self.model = None
 
-    def fit(self, X_mt, X_fef, y, test_size=0.1):
+    def fit(self, X_mt, X_fef, y, test_size=0.2):
         """
         Train LSTM Decoder
 
@@ -174,7 +175,7 @@ class LSTMRegression_multiInput_singleOutput(object):
         y: numpy 2d array of shape [n_samples, n_outputs]
             This is the outputs that are being predicted
         """
-        X_mt_train, X_mt_val, X_fef_train, X_fef_val, y_train, y_val = train_test_split(X_mt, X_fef, y, test_size=test_size, shuffle=False)
+        X_mt_train, X_mt_val, X_fef_train, X_fef_val, y_train, y_val = train_test_split(X_mt, X_fef, y, test_size=test_size, shuffle=True)
 
         # Define the LSTM model
         input_mt = Input(shape=(X_mt_train.shape[1], X_mt_train.shape[2]), name='mt_input')
@@ -190,7 +191,7 @@ class LSTMRegression_multiInput_singleOutput(object):
         model = Model(inputs=[input_mt, input_fef], outputs=output_layer)
 
         # Compile the model
-        model.compile(loss='mse', optimizer='rmsprop', metrics=['accuracy'])
+        model.compile(loss='mse',optimizer=keras.optimizers.Adam(learning_rate=self.lr),metrics=['accuracy']) #Set loss function and optimizer
 
         # Plot model architecture
         plot_model(model, to_file='LSTMDecoder_miso.png', show_shapes=True)

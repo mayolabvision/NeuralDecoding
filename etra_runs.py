@@ -21,8 +21,6 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 PARAMS = 'params_etra.txt'
 s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,pcType,num_repeats,j = helpers.get_params(int(sys.argv[1]),PARAMS)
 
-print(f'nn{nn}-nm{nm}-nf{nf}')
-
 jobs = helpers.get_jobArray(fo,num_repeats)
 print('# of jobs: {}'.format(len(jobs)))
 
@@ -54,9 +52,12 @@ neural_data, pos_binned, vel_binned, acc_binned, cond_binned = (
 neurons_perRepeat, nn, nm, nf = dataSampling.get_neuronRepeats(sess_nodt,nm=nm,nf=nf,num_repeats=num_repeats)
 these_neurons = neurons_perRepeat[repeat]
 
+mt_perRepeat, _, _, _ = dataSampling.get_neuronRepeats(sess_nodt,nm=99,nf=0)
+mt_neurons = mt_perRepeat[repeat]
+fef_perRepeat, _, _, _ = dataSampling.get_neuronRepeats(sess_nodt,nm=0,nf=99)
+fef_neurons = fef_perRepeat[repeat]
+
 print(f'nn{nn}-nm{nm}-nf{nf}')
-
-
 verb = 1
 
 if style==0: #SISO
@@ -87,7 +88,7 @@ if style==0: #SISO
         }
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        BO.maximize(init_points=1, n_iter=1,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         best_params = BO.max['params']
         num_units = int(best_params['num_units'])
@@ -126,14 +127,14 @@ elif style==1: #MISO
     pbounds = {
         'mt_units': (50, 300),
         'fef_units': (50, 300),
-        'mt_dropout': (0.25, 0.75),
-        'fef_dropout': (0.25, 0.75),
-        'batch_size': (128, 256),
-        'n_epochs': (2, 21)
+        'mt_dropout': (0.1, 0.75),
+        'fef_dropout': (0.1, 0.75),
+        'batch_size': (64, 512),
+        'n_epochs': (5, 21)
     }
     acquisition_function = UtilityFunction(kind="ucb", kappa=10)
     BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-    BO.maximize(init_points=10, n_iter=20,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+    BO.maximize(init_points=1, n_iter=1,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
     
     best_params = BO.max['params']
     mt_units = int(best_params['mt_units'])
@@ -145,6 +146,7 @@ elif style==1: #MISO
     prms = {'mt_units': mt_units, 'fef_units': fef_units, 'mt_dropout': mt_dropout, 'fef_dropout': fef_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
 
     model = LSTMDecoder_miso(mt_units=mt_units, fef_units=fef_units, mt_dropout=mt_dropout, fef_dropout=fef_dropout, batch_size=batch_size, num_epochs=n_epochs, workers=workers, verbose=1)
+    
     model.fit(Xtr_mt,Xtr_fef,ytr) 
     train_time = time.time()-t1
     y_train_predicted=model.predict(Xtr_mt,Xtr_fef) # train accuracy 
@@ -154,12 +156,8 @@ elif style==1: #MISO
     y_test_predicted=model.predict(Xte_mt,Xte_fef)   
     test_time = (time.time()-t2) / yte.shape[0]
 
-if m != 3:
-    y_train_data = y_train
-    y_test_data = y_test
-else:
-    y_train_data = y_zscore_train
-    y_test_data = y_zscore_test
+y_train_data = y_train
+y_test_data = y_test
 
 R2_train = get_R2(y_train_data, y_train_predicted)
 rho_train = get_rho(y_train_data, y_train_predicted)
@@ -176,9 +174,6 @@ print("rho (train)  =  {}".format(rho_train))
 print("RMSE (train) =  {}".format(rmse_train))
 
 #helpers.plot_first_column_lines(y_test, y_test_predicted)
-
-if m==3:
-    y_test_predicted = y_test_predicted*np.std(y_train, axis=0)
 
 print(blah)
 #######################################################################################################################################

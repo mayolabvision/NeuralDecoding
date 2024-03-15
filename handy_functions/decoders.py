@@ -46,7 +46,7 @@ class WienerFilterRegression(object):
     def __init__(self):
         self.model = None
 
-    def fit(self, X_flat_train, y_train):
+    def fit(self, X_flat_train, y_train, tb=0):
         """
         Train Wiener Filter Decoder
 

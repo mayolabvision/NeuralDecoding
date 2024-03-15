@@ -53,9 +53,9 @@ neurons_perRepeat, nn, nm, nf = dataSampling.get_neuronRepeats(sess_nodt,nm=nm,n
 these_neurons = neurons_perRepeat[repeat]
 
 mt_perRepeat, _, _, _ = dataSampling.get_neuronRepeats(sess_nodt,nm=99,nf=0)
-mt_neurons = mt_perRepeat[repeat]
+mt_neurons = mt_perRepeat[0]
 fef_perRepeat, _, _, _ = dataSampling.get_neuronRepeats(sess_nodt,nm=0,nf=99)
-fef_neurons = fef_perRepeat[repeat]
+fef_neurons = fef_perRepeat[0]
 
 print(f'nn{nn}-nm{nm}-nf{nf}')
 verb = 1
@@ -166,6 +166,47 @@ elif style==1: #MISO
     # model testing
     t2=time.time()
     y_test_predicted=model.predict(Xte_mt,Xte_fef)   
+    test_time = (time.time()-t2) / yte.shape[0]
+
+elif style==2: # attention layer
+    result = helpers.get_data(neural_data[:,:,these_neurons],o,pos_binned,vel_binned,acc_binned,cond_binned,fo,outer_fold,wi/dti)
+    X_train,X_test,X_valid,_,_,_,y_train,y_test,y_valid,_,_,_,c_train,c_test = result  
+    
+    t1=time.time()
+    from decoders import LSTMDecoder_attn
+    Xtr, Xva, Xte, ytr, yva, yte = X_train, X_valid, X_test, y_train, y_valid, y_test
+
+    def lstm_evaluate(num_units, frac_dropout, batch_size, n_epochs):
+        model_lstm=LSTMDecoder_attn(units=int(num_units),dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),workers=workers)
+        model_lstm.fit(Xtr, ytr)
+        y_valid_predicted_lstm = model_lstm.predict(Xva)
+        return np.mean(get_R2(yva,y_valid_predicted_lstm))
+
+    pbounds = {
+        'num_units': (50, 600),
+        'frac_dropout': (0.1, 0.75),
+        'batch_size': (64, 512),
+        'n_epochs': (5, 21)
+    }
+    acquisition_function = UtilityFunction(kind="ucb", kappa=10)
+    BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
+    BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+    
+    best_params = BO.max['params']
+    num_units = int(best_params['num_units'])
+    frac_dropout = float(best_params['frac_dropout'])
+    batch_size = int(best_params['batch_size'])
+    n_epochs = int(best_params['n_epochs'])
+    prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
+    
+    model = LSTMDecoder_attn(units=num_units, dropout=frac_dropout, batch_size=batch_size, num_epochs=n_epochs, workers=workers, verbose=1)
+    
+    model.fit(Xtr,ytr,tb=1) 
+    train_time = time.time()-t1
+    y_train_predicted=model.predict(Xtr) # train accuracy 
+   
+    t2=time.time()
+    y_test_predicted=model.predict(Xte)   
     test_time = (time.time()-t2) / yte.shape[0]
 
 y_train_data = y_train

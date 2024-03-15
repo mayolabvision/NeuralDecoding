@@ -14,7 +14,7 @@ from sklearn.svm import SVC #For support vector classification (SVM)
 import xgboost as xgb #For xgboost
 import keras
 from keras.models import Sequential
-from keras.layers import Dense, LSTM, SimpleRNN, GRU, Activation, Dropout
+from keras.layers import Dense, LSTM, SimpleRNN, GRU, Activation, Dropout, Attention
 from keras.utils import np_utils
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import OrthogonalMatchingPursuit
@@ -226,9 +226,73 @@ class LSTMRegression_multiInput_singleOutput(object):
         y_test_predicted = self.model.predict([X_mt_test, X_fef_test])  # Make predictions
         return y_test_predicted
 
+class LSTMRegressionWithAttention(LSTMRegression):
+    def __init__(self, units=400, lr=0.001, dropout=0, num_epochs=10, verbose=0, batch_size=128, workers=1, patience=3):
+        super().__init__(units=units, lr=lr, dropout=dropout, num_epochs=num_epochs, verbose=verbose,
+                         batch_size=batch_size, workers=workers, patience=patience)
+
+    def fit(self, X, y, tb=0, test_size=0.2):
+        """
+        Train LSTM Decoder with attention mechanism
+
+        Parameters
+        ----------
+        X_train: numpy 3d array of shape [n_samples, n_time_bins, n_neurons]
+            This is the neural data.
+            See example file for an example of how to format the neural data correctly
+
+        y_train: numpy 2d array of shape [n_samples, n_outputs]
+            This is the outputs that are being predicted
+        """
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, shuffle=True)
+
+        # Define the LSTM model with attention mechanism
+        input_layer = Input(shape=(X_train.shape[1], X_train.shape[2]))
+        attention_layer = Attention()([input_layer, input_layer])  # Apply attention mechanism to input features
+        lstm_layer = LSTM(self.units, dropout=self.dropout)(attention_layer)
+        output_layer = Dense(y_train.shape[1])(lstm_layer)
+
+        model = Model(inputs=input_layer, outputs=output_layer)
+
+        # Compile the model
+        model.compile(loss='mse', optimizer=keras.optimizers.Adam(learning_rate=self.lr), metrics=['accuracy'])
+
+        # Fit the model
+        early_stopping = EarlyStopping(monitor='val_loss', patience=self.patience, verbose=self.verbose, mode='min')
+        if tb == 1:
+            tensorboard_callback = TensorBoard(log_dir='./logs', histogram_freq=1)
+            model.fit(X_train, y_train, batch_size=self.batch_size, epochs=self.num_epochs,
+                      validation_data=(X_val, y_val), verbose=self.verbose, workers=self.workers,
+                      use_multiprocessing=True, callbacks=[early_stopping, tensorboard_callback])
+        else:
+            model.fit(X_train, y_train, batch_size=self.batch_size, epochs=self.num_epochs,
+                      validation_data=(X_val, y_val), verbose=self.verbose, workers=self.workers,
+                      use_multiprocessing=True, callbacks=[early_stopping])
+
+        self.model = model
+    
+    def predict(self, X_test):
+        """
+        Predict outcomes using trained LFADS Decoder
+
+        Parameters
+        ----------
+        X_test: numpy 3d array of shape [n_samples, n_time_bins, n_neurons]
+            This is the neural data being used to predict outputs.
+
+        Returns
+        -------
+        y_test_predicted: numpy 2d array of shape [n_samples, n_outputs]
+            The predicted outputs
+        """
+
+        y_test_predicted = self.model.predict(X_test)  # Make predictions
+        return y_test_predicted
+    
 
 ######### ALIASES for Regression ########
 
 #LinearDecoder = LinearRegression
 LSTMDecoder_miso = LSTMRegression_multiInput_singleOutput
+LSTMDecoder_attn = LSTMRegressionWithAttention
 RNNDecoder_miso = SimpleRNNRegression_multiInput_singleOutput

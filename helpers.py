@@ -76,24 +76,23 @@ def cart2pol(x, y):
 def do_pca(X_train, X_valid, X_test, explain_var=0.9):
     # Reshape X_train to flatten the time bins
     X_train_flat = np.reshape(X_train, (X_train.shape[0], -1))
-
-    # Standardize the data using the scaler fitted on X_train
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train_flat)
-    X_valid_scaled = scaler.transform(np.reshape(X_valid, (X_valid.shape[0], -1)))
-    X_test_scaled = scaler.transform(np.reshape(X_test, (X_test.shape[0], -1)))
+    X_valid_flat = np.reshape(X_valid, (X_valid.shape[0], -1))
+    X_test_flat = np.reshape(X_test, (X_test.shape[0], -1))
 
     # Perform PCA
     pca = PCA()
-    pca.fit(X_train_scaled)
+    pca.fit(X_train_flat)
 
     # Determine the number of components explaining the specified variance
     explained_variance_ratio_cumsum = np.cumsum(pca.explained_variance_ratio_)
     n_components = np.argmax(explained_variance_ratio_cumsum >= explain_var) + 1
 
     # Project X_train onto the selected number of principal components
-    X_train_pca = pca.transform(X_train_scaled)[:, :n_components]
-
+    X_train_pca = np.reshape(pca.transform(X_train_flat), X_train.shape) #[:, :n_components]
+    X_valid_pca = np.reshape(pca.transform(X_valid_flat), X_valid.shape)
+    X_test_pca = np.reshape(pca.transform(X_test_flat), X_test.shape)
+    
+    '''
     # Reconstruct X_train from the projected principal components
     X_train_reconstructed = np.dot(X_train_pca, pca.components_[:n_components, :])
     X_train_reconstructed += pca.mean_
@@ -113,9 +112,10 @@ def do_pca(X_train, X_valid, X_test, explain_var=0.9):
     X_test_reconstructed = np.dot(X_test_pca, pca.components_[:n_components, :])
     X_test_reconstructed += pca.mean_
     X_test_reconstructed = np.reshape(X_test_reconstructed, X_test.shape)
+    '''
 
     # Return the results
-    return X_train_reconstructed, X_valid_reconstructed, X_test_reconstructed, n_components, explained_variance_ratio_cumsum
+    return X_train_pca, X_valid_pca, X_test_pca, n_components, explained_variance_ratio_cumsum
 
 
 def get_possibleOuts(pos,vel,acc,cond):

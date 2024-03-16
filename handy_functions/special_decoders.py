@@ -14,7 +14,7 @@ from sklearn.svm import SVC #For support vector classification (SVM)
 import xgboost as xgb #For xgboost
 import keras
 from keras.models import Sequential
-from keras.layers import Dense, LSTM, SimpleRNN, GRU, Activation, Dropout, Attention
+from keras.layers import Dense, LSTM, SimpleRNN, GRU, Activation, Dropout, Attention, MultiHeadAttention
 from keras.utils import np_utils
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import OrthogonalMatchingPursuit
@@ -184,12 +184,15 @@ class LSTMRegression_multiInput_singleOutput(object):
         input_mt = Input(shape=(X_mt_train.shape[1], X_mt_train.shape[2]), name='mt_input')
         input_fef = Input(shape=(X_fef_train.shape[1], X_fef_train.shape[2]), name='fef_input')
 
-        lstm_layer_mt = LSTM(self.mt_units, dropout=self.mt_dropout, name='lstm_mt')(input_mt)  # Remove return_sequences=True
-        lstm_layer_fef = LSTM(self.fef_units, dropout=self.fef_dropout, name='lstm_fef')(input_fef)  # Remove return_sequences=True
+        shared_lstm = LSTM(self.units, dropout=self.dropout)
 
-        concatenated_layers = concatenate([lstm_layer_mt, lstm_layer_fef], name='concatenated_features')  # Concatenate the outputs of both LSTM layers
+        lstm_layer_mt = shared_lstm(input_mt)  
+        lstm_layer_fef = shared_lstm(input_fef)  
 
-        output_layer = Dense(y_train.shape[1], name='output')(concatenated_layers)
+        concatenated_layers = concatenate([lstm_layer_mt, lstm_layer_fef], name='concatenated_features')  
+
+        dense_layer = Dense(self.dense_units, activation='relu')(concatenated_layers)
+        output_layer = Dense(y_train.shape[1], name='output')(dense_layer)
 
         model = Model(inputs=[input_mt, input_fef], outputs=output_layer)
 
@@ -254,10 +257,11 @@ class LSTMRegressionWithAttention(object):
         Number of workers for data loading during training
     """
 
-    def __init__(self, units=400, lr=0.001, dropout=0, num_epochs=10, verbose=0, batch_size=128, workers=1,patience=3):
+    def __init__(self, units=400, lr=0.001, dropout=0, num_heads=1, num_epochs=10, verbose=0, batch_size=128, workers=1,patience=3):
         self.units = units
         self.lr = lr
         self.dropout = dropout
+        self.num_heads = num_heads
         self.num_epochs = num_epochs
         self.verbose = verbose
         self.batch_size = batch_size
@@ -282,7 +286,8 @@ class LSTMRegressionWithAttention(object):
 
         # Define the LSTM model with attention mechanism
         input_layer = Input(shape=(X_train.shape[1], X_train.shape[2]))
-        attention_layer = Attention()([input_layer, input_layer])  # Apply attention mechanism to input features
+        attention_layer = MultiHeadAttention(num_heads=self.num_heads, key_dim=X_train.shape[2], dropout=self.dropout)(input_layer, input_layer)  # Apply attention mechanism to input features
+        #attention_layer = Attention()([input_layer, input_layer])  # Apply attention mechanism to input features
         lstm_layer = LSTM(self.units, dropout=self.dropout)(attention_layer)
         output_layer = Dense(y_train.shape[1])(lstm_layer)
 
@@ -290,6 +295,9 @@ class LSTMRegressionWithAttention(object):
 
         # Compile the model
         model.compile(loss='mse', optimizer=keras.optimizers.Adam(learning_rate=self.lr), metrics=['accuracy'])
+        
+        # Plot model architecture
+        plot_model(model, to_file='LSTMDecoder_attn.png', show_shapes=True)
 
         # Fit the model
         early_stopping = EarlyStopping(monitor='val_loss', patience=self.patience, verbose=self.verbose, mode='min')
@@ -304,7 +312,8 @@ class LSTMRegressionWithAttention(object):
                       use_multiprocessing=True, callbacks=[early_stopping])
 
         self.model = model
-    
+
+
     def predict(self, X_test):
         """
         Predict outcomes using trained LFADS Decoder

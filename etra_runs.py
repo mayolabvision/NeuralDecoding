@@ -73,7 +73,7 @@ if style==0: #SISO
         X_test = np.concatenate((Xmt_test_pca, Xfef_test_pca), axis=2)
 
     elif pcType==2:
-        X_train, X_valid, X_test, n_components, pve = helpers.do_pca(X_train[:,:,these_neurons],X_valid[:,:,these_neurons],X_test[:,:,these_neurons],explain_var=0.5)
+        X_train, X_valid, X_test, n_components, pve = helpers.do_pca(X_train[:,:,these_neurons],X_valid[:,:,these_neurons],X_test[:,:,these_neurons],explain_var=0.1)
 
     t1=time.time()
     if m==7:
@@ -137,8 +137,8 @@ elif style==1: #MISO
         return np.mean(get_R2(yva,y_valid_predicted_lstm))
 
     pbounds = {
-        'mt_units': (50, 300),
-        'fef_units': (50, 300),
+        'mt_units': (50, 600),
+        'fef_units': (50, 600),
         'mt_dropout': (0.1, 0.75),
         'fef_dropout': (0.1, 0.75),
         'batch_size': (64, 512),
@@ -176,8 +176,8 @@ elif style==2: # attention layer
     from special_decoders import LSTMDecoder_attn
     Xtr, Xva, Xte, ytr, yva, yte = X_train, X_valid, X_test, y_train, y_valid, y_test
 
-    def lstm_evaluate(num_units, frac_dropout, batch_size, n_epochs):
-        model_lstm=LSTMDecoder_attn(units=int(num_units),dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),workers=workers)
+    def lstm_evaluate(num_units, frac_dropout, batch_size, n_epochs, num_heads):
+        model_lstm=LSTMDecoder_attn(units=int(num_units),dropout=float(frac_dropout),batch_size=int(batch_size),num_epochs=int(n_epochs),num_heads=int(num_heads),workers=workers)
         model_lstm.fit(Xtr, ytr)
         y_valid_predicted_lstm = model_lstm.predict(Xva)
         return np.mean(get_R2(yva,y_valid_predicted_lstm))
@@ -186,20 +186,22 @@ elif style==2: # attention layer
         'num_units': (50, 600),
         'frac_dropout': (0.1, 0.75),
         'batch_size': (64, 512),
-        'n_epochs': (5, 21)
+        'n_epochs': (5, 21),
+        'num_heads': (1,24)
     }
     acquisition_function = UtilityFunction(kind="ucb", kappa=10)
     BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-    BO.maximize(init_points=1, n_iter=1,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+    BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
     
     best_params = BO.max['params']
     num_units = int(best_params['num_units'])
     frac_dropout = float(best_params['frac_dropout'])
     batch_size = int(best_params['batch_size'])
     n_epochs = int(best_params['n_epochs'])
-    prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs}
+    num_heads = int(best_params['num_heads'])
+    prms = {'num_units': num_units, 'frac_dropout': frac_dropout, 'batch_size': batch_size, 'n_epochs': n_epochs, 'num_heads': num_heads}
     
-    model = LSTMDecoder_attn(units=num_units, dropout=frac_dropout, batch_size=batch_size, num_epochs=n_epochs, workers=workers, verbose=1)
+    model = LSTMDecoder_attn(units=num_units, dropout=frac_dropout, batch_size=batch_size, num_epochs=n_epochs, num_heads = num_heads, workers=workers, verbose=1)
     
     model.fit(Xtr,ytr,tb=1) 
     train_time = time.time()-t1

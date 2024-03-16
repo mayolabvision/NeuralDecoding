@@ -27,9 +27,11 @@ print('# of jobs: {}'.format(len(jobs)))
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
     jobID = int(sys.argv[3])
+    init_points, n_iter = 1, 2
 else: # hpc cluster
     workers = int(os.environ['SLURM_CPUS_PER_TASK'])
     jobID = int(os.environ["SLURM_ARRAY_TASK_ID"])
+    init_points, n_iter = 10, 10
     blah = 0
 
 job = jobs[jobID + (j*1000)]
@@ -94,7 +96,7 @@ if style==0: #SISO
         }
         acquisition_function = UtilityFunction(kind="ucb", kappa=10)
         BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-        BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+        BO.maximize(init_points=init_points, n_iter=n_iter,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
         
         best_params = BO.max['params']
         num_units = int(best_params['num_units'])
@@ -146,7 +148,7 @@ elif style==1: #MISO
     }
     acquisition_function = UtilityFunction(kind="ucb", kappa=10)
     BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-    BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+    BO.maximize(init_points=init_points, n_iter=n_iter,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
     
     best_params = BO.max['params']
     mt_units = int(best_params['mt_units'])
@@ -191,7 +193,7 @@ elif style==2: # attention layer
     }
     acquisition_function = UtilityFunction(kind="ucb", kappa=10)
     BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-    BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+    BO.maximize(init_points=init_points, n_iter=n_iter,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
     
     best_params = BO.max['params']
     num_units = int(best_params['num_units'])

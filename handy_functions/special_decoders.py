@@ -23,6 +23,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from tensorflow.keras.callbacks import EarlyStopping
 from keras.regularizers import l2
+from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
+from tensorflow.keras.models import Model
+from tensorflow.keras.utils import plot_model
 
 ##################### DECODER FUNCTIONS ##########################
 
@@ -175,7 +178,7 @@ class LSTMRegression_multiInput_singleOutput(object):
         y: numpy 2d array of shape [n_samples, n_outputs]
             This is the outputs that are being predicted
         """
-        X_mt_train, X_mt_val, X_fef_train, X_fef_val, y_train, y_val = train_test_split(X_mt, X_fef, y, test_size=test_size, shuffle=True)
+        X_mt_train, X_mt_val, X_fef_train, X_fef_val, y_train, y_val = train_test_split(X_mt, X_fef, y, test_size=test_size, random_state=42)
 
         # Define the LSTM model
         input_mt = Input(shape=(X_mt_train.shape[1], X_mt_train.shape[2]), name='mt_input')
@@ -226,10 +229,41 @@ class LSTMRegression_multiInput_singleOutput(object):
         y_test_predicted = self.model.predict([X_mt_test, X_fef_test])  # Make predictions
         return y_test_predicted
 
-class LSTMRegressionWithAttention(LSTMRegression):
-    def __init__(self, units=400, lr=0.001, dropout=0, num_epochs=10, verbose=0, batch_size=128, workers=1, patience=3):
-        super().__init__(units=units, lr=lr, dropout=dropout, num_epochs=num_epochs, verbose=verbose,
-                         batch_size=batch_size, workers=workers, patience=patience)
+class LSTMRegressionWithAttention(object):
+    """
+    Class for the LSTM Decoder
+
+    Parameters
+    ----------
+    units: integer, optional, default 400
+        Number of hidden units in each layer
+
+    dropout: decimal, optional, default 0
+        Proportion of units that get dropped out
+
+    num_epochs: integer, optional, default 10
+        Number of epochs used for training
+
+    verbose: binary, optional, default=0
+        Whether to show progress of the fit after each epoch
+
+    batch_size: integer, optional, default 128
+        Batch size for training
+
+    workers: integer, optional, default 1
+        Number of workers for data loading during training
+    """
+
+    def __init__(self, units=400, lr=0.001, dropout=0, num_epochs=10, verbose=0, batch_size=128, workers=1,patience=3):
+        self.units = units
+        self.lr = lr
+        self.dropout = dropout
+        self.num_epochs = num_epochs
+        self.verbose = verbose
+        self.batch_size = batch_size
+        self.workers = workers
+        self.patience = patience
+        self.model = None
 
     def fit(self, X, y, tb=0, test_size=0.2):
         """
@@ -244,7 +278,7 @@ class LSTMRegressionWithAttention(LSTMRegression):
         y_train: numpy 2d array of shape [n_samples, n_outputs]
             This is the outputs that are being predicted
         """
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, shuffle=True)
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, random_state=42)
 
         # Define the LSTM model with attention mechanism
         input_layer = Input(shape=(X_train.shape[1], X_train.shape[2]))

@@ -852,7 +852,7 @@ class LSTMRegression(object):
         y_train: numpy 2d array of shape [n_samples, n_outputs]
             This is the outputs that are being predicted
         """
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, shuffle=True)
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, random_state=42)
 
         # Define the LFADS model
         input_layer = Input(shape=(X_train.shape[1], X_train.shape[2]))

@@ -73,7 +73,7 @@ if style==0: #SISO
         X_test = np.concatenate((Xmt_test_pca, Xfef_test_pca), axis=2)
 
     elif pcType==2:
-        X_train, X_valid, X_test, n_components, pve = helpers.do_pca(X_train[:,:,these_neurons],X_valid[:,:,these_neurons],X_test[:,:,these_neurons],explain_var=0.9)
+        X_train, X_valid, X_test, n_components, pve = helpers.do_pca(X_train[:,:,these_neurons],X_valid[:,:,these_neurons],X_test[:,:,these_neurons],explain_var=0.5)
 
     t1=time.time()
     if m==7:
@@ -173,7 +173,7 @@ elif style==2: # attention layer
     X_train,X_test,X_valid,_,_,_,y_train,y_test,y_valid,_,_,_,c_train,c_test = result  
     
     t1=time.time()
-    from decoders import LSTMDecoder_attn
+    from special_decoders import LSTMDecoder_attn
     Xtr, Xva, Xte, ytr, yva, yte = X_train, X_valid, X_test, y_train, y_valid, y_test
 
     def lstm_evaluate(num_units, frac_dropout, batch_size, n_epochs):
@@ -190,7 +190,7 @@ elif style==2: # attention layer
     }
     acquisition_function = UtilityFunction(kind="ucb", kappa=10)
     BO = BayesianOptimization(lstm_evaluate, pbounds, verbose=verb, allow_duplicate_points=True,random_state=m)
-    BO.maximize(init_points=10, n_iter=10,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
+    BO.maximize(init_points=1, n_iter=1,acquisition_function=acquisition_function)#, n_jobs=workers) 10,10
     
     best_params = BO.max['params']
     num_units = int(best_params['num_units'])

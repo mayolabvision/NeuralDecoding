@@ -239,7 +239,7 @@ jobname = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,
 pfile = helpers.make_directory((jobname),0)
 
 output = {0: 'position', 1: 'velocity', 2: 'acceleration'}.get(o)
-metric = {0: 'siso', 1: 'miso'}.get(style)
+metric = {0: 'siso', 1: 'miso', 2: 'attn'}.get(style)
 pcaFlag = {0: 'none', 1: 'sep', 2: 'tog'}.get(pcType)
 
 result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,metric,pcaFlag,prms,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     

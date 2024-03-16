@@ -150,12 +150,11 @@ class LSTMRegression_multiInput_singleOutput(object):
         Number of workers for data loading during training
     """
 
-    def __init__(self, mt_units=400, fef_units=400, mt_dropout=0, fef_dropout=0, lr=0.001, num_epochs=10, verbose=0, batch_size=128, workers=1, patience=3):
+    def __init__(self, mt_units=400, fef_units=400, mt_dropout=0, fef_dropout=0, num_epochs=10, verbose=0, batch_size=128, workers=1, patience=5):
         self.mt_units = mt_units
         self.fef_units = fef_units
         self.mt_dropout = mt_dropout
         self.fef_dropout = fef_dropout
-        self.lr = lr
         self.num_epochs = num_epochs
         self.verbose = verbose
         self.batch_size = batch_size
@@ -163,7 +162,7 @@ class LSTMRegression_multiInput_singleOutput(object):
         self.patience = patience
         self.model = None
 
-    def fit(self, X_mt, X_fef, y, test_size=0.2):
+    def fit(self, X_mt, X_fef, y, test_size=0.1):
         """
         Train LSTM Decoder
 
@@ -178,26 +177,23 @@ class LSTMRegression_multiInput_singleOutput(object):
         y: numpy 2d array of shape [n_samples, n_outputs]
             This is the outputs that are being predicted
         """
-        X_mt_train, X_mt_val, X_fef_train, X_fef_val, y_train, y_val = train_test_split(X_mt, X_fef, y, test_size=test_size, random_state=42)
+        X_mt_train, X_mt_val, X_fef_train, X_fef_val, y_train, y_val = train_test_split(X_mt, X_fef, y, test_size=test_size, shuffle=False)
 
         # Define the LSTM model
         input_mt = Input(shape=(X_mt_train.shape[1], X_mt_train.shape[2]), name='mt_input')
         input_fef = Input(shape=(X_fef_train.shape[1], X_fef_train.shape[2]), name='fef_input')
 
-        shared_lstm = LSTM(self.units, dropout=self.dropout)
+        lstm_layer_mt = LSTM(self.mt_units, dropout=self.mt_dropout, name='lstm_mt')(input_mt)  # Remove return_sequences=True
+        lstm_layer_fef = LSTM(self.fef_units, dropout=self.fef_dropout, name='lstm_fef')(input_fef)  # Remove return_sequences=True
 
-        lstm_layer_mt = shared_lstm(input_mt)  
-        lstm_layer_fef = shared_lstm(input_fef)  
+        concatenated_layers = concatenate([lstm_layer_mt, lstm_layer_fef], name='concatenated_features')  # Concatenate the outputs of both LSTM layers
 
-        concatenated_layers = concatenate([lstm_layer_mt, lstm_layer_fef], name='concatenated_features')  
-
-        dense_layer = Dense(self.dense_units, activation='relu')(concatenated_layers)
-        output_layer = Dense(y_train.shape[1], name='output')(dense_layer)
+        output_layer = Dense(y_train.shape[1], name='output')(concatenated_layers)
 
         model = Model(inputs=[input_mt, input_fef], outputs=output_layer)
 
         # Compile the model
-        model.compile(loss='mse',optimizer=keras.optimizers.Adam(learning_rate=self.lr),metrics=['accuracy']) #Set loss function and optimizer
+        model.compile(loss='mse', optimizer='rmsprop', metrics=['accuracy'])
 
         # Plot model architecture
         plot_model(model, to_file='LSTMDecoder_miso.png', show_shapes=True)

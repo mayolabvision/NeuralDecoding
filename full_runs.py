@@ -15,7 +15,10 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 
 # Get job parameters
 PARAMS = 'params.txt'
-s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,em,num_repeats,j = helpers.get_params(int(sys.argv[1]),PARAMS)
+s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,num_repeats,j = helpers.get_params(int(sys.argv[1]),PARAMS)
+
+print(fo)
+print(num_repeats)
 
 jobs = helpers.get_jobArray(fo,num_repeats)
 print('# of jobs: {}'.format(len(jobs)))
@@ -26,6 +29,9 @@ if int(sys.argv[2])==0: # local computer
 else: # hpc cluster
     workers = int(os.environ['SLURM_CPUS_PER_TASK'])
     jobID = int(os.environ["SLURM_ARRAY_TASK_ID"])
+
+
+print(j)
 
 job = jobs[jobID + (j*1000)]
 outer_fold = job[0]
@@ -75,7 +81,7 @@ if tp != 1.0:
 #y_test_zscore_avg = helpers.avgEye_perCondition(c_train,y_zscore_train,c_test,y_zscore_test)
 
 #######################################################################################################################################
-result,prms = run_model(m,o,em,1,workers,X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid)
+result,prms = run_model(m,o,1,workers,int(sys.argv[2]),X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid)
 y_train_predicted, y_test_predicted, train_time, test_time = result
 #y_train_predicted, y_test_predicted, y_shuf_predicted, y_mean_predicted, y_base_predicted, r2_train, rho_train, r2_test, rho_test, r2_shuf, rho_shuf, r2_mean, rho_mean, r2_base, rho_base, train_time, test_time = result
 
@@ -107,12 +113,11 @@ if m==3:
 
 #######################################################################################################################################
 cwd = os.getcwd()
-jobname = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,em,num_repeats)
+jobname = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,num_repeats)
 pfile = helpers.make_directory((jobname),0)
 
 output = {0: 'position', 1: 'velocity', 2: 'acceleration'}.get(o)
-metric = {0: 'R2', 1: 'rho', 2: 'RMSE'}.get(em)
-result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,metric,prms,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     
+result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,prms,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     
 
 truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-o{:d}-fold{:0>1d}".format(s, t, dto, df, o, outer_fold)
 file_path = os.path.join(cwd, 'runs/actual', truth_file + '.pickle')

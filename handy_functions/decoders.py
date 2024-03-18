@@ -839,7 +839,7 @@ class LSTMRegression(object):
         self.patience = patience
         self.model = None
 
-    def fit(self, X, y, tb=0, test_size=0.2):
+    def fit(self, X, y, tb=0, test_size=0.1):
         """
         Train LFADS Decoder
 
@@ -852,7 +852,7 @@ class LSTMRegression(object):
         y_train: numpy 2d array of shape [n_samples, n_outputs]
             This is the outputs that are being predicted
         """
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, random_state=42)
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, shuffle=False)
 
         # Define the LFADS model
         input_layer = Input(shape=(X_train.shape[1], X_train.shape[2]))

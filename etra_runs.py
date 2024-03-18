@@ -113,7 +113,7 @@ if style==0: #SISO
 
         model = LSTMDecoder(units=num_units, dropout=frac_dropout, batch_size=batch_size, num_epochs=n_epochs, workers=workers, verbose=1)
     
-    model.fit(Xtr,ytr,tb=1) 
+    model.fit(Xtr,ytr,tb=0) 
     train_time = time.time()-t1
     y_train_predicted=model.predict(Xtr) # train accuracy 
    
@@ -205,7 +205,7 @@ elif style==2: # attention layer
     
     model = LSTMDecoder_attn(units=num_units, dropout=frac_dropout, batch_size=batch_size, num_epochs=n_epochs, num_heads = num_heads, workers=workers, verbose=1)
     
-    model.fit(Xtr,ytr,tb=1) 
+    model.fit(Xtr,ytr,tb=0) 
     train_time = time.time()-t1
     y_train_predicted=model.predict(Xtr) # train accuracy 
    

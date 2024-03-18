@@ -35,14 +35,12 @@ def get_params(i,params):
     tp  = float(line[11])/100   # proportion of training data to train model on
     o   = int(line[12])         # output type (0 = pos, 1 = vel, 2 = acc)
     m   = int(line[13])         # model type
-    st  = int(line[14])         # evaluation metric
-    pc  = int(line[15])         # whether PCA is done to input data (0 = none, 1 = seperate, 2 = together)
-    r   = int(line[16])         # number of repeats
-    j   = int(line[17])         # jobID multiplier
-    return s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,st,pc,r,j
+    r   = int(line[14])         # number of repeats
+    j   = int(line[15])         # jobID multiplier
+    return s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r,j
 
-def make_name(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,st,pc,r):
-    return "{:05d}-s{:02d}-t{}-dto{:03d}-df{}-wi{:03d}-dti{:03d}-nn{:02d}-nm{:02d}-nf{:02d}-fo{:02d}-tp{:03d}-o{}-m{:02d}-stl{}-pc{}-r{:04d}".format(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,int(tp*100),o,m,st,pc,r)
+def make_name(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r):
+    return "{:05d}-s{:02d}-t{}-dto{:03d}-df{}-wi{:03d}-dti{:03d}-nn{:02d}-nm{:02d}-nf{:02d}-fo{:02d}-tp{:03d}-o{}-m{:02d}-r{:04d}".format(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,int(tp*100),o,m,r)
 
 def make_directory(jobname,nameOnly):
     cwd = os.getcwd()

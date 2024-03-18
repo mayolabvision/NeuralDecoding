@@ -520,8 +520,9 @@ class DenseNNRegression(object):
         Whether to show progress of the fit after each epoch
     """
 
-    def __init__(self,units=400,dropout=0,batch_size=128,num_epochs=10,verbose=0,workers=1,patience=5):
+    def __init__(self,units=400,lr=0.001,dropout=0,batch_size=128,num_epochs=10,verbose=0,workers=1,patience=5):
          self.dropout=dropout
+         self.lr = lr
          self.batch_size=batch_size
          self.num_epochs=num_epochs
          self.verbose=verbose
@@ -571,7 +572,7 @@ class DenseNNRegression(object):
         model.add(Dense(y_train.shape[1])) #Add final dense layer (connected to outputs)
 
         #Fit model (and set fitting parameters)
-        model.compile(loss='mse',optimizer='adam',metrics=['accuracy']) #Set loss function and optimizer
+        model.compile(loss='mse',optimizer=keras.optimizers.Adam(learning_rate=self.lr),metrics=['accuracy']) #Set loss function and optimizer
         #if keras_v1:
         #    model.fit(X_flat_train,y_train,nb_epoch=self.num_epochs,verbose=self.verbose) #Fit the model
         #else:
@@ -728,8 +729,9 @@ class GRURegression(object):
         Whether to show progress of the fit after each epoch
     """
 
-    def __init__(self,units=400,dropout=0,batch_size=128,num_epochs=10,verbose=0,workers=1,patience=5):
+    def __init__(self,units=400,lr=0.001,dropout=0,batch_size=128,num_epochs=10,verbose=0,workers=1,patience=5):
          self.units=units
+         self.lr = lr
          self.dropout=dropout
          self.batch_size=batch_size
          self.num_epochs=num_epochs
@@ -766,7 +768,7 @@ class GRURegression(object):
         model.add(Dense(y_train.shape[1]))
 
         #Fit model (and set fitting parameters)
-        model.compile(loss='mse',optimizer='rmsprop',metrics=['accuracy']) #Set loss function and optimizer
+        model.compile(loss='mse',optimizer=keras.optimizers.Adam(learning_rate=self.lr),metrics=['accuracy']) #Set loss function and optimizer
         
         early_stopping = EarlyStopping(monitor='val_loss', patience=self.patience, verbose=self.verbose, mode='min')
 

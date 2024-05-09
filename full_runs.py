@@ -22,17 +22,22 @@ if int(sys.argv[2])==0: # local computer
     jobID = int(sys.argv[3])
     arraySize = 100
     datapath = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/' 
-else: # hpc cluster
+elif int(sys.argv[2])==1: # hpc cluster, batch job
     workers = int(os.environ['SLURM_CPUS_PER_TASK'])
     jobID = int(os.environ["SLURM_ARRAY_TASK_ID"])
     arraySize = int(os.environ["SLURM_ARRAY_TASK_COUNT"])
+    datapath = '/ix1/pmayo/neuraldecoding/' 
+else: # hpc cluster, interactive job
+    workers = int(2)
+    jobID = int(sys.argv[3])
+    arraySize = 100
     datapath = '/ix1/pmayo/neuraldecoding/' 
 
 # TO-DO: add a line that looks for whether result for this job exists or not, skips to next if it does
 jobs = helpers.get_jobArray(fo,num_repeats)
 print('# of jobs: {}'.format(len(jobs)))
 
-if len(jobs) < arraySize:
+if len(jobs) <= arraySize:
     job_arr = [jobID]
 else:
     runs_per_job = int(len(jobs)/arraySize) 

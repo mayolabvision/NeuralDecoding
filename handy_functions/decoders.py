@@ -25,6 +25,9 @@ from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
 from keras.regularizers import l2
 from tensorflow.keras.models import Model
 from tensorflow.keras.utils import plot_model
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 ##################### DECODER FUNCTIONS ##########################
 
@@ -32,6 +35,7 @@ from tensorflow.keras.utils import plot_model
 from scipy.signal import wiener
 from sklearn import linear_model
 import numpy as np
+
 
 class WienerFilterRegression(object):
 

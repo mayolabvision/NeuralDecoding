@@ -12,6 +12,7 @@ from metrics import get_R2, get_rho, get_RMSE
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings('ignore', 'Solver terminated early.*')
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # Get job parameters
 PARAMS = 'params.txt'

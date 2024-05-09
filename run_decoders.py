@@ -6,6 +6,7 @@ from bayes_opt import BayesianOptimization, UtilityFunction
 
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 warnings.filterwarnings('ignore', 'Solver terminated early.*')
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 def fitModel(model,Xtr,ytr,t1,Xte,yte):
     # model training

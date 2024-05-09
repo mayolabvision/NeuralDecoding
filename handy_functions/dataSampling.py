@@ -5,15 +5,11 @@ import pandas as pd
 import os.path
 import os
 
-cwd = os.getcwd()
-sys.path.append(cwd+"/handy_functions") # go to parent dir
-
-from preprocessing_funcs import get_spikes_with_history
 from sklearn.model_selection import KFold
 import helpers
 
-def get_neuronRepeats(sess_nodt,nn=99,nm=99,nf=99,num_repeats=1):
-    units = pd.read_csv(cwd+'/datasets/units/units-'+sess_nodt+'.csv')
+def get_neuronRepeats(sess_nodt,data_folder,nn=99,nm=99,nf=99,num_repeats=1):
+    units = pd.read_csv(data_folder+'datasets/units/units-'+sess_nodt+'.csv')
 
     if nn==99:
         if nm==99:
@@ -26,11 +22,11 @@ def get_neuronRepeats(sess_nodt,nn=99,nm=99,nf=99,num_repeats=1):
             nf = nf
 
         nn = nm + nf
-        file_path = os.path.join(cwd, 'datasets', 'dsplt', f"dsplt-{sess_nodt}-nm{nm}-nf{nf}-r{num_repeats}.pickle")
+        file_path = os.path.join(data_folder, 'datasets', 'dsplt', f"dsplt-{sess_nodt}-nm{nm}-nf{nf}-r{num_repeats}.pickle")
         condition = 'nm'
 
     else:
-        file_path = os.path.join(cwd, 'datasets', 'dsplt', f"dsplt-{sess_nodt}-nn{nn}-r{num_repeats}.pickle")
+        file_path = os.path.join(data_folder, 'datasets', 'dsplt', f"dsplt-{sess_nodt}-nn{nn}-r{num_repeats}.pickle")
         condition = 'nn'
     
     if not os.path.isfile(file_path):
@@ -62,8 +58,8 @@ def get_neuronRepeats(sess_nodt,nn=99,nm=99,nf=99,num_repeats=1):
 
     return neurons_perRepeat,nn,nm,nf
 
-def get_trainSection(cond, sess_nodt, outfold, tp=1.0, num_repeats=1):
-    file_path = os.path.join(cwd, 'datasets', 'dsplt', f"tsplt-{sess_nodt}-tp{int(tp*100)}-fo{outfold}-r{num_repeats}.pickle")
+def get_trainSection(cond, sess_nodt, outfold, dto=50, tp=1.0, num_repeats=1):
+    file_path = os.path.join(cwd, 'datasets', 'dsplt', f"tsplt-{sess_nodt}-dto{dto}-tp{int(tp*100)}-fo{outfold}-r{num_repeats}.pickle")
   
     if not os.path.isfile(file_path):
         print('sampling observations')

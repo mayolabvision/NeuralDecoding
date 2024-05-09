@@ -2,15 +2,15 @@
 #SBATCH --cluster=smp
 #SBATCH --partition=smp
 #SBATCH --job-name=neuraldecoding
-#SBATCH --error=outfiles/error_%A_%a.err
-#SBATCH --output=outfiles/out_%A_%a.out
+#SBATCH --error=/ix1/pmayo/neuraldecoding/outfiles/error_%A_%a.err
+#SBATCH --output=/ix1/pmayo/neuraldecoding/outfiles/out_%A_%a.out
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=knoneman@pitt.edu
-#SBATCH --time=0-09:59:59
-#SBATCH --array=0-9
+#SBATCH --time=0-02:59:59
+#SBATCH --array=0
 
 echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."
 echo "My SLURM_ARRAY_TASK_ID is $SLURM_ARRAY_TASK_ID"

@@ -22,10 +22,7 @@ from preprocessing_funcs import bin_spikes
 from preprocessing_funcs import bin_output
 from preprocessing_funcs import get_spikes_with_history
 
-cwd = os.getcwd()
-data_folder = cwd+'/datasets/'
-
-def mat_to_pickle(filename,dto,wi,dti,downsample_factor=1):
+def mat_to_pickle(filename,dto,wi,dti,data_folder,downsample_factor=1):
     dto = int(dto)
     dti = int(dti)
     df = int(downsample_factor)

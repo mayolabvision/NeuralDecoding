@@ -26,10 +26,11 @@ print('# of jobs: {}'.format(len(jobs)))
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
     jobID = int(sys.argv[3])
+    datapath = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/' 
 else: # hpc cluster
     workers = int(os.environ['SLURM_CPUS_PER_TASK'])
     jobID = int(os.environ["SLURM_ARRAY_TASK_ID"])
-
+    datapath = '/ix1/pmayo/neuraldecoding/' 
 
 print(j)
 
@@ -42,7 +43,7 @@ print(f'fo{outer_fold}-re{repeat}')
 #######################################################################################################################################
 # Do some preprocessing first
 sess,sess_nodt = helpers.get_session(s,t,dto,df,wi,dti)
-neural_data,pos_binned,vel_binned,acc_binned,cond_binned,pp_time = mat_to_pickle('vars-'+sess_nodt+'.mat',dto,wi,dti,df)
+neural_data,pos_binned,vel_binned,acc_binned,cond_binned,pp_time = mat_to_pickle('vars-'+sess_nodt+'.mat',dto,wi,dti,datapath,df)
 pp_time = pp_time/pos_binned.shape[0]
 
 toss_inds = helpers.remove_overlapBins(cond_binned, wi, dto)  # Remove bins of overlapping trials
@@ -62,7 +63,7 @@ else:
     neuron_repeat = repeat
 
 # Pull out neurons, either all of them or randomly sampled
-neurons_perRepeat, nn, nm, nf = dataSampling.get_neuronRepeats(sess_nodt,nn=nn,nm=nm,nf=nf,num_repeats=neuron_repeats)
+neurons_perRepeat, nn, nm, nf = dataSampling.get_neuronRepeats(sess_nodt,datapath,nn=nn,nm=nm,nf=nf,num_repeats=neuron_repeats)
 these_neurons = neurons_perRepeat[neuron_repeat]
 
 # Split the data into train:valid:test sets and normalize
@@ -71,7 +72,7 @@ X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_va
 
 # Train on a subset of the observations, based on tp
 if tp != 1.0: 
-    obs_perRepeat = dataSampling.get_trainSection(c_train,sess_nodt,outer_fold,tp=tp,num_repeats=tp_repeats)
+    obs_perRepeat = dataSampling.get_trainSection(c_train,sess_nodt,outer_fold,dto=dto,tp=tp,num_repeats=tp_repeats)
     these_obs = obs_perRepeat[tp_repeat]
     X_train = X_train[these_obs,:,:]
     X_flat_train, y_train, y_zscore_train, c_train = [arr[these_obs, :] for arr in (X_flat_train, y_train, y_zscore_train, c_train)]
@@ -112,7 +113,6 @@ if m==3:
     y_test_predicted = y_test_predicted*np.std(y_train, axis=0)
 
 #######################################################################################################################################
-cwd = os.getcwd()
 jobname = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,num_repeats)
 pfile = helpers.make_directory((jobname),0)
 
@@ -120,12 +120,12 @@ output = {0: 'position', 1: 'velocity', 2: 'acceleration'}.get(o)
 result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,prms,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     
 
 truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-o{:d}-fold{:0>1d}".format(s, t, dto, df, o, outer_fold)
-file_path = os.path.join(cwd, 'runs/actual', truth_file + '.pickle')
+file_path = os.path.join(datapath, 'runs/actual', truth_file + '.pickle')
 if not os.path.isfile(file_path):
     print('saving recorded eye traces')
     with open(file_path, 'wb') as p:
         pickle.dump([y_test, c_test], p)
 
-with open(cwd+pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
+with open(datapath+pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
     pickle.dump([result,y_test_predicted],p)
 

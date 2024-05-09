@@ -116,20 +116,6 @@ def do_pca(X_train, X_valid, X_test, explain_var=0.9):
     return X_train_pca, X_valid_pca, X_test_pca, n_components, explained_variance_ratio_cumsum
 
 
-def get_possibleOuts(pos,vel,acc,cond):
-    r_eye,p_eye = cart2pol(pos[:,0],pos[:,1])
-    pos_pol = np.concatenate((r_eye[:,np.newaxis],p_eye[:,np.newaxis]), axis=1)
-    rr_eye,pp_eye = cart2pol(vel[:,0],vel[:,1])
-    vel_pol = np.concatenate((rr_eye[:,np.newaxis],pp_eye[:,np.newaxis]), axis=1)
-    rrr_eye,ppp_eye = cart2pol(acc[:,0],acc[:,1])
-    acc_pol = np.concatenate((rrr_eye[:,np.newaxis],ppp_eye[:,np.newaxis]), axis=1)
-    
-    print(cond[0:10,:])
-
-
-    print(pos_pol.shape)
-    print(blah)
-
 def remove_overlapBins(cond,wi,dto):
     num_bins = round(int(wi)/int(dto))
     trials = np.unique(cond[:, 0])
@@ -284,61 +270,3 @@ def normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_v
     return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid
 
 ##########################################################################
-
-def checkdir(name):
-    if not os.path.exists(name):
-        os.makedirs(name)
-    return
-
-def get_bins(bn):
-    #bins = [[6,1,6],[3,1,0],[0,1,0]]#,[6,1,0],[0,1,6],[1,1,0],[2,1,0],[3,1,0],[1,0,0],[2,0,0],[3,0,0]]
-    #return bins[bn][0],bins[bn][1],bins[bn][2]
-    bins = [bn,1,0]
-    return bins[0],bins[1],bins[2]
-
-def get_bins_fromTime(d,bn):
-    binsPre = int(bn/d)
-    binsCur = int(1)
-    binsPost = int(0)
-    return binsPre,binsCur,binsPost
-
-def get_foldneuronPairs(i,params):
-    s,t,dto,df,o,wi,dti,m,nm,nf,fo,fi,r = get_params(i,params)
-    pairs = list(product(range(fo), range(r)))
-    return pairs
-
-def get_foldneuronmodelPairs(fo,r,mdls):
-    pairs = list(product(range(fo), range(r), range(mdls)))
-    return pairs
-
-def get_foldneuronmodelrepeatPairs_twoBrainAreas(fo,r,nm,nf,mdls):
-    if nm>0 and nf>0:
-        nPairs = list(product(range(fo), range(0,nm,2), range(0,nf,2), range(1,r+1), range(mdls)))
-    elif nm==0:
-        nPairs = list(product(range(fo), [0], range(0,nf,2), range(1,r+1), range(mdls))) 
-    elif nf==0:
-        nPairs = list(product(range(fo), range(0,nm,2), [0], range(1,r+1), range(mdls)))
-   
-    # Filter out pairs where values in index 1 and 2 both equal 0
-    nPairs = [pair for pair in nPairs if not (pair[1] == 0 and pair[2] == 0)]
-
-    return nPairs
-
-def get_modelneuronfoldrepeatPairs(fo,r,nm,nf,mdls):
-    nPairs = list(product(range(mdls), range(0,nm+nf+1,5), range(fo), range(1,r+1)))
-    nPairs = [pair for pair in nPairs if not (pair[1] == 0)]
-
-    return nPairs
-
-def get_neuronCombos(i,params):
-    s,t,d,m,o,nm,nf,bn,fo,fi,r = get_params(i,params)
-    if nm>0 & nf>0:
-        pairs = list(product(range(0,nm,2), range(0,nf,2)))
-    elif nm==0:
-        pairs = list(product([0],range(0,nf,2))) 
-    elif nf==0:
-        pairs = list(product(range(0,nm,2), [0])) 
-    return pairs
-
-
-

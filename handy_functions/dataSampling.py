@@ -22,7 +22,7 @@ def get_neuronRepeats(sess_nodt,data_folder,nn=99,nm=99,nf=99,num_repeats=1):
             nf = nf
 
         nn = nm + nf
-        file_path = os.path.join(data_folder, 'datasets', 'dsplt', f"dsplt-{sess_nodt}-nm{nm}-nf{nf}-r{num_repeats}.pickle")
+        file_path = os.path.join(data_folder, 'datasets','dsplt', f"dsplt-{sess_nodt}-nm{nm}-nf{nf}-r{num_repeats}.pickle")
         condition = 'nm'
 
     else:
@@ -58,8 +58,8 @@ def get_neuronRepeats(sess_nodt,data_folder,nn=99,nm=99,nf=99,num_repeats=1):
 
     return neurons_perRepeat,nn,nm,nf
 
-def get_trainSection(cond, sess_nodt, outfold, dto=50, tp=1.0, num_repeats=1):
-    file_path = os.path.join(cwd, 'datasets', 'dsplt', f"tsplt-{sess_nodt}-dto{dto}-tp{int(tp*100)}-fo{outfold}-r{num_repeats}.pickle")
+def get_trainSection(cond, sess_nodt, outfold, data_folder, dto=50, tp=1.0, num_repeats=1):
+    file_path = os.path.join(data_folder, 'datasets', 'dsplt', f"tsplt-{sess_nodt}-dto{dto}-tp{int(tp*100)}-fo{outfold}-r{num_repeats}.pickle")
   
     if not os.path.isfile(file_path):
         print('sampling observations')

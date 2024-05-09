@@ -28,7 +28,7 @@ def mat_to_pickle(filename,dto,wi,dti,data_folder,downsample_factor=1):
     df = int(downsample_factor)
 
     # Load in variables from datafile
-    data         =  io.loadmat(data_folder+'vars/'+filename)
+    data         =  io.loadmat(data_folder+'datasets/vars/'+filename)
     out_times    =  data['vels_times'] # times at which velocities were recorded
     out_times    =  np.squeeze(out_times)
     out_times    =  out_times[wi-dto:]
@@ -37,8 +37,8 @@ def mat_to_pickle(filename,dto,wi,dti,data_folder,downsample_factor=1):
     t_start  =  out_times[0] # time to start extracting data
     t_end    =  out_times[-1] # time to finish extracting data
 
-    if os.path.exists(data_folder+'/pickles/outs-'+filename[5:-4]+'-dto{:03d}-df{}.pickle'.format(dto,df)):
-        with open(data_folder+'pickles/outs-'+filename[5:-4]+'-dto{:03d}-df{}.pickle'.format(dto,df),'rb') as f:
+    if os.path.exists(data_folder+'datasets/pickles/outs-'+filename[5:-4]+'-dto{:03d}-df{}.pickle'.format(dto,df)):
+        with open(data_folder+'datasets/pickles/outs-'+filename[5:-4]+'-dto{:03d}-df{}.pickle'.format(dto,df),'rb') as f:
             pos_binned,vel_binned,acc_binned,cond_binned,out_edges,t1_elapsed=pickle.load(f,encoding='latin1')
         print('loaded outputs')
         
@@ -60,12 +60,12 @@ def mat_to_pickle(filename,dto,wi,dti,data_folder,downsample_factor=1):
         acc_binned  =  outs_binned[:,4:6]
         cond_binned =  outs_binned[:,6:]
 
-        with open(data_folder+'pickles/outs-'+filename[5:-4]+'-dto{:03d}-df{}.pickle'.format(dto,df),'wb') as f:
+        with open(data_folder+'datasets/pickles/outs-'+filename[5:-4]+'-dto{:03d}-df{}.pickle'.format(dto,df),'wb') as f:
             pickle.dump([pos_binned,vel_binned,acc_binned,cond_binned,out_edges,t1_elapsed],f)
         print('pickled outputs')
 
-    if os.path.exists(data_folder+'/pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti)):
-        with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti),'rb') as f:
+    if os.path.exists(data_folder+'datasets/pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti)):
+        with open(data_folder+'datasets/pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti),'rb') as f:
             neural_data,t2_elapsed=pickle.load(f,encoding='latin1')
         print('loaded inputs')
     
@@ -81,7 +81,7 @@ def mat_to_pickle(filename,dto,wi,dti,data_folder,downsample_factor=1):
         neural_data = get_spikes_with_history(spike_times,wi,dti,out_edges)
         t2_elapsed = time.time()-t2
 
-        with open(data_folder+'pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti),'wb') as f:
+        with open(data_folder+'datasets/pickles/ins-'+filename[5:-4]+'-dto{:03d}-wi{:03d}-dti{:03d}.pickle'.format(dto,wi,dti),'wb') as f:
             pickle.dump([neural_data,t2_elapsed],f)
         print('pickled inputs')
 

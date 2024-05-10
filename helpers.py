@@ -39,8 +39,37 @@ def get_params(i,params):
     j   = int(line[15])         # jobID multiplier
     return s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r,j
 
+def get_params_etra(i,params):
+    line = np.loadtxt(params)[i]
+    print(line)
+    s   = int(line[1])          # session number
+    t   = int(line[2])          # time configuration around target motion onset 
+    dto = int(line[3])          # output bin width
+    df  = int(line[4])          # downsample factor
+    wi  = int(line[5])          # input time window
+    dti = int(line[6])          # input bin width
+    nn  = int(line[7])          # number of total neurons
+    nm  = int(line[8])          # number of MT neurons
+    nf  = int(line[9])          # number of FEF neurons
+    fo  = int(line[10])          # number of outer cross-validation folds 
+    tp  = float(line[11])/100   # proportion of training data to train model on
+    o   = int(line[12])         # output type (0 = pos, 1 = vel, 2 = acc)
+    m   = int(line[13])         # model type
+    st  = int(line[14])         # model style
+    pc  = int(line[15])         # pca type
+    r   = int(line[16])         # number of repeats
+    j   = int(line[17])         # jobID multiplier
+    return s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,st,pc,r,j
+
 def make_name(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r,dirpath):
     run_name = "{:05d}-s{:02d}-t{}-dto{:03d}-df{}-wi{:03d}-dti{:03d}-nn{:02d}-nm{:02d}-nf{:02d}-fo{:02d}-tp{:03d}-o{}-m{:02d}-r{:04d}".format(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,int(tp*100),o,m,r)
+    run_path = dirpath+'runs/'+run_name
+    if not os.path.isdir(run_path):
+        os.makedirs(run_path,exist_ok=True)
+    return run_path
+
+def make_name_etra(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,st,pc,r,dirpath):
+    run_name = "{:05d}-s{:02d}-t{}-dto{:03d}-df{}-wi{:03d}-dti{:03d}-nn{:02d}-nm{:02d}-nf{:02d}-fo{:02d}-tp{:03d}-o{}-m{:02d}-st{}-pc{}-r{:04d}".format(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,int(tp*100),o,m,st,pc,r)
     run_path = dirpath+'runs/'+run_name
     if not os.path.isdir(run_path):
         os.makedirs(run_path,exist_ok=True)

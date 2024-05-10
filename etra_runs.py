@@ -20,8 +20,8 @@ warnings.filterwarnings('ignore', 'Solver terminated early.*')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # Get job parameters
-PARAMS = 'other_params/params.txt'
-s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,num_repeats,_ = helpers.get_params(int(sys.argv[1]),PARAMS)
+PARAMS = 'other_params/params_etra.txt'
+s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,pcType,num_repeats,_ = helpers.get_params_etra(int(sys.argv[1]),PARAMS)
 
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
@@ -80,7 +80,7 @@ for j, job in enumerate(job_arr):
 
     ########################
     # Before running decoder, check that this run doesn't already exist.
-    pfile = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,num_repeats,datapath)
+    pfile = helpers.make_name_etra(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,pcType,num_repeats,datapath)
     decoder_path = pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle'
     if os.path.exists(decoder_path):
         print("ALREADY RAN")

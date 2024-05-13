@@ -32,12 +32,12 @@ elif int(sys.argv[2])==1: # hpc cluster, batch job
     workers = int(os.environ['SLURM_CPUS_PER_TASK'])
     jobID = int(os.environ["SLURM_ARRAY_TASK_ID"])
     arraySize = int(os.environ["SLURM_ARRAY_TASK_COUNT"])
-    datapath = '/ix1/pmayo/neuraldecoding/' 
+    datapath = '/ix1/pmayo/decoding/' 
 else: # hpc cluster, interactive job
     workers = int(2)
     jobID = int(sys.argv[3])
     arraySize = 100
-    datapath = '/ix1/pmayo/neuraldecoding/' 
+    datapath = '/ix1/pmayo/decoding/' 
 
 # TO-DO: add a line that looks for whether result for this job exists or not, skips to next if it does
 jobs = helpers.get_jobArray(fo,num_repeats)
@@ -168,7 +168,6 @@ for j, job in enumerate(job_arr):
     pcaFlag = {0: 'none', 1: 'sep', 2: 'tog'}.get(pcType)
     
     result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,metric,pcaFlag,prms,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     
-
     truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-o{:d}-fold{:0>1d}".format(s, t, dto, df, o, outer_fold)
     file_path = os.path.join(datapath, 'runs/actual', truth_file + '.pickle')
     if not os.path.isfile(file_path):

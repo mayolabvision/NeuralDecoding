@@ -51,7 +51,7 @@ def run_siso(m,o,verb,workers,comp,X_train,X_test,X_valid,X_flat_train,X_flat_te
         init_points = 1
         n_iter     = 1
     else:
-        init_points = 10
+        init_points = 5
         n_iter     = 10
 
 ##################### WF ############################

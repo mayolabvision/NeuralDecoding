@@ -26,7 +26,7 @@ s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,style,pcType,num_repeats,_ = helpers.get_pa
 if int(sys.argv[2])==0: # local computer
     workers = multiprocessing.cpu_count() 
     jobID = int(sys.argv[3])
-    arraySize = 100
+    arraySize = 1
     datapath = '/Users/kendranoneman/Projects/mayo/NeuralDecoding/' 
 elif int(sys.argv[2])==1: # hpc cluster, batch job
     workers = int(os.environ['SLURM_CPUS_PER_TASK'])
@@ -36,7 +36,7 @@ elif int(sys.argv[2])==1: # hpc cluster, batch job
 else: # hpc cluster, interactive job
     workers = int(2)
     jobID = int(sys.argv[3])
-    arraySize = 100
+    arraySize = 10
     datapath = '/ix1/pmayo/decoding/' 
 
 # TO-DO: add a line that looks for whether result for this job exists or not, skips to next if it does

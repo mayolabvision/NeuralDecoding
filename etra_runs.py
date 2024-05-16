@@ -175,7 +175,11 @@ for j, job in enumerate(job_arr):
         with open(file_path, 'wb') as p:
             pickle.dump([y_test, c_test], p)
     
-    with open(pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
-        pickle.dump([result,y_test_predicted],p)
+    if outer_fold==0 and repeat==0:
+        with open(pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
+            pickle.dump([result,y_test_predicted],p)
+    else:
+        with open(pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
+            pickle.dump([result],p)
     print('------------')
 

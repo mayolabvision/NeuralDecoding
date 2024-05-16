@@ -10,7 +10,7 @@
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=knoneman@pitt.edu
 #SBATCH --time=0-23:59:59
-#SBATCH --array=0-99
+#SBATCH --array=0
 
 echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."
 echo "My SLURM_ARRAY_TASK_ID is $SLURM_ARRAY_TASK_ID"
@@ -21,7 +21,7 @@ module load gcc/8.2.0
 module load python/anaconda3.9-2021.11
 conda activate decoding
 
-#python full_runs.py $1 1
-python etra_runs.py $1 1 
+python full_runs.py $1 1
+#python etra_runs.py $1 1 
 
 echo "DONE"

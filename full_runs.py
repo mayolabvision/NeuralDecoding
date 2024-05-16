@@ -27,12 +27,12 @@ elif int(sys.argv[2])==1: # hpc cluster, batch job
     workers = int(os.environ['SLURM_CPUS_PER_TASK'])
     jobID = int(os.environ["SLURM_ARRAY_TASK_ID"])
     arraySize = int(os.environ["SLURM_ARRAY_TASK_COUNT"])
-    datapath = '/ix1/pmayo/neuraldecoding/' 
+    datapath = '/ix1/pmayo/decoding/' 
 else: # hpc cluster, interactive job
     workers = int(2)
     jobID = int(sys.argv[3])
     arraySize = 100
-    datapath = '/ix1/pmayo/neuraldecoding/' 
+    datapath = '/ix1/pmayo/decoding/' 
 
 # TO-DO: add a line that looks for whether result for this job exists or not, skips to next if it does
 jobs = helpers.get_jobArray(fo,num_repeats)

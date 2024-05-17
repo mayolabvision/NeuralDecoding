@@ -153,7 +153,7 @@ def remove_overlapBins(cond,wi,dto):
             ind_thisTrial = np.where(cond[:, 0] == trial)[0]
             toss_inds.append(ind_thisTrial[:num_bins-1])
 
-    toss_inds = np.array(toss_inds).flatten()
+    toss_inds = np.concatenate(toss_inds)
     if inbt_trials.size != 0:
         toss_inds = np.sort(np.concatenate((toss_inds,inbt_trials)))
 

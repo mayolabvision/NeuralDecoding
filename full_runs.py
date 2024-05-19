@@ -52,15 +52,8 @@ for j, job in enumerate(job_arr):
     outer_fold = thisjob[0]
     repeat = thisjob[1]
     print(f'fo{outer_fold}-re{repeat}')
-
-    # Do some preprocessing first
+    
     sess,sess_nodt = helpers.get_session(s,t,dto,df,wi,dti)
-    neural_data,pos_binned,vel_binned,acc_binned,cond_binned,pp_time = mat_to_pickle('vars-'+sess_nodt+'.mat',dto,wi,dti,datapath,df)
-    pp_time = pp_time/pos_binned.shape[0]
-
-    toss_inds = helpers.remove_overlapBins(cond_binned, wi, dto)  # Remove bins of overlapping trials
-    neural_data, pos_binned, vel_binned, acc_binned, cond_binned = (
-        np.delete(arr, toss_inds, axis=0) for arr in [neural_data, pos_binned, vel_binned, acc_binned, cond_binned])
 
     # Determine which 'regime' we are in
     if tp != 1.0:
@@ -87,6 +80,14 @@ for j, job in enumerate(job_arr):
         print('------------')
         continue
     ########################
+
+    # Do some preprocessing first
+    if 'neural_data' not in locals():
+        neural_data,pos_binned,vel_binned,acc_binned,cond_binned,pp_time = mat_to_pickle('vars-'+sess_nodt+'.mat',dto,wi,dti,datapath,df)
+        pp_time = pp_time/pos_binned.shape[0]
+        toss_inds = helpers.remove_overlapBins(cond_binned, wi, dto)  # Remove bins of overlapping trials
+        neural_data, pos_binned, vel_binned, acc_binned, cond_binned = (
+            np.delete(arr, toss_inds, axis=0) for arr in [neural_data, pos_binned, vel_binned, acc_binned, cond_binned])
 
     # Split the data into train:valid:test sets and normalize
     result = helpers.get_data(neural_data[:,:,these_neurons],o,pos_binned,vel_binned,acc_binned,cond_binned,fo,outer_fold,wi/dti)

@@ -1,0 +1,3 @@
+0000 29 0 050 1 400 050 99 99 99 10 100 0 0 001 0  #lineID,sess,timeConfig,outBW,downsampFactor,inTW,inBW,numNeurons,numMT,numFEF,outerFolds,perTrainData,output,model,numRepeats,jobArray
+0001 29 0 050 1 400 050 99 99 99 10 100 1 0 001 0  
+0002 29 0 050 1 400 050 99 99 99 10 100 2 0 001 0  

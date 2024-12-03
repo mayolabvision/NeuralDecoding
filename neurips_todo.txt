@@ -1,0 +1,25 @@
+#### Decoders to run: ####
+
+6 models: WF, SVR, DNN, RNN, GRU, LSTM
+1. Basic performance of each with all of the data (R2, reconstructed traces, etc...)
+    - 6 models (0,3,4,5,6,7)
+    - 10 sessions
+2. Show that more data = better performance, as expected
+    - range of percentages of total number of trials
+    - 6 models
+    - 10 sessions
+3. Cross-decoding across stimulus conditions
+    - target speeds, stimulus contrasts, target directions
+    - 6 models
+    - 10 sessions
+4. Cross-decoding across behavioral ypes
+    - trials with "purest" pursuit, trials with more velocity variability
+    - 6 models
+    - 10 sessions
+
+#### Plots: ####
+1. Intro/intuition, behavioral variability
+2. Pipeline of methods
+3. True/predicted eye traces, R2 of each model with all of the data, R2 increases with more data
+4. Confusion matrix --> 3 conceptual drawings (train/test sets), 3 plots (speed, contrast, direction)
+5. Confusion matrix --> 1 conceptual drawing (train/test sets), 1 plot (saccadey, pursuity, mixed)

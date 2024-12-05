@@ -61,14 +61,83 @@ motionSpeeds = cellfun(@(q) str2double(q(strfind(q,'s')+2:strfind(q,'s')+3)), {e
 %trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","PursuitOnset","TargetMotionOnset","RxnTime","EyeTraces"]);
 %trialTbl.TrialName = categorical(string(trialTbl.TrialName)); trialTbl.TrialType = categorical(string(trialTbl.TrialType));
 
+% eye acceleration variability
+eyeAcc_std = cellfun(@(q) mean(std(q{3})), eyes_new, 'uni',0);
+[~,idx_rank] = sort(cell2mat(eyeAcc_std));
+idx_rank = [idx_rank (1:length(idx_rank)).'];
+
+av_rank = zeros(size(eyeAcc_std));
+av_rank(idx_rank(:,1)) = idx_rank(:,2);
+
 %trls = {exp_clean.dataMaestroPlx.trType}.';
 %cellfun(@(q) str2double(q(9:11)), trls(:,2), 'uni', 0)  cellfun(@(q) str2double(q(15:16)), trls(:,2), 'uni', 0)
-tt = [{exp_clean.dataMaestroPlx.trName}.' {exp_clean.dataMaestroPlx.trType}.' motionDirs stimContrasts motionSpeeds stimOnsets eyes_new];
-trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","Contrast","Speed","TargetMotionOnset","EyeTraces"]);
+tt = [{exp_clean.dataMaestroPlx.trName}.' {exp_clean.dataMaestroPlx.trType}.' motionDirs stimContrasts motionSpeeds stimOnsets eyeAcc_std num2cell(av_rank) eyes_new];
+trialTbl = cell2table(tt,'VariableNames',["TrialName","TrialType","Direction","Contrast","Speed","TargetMotionOnset","EyeAcc_std","AV_rank","EyeTraces"]);
 trialTbl.TrialNum = cellfun(@(q) str2double(q(end-3:end)), trialTbl.TrialName, 'uni', 1);
 trialTbl = movevars(trialTbl,'TrialNum','After','TrialName');
 trialTbl.TrialName = categorical(string(trialTbl.TrialName)); trialTbl.TrialType = categorical(string(trialTbl.TrialType));
 
+%% testing that AV metric is sound
+% av_10 = trialTbl.EyeAcc_std(trialTbl.Speed==10);
+% av_20 = trialTbl.EyeAcc_std(trialTbl.Speed==20);
+% 
+% f1 = figure;
+% t = tiledlayout(1,2);
+% t.TileSpacing = 'loose';
+% t.Padding = 'compact';
+% 
+% nexttile
+% [datamean, datastd] = histStyle(av_10,'10 deg/s','AV','Number of Trials',[0 max(av_10)],[0 200],20,1,[0 0 0],[1 1 1]);
+% nexttile
+% [datamean, datastd] = histStyle(av_20,'20 deg/s','AV','Number of Trials',[0 max(av_20)],[0 200],20,1,[0 0 0],[1 1 1]);
+
+lo_trl = 16;
+hi_trl = 34;
+
+f1 = figure;
+t = tiledlayout(3,2);
+
+x = (1:length(trialTbl.EyeTraces{1}{1}))-preint;
+
+nexttile
+plot(x,trialTbl.EyeTraces{lo_trl}{1}(:,1),'b-')
+hold on
+plot(x,trialTbl.EyeTraces{lo_trl}{1}(:,2),'r-')
+ylabel('eye position (deg)')
+title(sprintf('lo AV trial (trial %d, AV = %1.2f)',lo_trl,trialTbl.EyeAcc_std(lo_trl)))
+
+nexttile
+plot(x,trialTbl.EyeTraces{hi_trl}{1}(:,1),'b-')
+hold on
+plot(x,trialTbl.EyeTraces{hi_trl}{1}(:,2),'r-')
+title(sprintf('hi AV trial (trial %d, AV = %1.2f)',hi_trl,trialTbl.EyeAcc_std(hi_trl)))
+
+nexttile
+plot(x,trialTbl.EyeTraces{lo_trl}{2}(:,1),'b-')
+hold on
+plot(x,trialTbl.EyeTraces{lo_trl}{2}(:,2),'r-')
+ylabel('eye velocity (deg/s)')
+
+nexttile
+plot(x,trialTbl.EyeTraces{hi_trl}{2}(:,1),'b-')
+hold on
+plot(x,trialTbl.EyeTraces{hi_trl}{2}(:,2),'r-')
+
+nexttile
+plot(x,trialTbl.EyeTraces{lo_trl}{3}(:,1),'b-')
+hold on
+plot(x,trialTbl.EyeTraces{lo_trl}{3}(:,2),'r-')
+ylabel('eye acceleration (deg/s^2)')
+
+nexttile
+plot(x,trialTbl.EyeTraces{hi_trl}{3}(:,1),'b-')
+hold on
+plot(x,trialTbl.EyeTraces{hi_trl}{3}(:,2),'r-')
+
+xlabel(t,'time aligned to target motion onset (ms)')
+
+
+%%
 contConditions = cell(size(trialTbl,1),5);
 for i=1:length(trialTbl.Contrast)
     contConditions{i,1} = repmat(trialTbl.TrialNum(i),preint+postint,1);

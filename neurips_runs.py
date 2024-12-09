@@ -84,7 +84,7 @@ for j, job in enumerate(job_arr):
             num_conds = 6
 
         for tr in range(num_conds):
-            trls_tr, rows_tr, cond_tr = crossDecoding.get_trials(cond_binned,num_trls,num_repeats=num_repeats,condition=parameters[3],cond_ind=tr,repeat=repeat)
+            trls_tr, rows_tr, cond_tr = crossDecoding.get_trials(cond_binned,num_trls,num_repeats=num_repeats,condition=param,cond_ind=tr,repeat=repeat)
             for te in range(num_conds):
                 trls_te, rows_te, cond_te = crossDecoding.get_trials(cond_binned,num_trls,num_repeats=num_repeats,condition=param,cond_ind=te,repeat=repeat)
 
@@ -136,14 +136,14 @@ for j, job in enumerate(job_arr):
                 output = {0: 'position', 1: 'velocity', 2: 'acceleration'}.get(o)
                 result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,prms,param,cond_tr,cond_te,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     
 
-                truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-o{:d}-fold{:0>1d}".format(s, t, dto, df, o, outer_fold)
-                file_path = os.path.join(datapath, 'runs_neurips/actual', truth_file + '.pickle')
+                truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-o{:d}-fold{:0>1d}-{}-tr{}_te{}".format(s, t, dto, df, o, outer_fold, param, tr, te)
+                file_path = os.path.join(datapath, 'runs/actual', truth_file + '.pickle')
                 if not os.path.isfile(file_path):
                     print('saving recorded eye traces')
                     with open(file_path, 'wb') as p:
                         pickle.dump([y_test, c_test], p)
                 
-                with open(pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
+                with open(pfile+'/fold{:0>1d}_repeat{:0>3d}_{}_tr{}_te{}'.format(outer_fold,repeat,param,tr,te)+'.pickle','wb') as p:
                     pickle.dump([result,y_test_predicted],p)
                 print('------------')
 

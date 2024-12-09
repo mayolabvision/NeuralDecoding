@@ -63,7 +63,7 @@ def get_params_etra(i,params):
 
 def make_name(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r,dirpath):
     run_name = "{:05d}-s{:02d}-t{}-dto{:03d}-df{}-wi{:03d}-dti{:03d}-nn{:02d}-nm{:02d}-nf{:02d}-fo{:02d}-tp{:03d}-o{}-m{:02d}-r{:04d}".format(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,int(tp*100),o,m,r)
-    run_path = dirpath+'runs_neurips/'+run_name
+    run_path = dirpath+'runs/'+run_name
     if not os.path.isdir(run_path):
         os.makedirs(run_path,exist_ok=True)
     return run_path

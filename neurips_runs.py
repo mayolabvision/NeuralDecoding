@@ -5,10 +5,11 @@ from joblib import Parallel, delayed
 from psutil import cpu_count
 import multiprocessing
 import helpers
-from handy_functions import dataSampling
+from handy_functions import dataSampling, crossDecoding
 from run_decoders import run_model
 from matlab_funcs import mat_to_pickle
 from metrics import get_R2, get_rho, get_RMSE
+from itertools import combinations
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings('ignore', 'Solver terminated early.*')
@@ -55,31 +56,9 @@ for j, job in enumerate(job_arr):
     
     sess,sess_nodt = helpers.get_session(s,t,dto,df,wi,dti)
 
-    # Determine which 'regime' we are in
-    if tp != 1.0:
-        tp_repeats = num_repeats
-        tp_repeat = repeat
-        neuron_repeats = 1
-        neuron_repeat = 0
-    else:
-        tp_repeats = 1
-        tp_repeat = 0
-        neuron_repeats = num_repeats
-        neuron_repeat = repeat
-
     # Pull out neurons, either all of them or randomly sampled
-    neurons_perRepeat, nn, nm, nf = dataSampling.get_neuronRepeats(sess_nodt,datapath,nn=nn,nm=nm,nf=nf,num_repeats=neuron_repeats)
-    these_neurons = neurons_perRepeat[neuron_repeat]
-
-    ########################
-    # Before running decoder, check that this run doesn't already exist.
-    pfile = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,num_repeats,datapath)
-    decoder_path = pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle'
-    if os.path.exists(decoder_path):
-        print("ALREADY RAN")
-        print('------------')
-        continue
-    ########################
+    neurons_perRepeat, nn, nm, nf = dataSampling.get_neuronRepeats(sess_nodt,datapath,nn=nn,nm=nm,nf=nf,num_repeats=1)
+    these_neurons = neurons_perRepeat[0]
 
     # Do some preprocessing first
     if 'neural_data' not in locals():
@@ -89,63 +68,82 @@ for j, job in enumerate(job_arr):
         neural_data, pos_binned, vel_binned, acc_binned, cond_binned = (
             np.delete(arr, toss_inds, axis=0) for arr in [neural_data, pos_binned, vel_binned, acc_binned, cond_binned])
 
-    # Split the data into train:valid:test sets and normalize
-    result = helpers.get_data(neural_data[:,:,these_neurons],o,pos_binned,vel_binned,acc_binned,cond_binned,fo,outer_fold,wi/dti)
-    X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_train,c_test = result  
-
-    # Train on a subset of the observations, based on tp
-    if tp != 1.0: 
-        obs_perRepeat = dataSampling.get_trainSection(c_train,sess_nodt,outer_fold,datapath,dto=dto,tp=tp,num_repeats=tp_repeats)
-        these_obs = obs_perRepeat[tp_repeat]
-        X_train = X_train[these_obs,:,:]
-        X_flat_train, y_train, y_zscore_train, c_train = [arr[these_obs, :] for arr in (X_flat_train, y_train, y_zscore_train, c_train)]
-
-    # calculate baseline eye traces (averaged within each condition)
-    #y_test_avg = helpers.avgEye_perCondition(c_train,y_train,c_test,y_test)
-    #y_test_zscore_avg = helpers.avgEye_perCondition(c_train,y_zscore_train,c_test,y_zscore_test)
-
-    ##############################
-    result,prms = run_model(m,o,1,workers,int(sys.argv[2]),X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid)
-    y_train_predicted, y_test_predicted, train_time, test_time = result
-
-    if m != 3:
-        y_train_data = y_train
-        y_test_data = y_test
+    if o==0:
+        y = pos_binned
+    elif o==1:
+        y = vel_binned
     else:
-        y_train_data = y_zscore_train
-        y_test_data = y_zscore_test
+        y = acc_binned
 
-    R2_train = get_R2(y_train_data, y_train_predicted)
-    rho_train = get_rho(y_train_data, y_train_predicted)
-    rmse_train = get_RMSE(y_train_data, y_train_predicted)
-    R2_test = get_R2(y_test_data, y_test_predicted)
-    rho_test = get_rho(y_test_data, y_test_predicted)
-    rmse_test = get_RMSE(y_test_data, y_test_predicted)
+    num_trls = crossDecoding.get_trial_num(cond_binned)
+    parameters = ['contrast', 'speed', 'direction', 'AV']
+    for param in parameters:
+        if param in ['contrast', 'speed', 'AV']:
+            num_conds = 3
+        elif param in ['direction']:
+            num_conds = 6
 
-    print("R2 (test)    =  {}".format(R2_test))
-    print("rho (test)   =  {}".format(rho_test))
-    print("RMSE (test)  =  {}".format(rmse_test))
-    print("R2 (train)   =  {}".format(R2_train))
-    print("rho (train)  =  {}".format(rho_train))
-    print("RMSE (train) =  {}".format(rmse_train))
+        for tr in range(num_conds):
+            trls_tr, rows_tr, cond_tr = crossDecoding.get_trials(cond_binned,num_trls,num_repeats=num_repeats,condition=parameters[3],cond_ind=tr,repeat=repeat)
+            for te in range(num_conds):
+                trls_te, rows_te, cond_te = crossDecoding.get_trials(cond_binned,num_trls,num_repeats=num_repeats,condition=param,cond_ind=te,repeat=repeat)
 
-    #helpers.plot_first_column_lines(y_test, y_test_predicted)
+                ########################
+                # Before running decoder, check that this run doesn't already exist.
+                pfile = helpers.make_name(int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,num_repeats,datapath)
+                decoder_path = pfile+'/fold{:0>1d}_repeat{:0>3d}_{}_tr{}_te{}'.format(outer_fold,repeat,param,tr,te)+'.pickle'
+                if os.path.exists(decoder_path):
+                    print("ALREADY RAN")
+                    print('------------')
+                    continue
+                ########################
 
-    if m==3:
-        y_test_predicted = y_test_predicted*np.std(y_train, axis=0)
+                result = helpers.get_data_xd(neural_data[rows_tr,:,:],neural_data[rows_te,:,:],y[rows_tr,:],y[rows_te,:],cond_binned[rows_tr,:],cond_binned[rows_te,:],outer_fold)
+                X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_train,c_test = result  
 
-    #######################################################################
-    output = {0: 'position', 1: 'velocity', 2: 'acceleration'}.get(o)
-    result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,prms,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     
+                ##############################
+                result,prms = run_model(m,o,1,workers,int(sys.argv[2]),X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid)
+                y_train_predicted, y_test_predicted, train_time, test_time = result
 
-    truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-o{:d}-fold{:0>1d}".format(s, t, dto, df, o, outer_fold)
-    file_path = os.path.join(datapath, 'runs/actual', truth_file + '.pickle')
-    if not os.path.isfile(file_path):
-        print('saving recorded eye traces')
-        with open(file_path, 'wb') as p:
-            pickle.dump([y_test, c_test], p)
-    
-    with open(pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
-        pickle.dump([result,y_test_predicted],p)
-    print('------------')
+                if m != 3:
+                    y_train_data = y_train
+                    y_test_data = y_test
+                else:
+                    y_train_data = y_zscore_train
+                    y_test_data = y_zscore_test
+
+                R2_train = get_R2(y_train_data, y_train_predicted)
+                rho_train = get_rho(y_train_data, y_train_predicted)
+                rmse_train = get_RMSE(y_train_data, y_train_predicted)
+                R2_test = get_R2(y_test_data, y_test_predicted)
+                rho_test = get_rho(y_test_data, y_test_predicted)
+                rmse_test = get_RMSE(y_test_data, y_test_predicted)
+
+                print("train: {}, test: {}".format(cond_tr, cond_te))
+                print("R2 (test)    =  {}".format(R2_test))
+                print("rho (test)   =  {}".format(rho_test))
+                print("RMSE (test)  =  {}".format(rmse_test))
+                print("R2 (train)   =  {}".format(R2_train))
+                print("rho (train)  =  {}".format(rho_train))
+                print("RMSE (train) =  {}".format(rmse_train))
+
+                #helpers.plot_first_column_lines(y_test, y_test_predicted)
+
+                if m==3:
+                    y_test_predicted = y_test_predicted*np.std(y_train, axis=0)
+
+                #######################################################################
+                output = {0: 'position', 1: 'velocity', 2: 'acceleration'}.get(o)
+                result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,prms,param,cond_tr,cond_te,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     
+
+                truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-o{:d}-fold{:0>1d}".format(s, t, dto, df, o, outer_fold)
+                file_path = os.path.join(datapath, 'runs_neurips/actual', truth_file + '.pickle')
+                if not os.path.isfile(file_path):
+                    print('saving recorded eye traces')
+                    with open(file_path, 'wb') as p:
+                        pickle.dump([y_test, c_test], p)
+                
+                with open(pfile+'/fold{:0>1d}_repeat{:0>3d}'.format(outer_fold,repeat)+'.pickle','wb') as p:
+                    pickle.dump([result,y_test_predicted],p)
+                print('------------')
 

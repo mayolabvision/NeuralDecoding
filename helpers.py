@@ -63,7 +63,7 @@ def get_params_etra(i,params):
 
 def make_name(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,tp,o,m,r,dirpath):
     run_name = "{:05d}-s{:02d}-t{}-dto{:03d}-df{}-wi{:03d}-dti{:03d}-nn{:02d}-nm{:02d}-nf{:02d}-fo{:02d}-tp{:03d}-o{}-m{:02d}-r{:04d}".format(l,s,t,dto,df,wi,dti,nn,nm,nf,fo,int(tp*100),o,m,r)
-    run_path = dirpath+'runs/'+run_name
+    run_path = dirpath+'runs_neurips/'+run_name
     if not os.path.isdir(run_path):
         os.makedirs(run_path,exist_ok=True)
     return run_path
@@ -243,7 +243,33 @@ def get_data(X,o,pos_binned,vel_binned,acc_binned,cond,fo,outer_fold,bn,conditio
 
     return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_train,c_test 
 
-def get_fold(outer_fold, bins_before, cond):
+def get_data_xd(Xtr,Xte,ytr,yte,ctr,cte,outer_fold):
+    X_flat_tr=Xtr.reshape(Xtr.shape[0],(Xtr.shape[1]*Xtr.shape[2]))
+    X_flat_te=Xte.reshape(Xte.shape[0],(Xte.shape[1]*Xte.shape[2]))
+    num_examples=Xtr.shape[0]
+    
+    training_ind,valid_ind,testing_ind = get_fold_xd(outer_fold,ctr)
+    training_set = np.isin(ctr[:, 0], np.sort(np.unique(ctr[:, 0]))[training_ind])
+    valid_set = np.isin(ctr[:, 0], np.sort(np.unique(ctr[:, 0]))[valid_ind])
+    testing_set = np.isin(cte[:, 0], np.sort(np.unique(cte[:, 0]))[testing_ind])
+
+    X_train=Xtr[training_set,:,:]
+    X_flat_train=X_flat_tr[training_set,:]
+    y_train=ytr[training_set,:]
+    X_test=Xte[testing_set,:,:]
+    X_flat_test=X_flat_te[testing_set,:]
+    y_test=yte[testing_set,:]
+    X_valid=Xtr[valid_set,:,:]
+    X_flat_valid=X_flat_tr[valid_set,:]
+    y_valid=ytr[valid_set,:]
+    c_train=ctr[training_set,:].astype(int)
+    c_test=cte[testing_set,:].astype(int)
+
+    X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid = normalize_trainTest(X_train,X_flat_train,X_test,X_flat_test,X_valid,X_flat_valid,y_train,y_test,y_valid)
+
+    return X_train,X_test,X_valid,X_flat_train,X_flat_test,X_flat_valid,y_train,y_test,y_valid,y_zscore_train,y_zscore_test,y_zscore_valid,c_train,c_test 
+
+def get_fold(outer_fold, cond):
     trials = np.unique(cond[:,0])
 
     fold_size = len(trials) // 10
@@ -262,6 +288,29 @@ def get_fold(outer_fold, bins_before, cond):
         training_set.append(np.where(np.isin(cond[:,0], train_trls))[0]) 
         validation_set.append(np.where(np.isin(cond[:,0], valid_trls))[0]) 
         testing_set.append(np.where(np.isin(cond[:,0], test_trls))[0]) 
+
+    return training_set[outer_fold], validation_set[outer_fold], testing_set[outer_fold]
+
+def get_fold_xd(outer_fold, cond):
+    num_trials = np.unique(cond[:,0]).shape[0]
+    trials = np.arange(num_trials)
+
+    fold_size = len(trials) // 10
+    fold_rem = len(trials) % 10  # Determine the remainder
+
+    training_set, validation_set, testing_set = [], [], []
+    order = [1,2,3,4,5,6,7,8,9,0]
+    for i in order:
+        fold_start = i * fold_size + min(i, fold_rem)
+        fold_end = (i + 1) * fold_size + min(i + 1, fold_rem)
+        
+        test_trls = [int(num) for num in trials[fold_start:fold_end]]
+        remaining_trls =  [int(num) for num in list(set(trials) - set(test_trls))] 
+        train_trls, valid_trls = train_test_split(remaining_trls, test_size=0.24, shuffle=True, random_state=42)
+        
+        training_set.append(train_trls) 
+        validation_set.append(valid_trls) 
+        testing_set.append(test_trls)
 
     return training_set[outer_fold], validation_set[outer_fold], testing_set[outer_fold]
 

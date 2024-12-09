@@ -138,22 +138,24 @@ xlabel(t,'time aligned to target motion onset (ms)')
 
 
 %%
-contConditions = cell(size(trialTbl,1),5);
+contConditions = cell(size(trialTbl,1),7);
 for i=1:length(trialTbl.Contrast)
     contConditions{i,1} = repmat(trialTbl.TrialNum(i),preint+postint,1);
     contConditions{i,2} = repmat(trialTbl.Contrast(i),preint+postint,1);
     contConditions{i,3} = repmat(trialTbl.Speed(i),preint+postint,1);
     contConditions{i,4} = repmat(trialTbl.Direction(i),preint+postint,1);
     contConditions{i,5} = (1:preint+postint)';
+    contConditions{i,6} = repmat(trialTbl.EyeAcc_std(i),preint+postint,1);
+    contConditions{i,7} = repmat(trialTbl.AV_rank(i),preint+postint,1);
 end
 
-contConditions = [vertcat(contConditions{:,1}) vertcat(contConditions{:,2}) vertcat(contConditions{:,3}) vertcat(contConditions{:,4}) vertcat(contConditions{:,5})];
+contConditions = [vertcat(contConditions{:,1}) vertcat(contConditions{:,2}) vertcat(contConditions{:,3}) vertcat(contConditions{:,4}) vertcat(contConditions{:,5}) vertcat(contConditions{:,6}) vertcat(contConditions{:,7})];
 
 condition_strings = cellstr(num2str(contConditions(:,2:4)));
 unique_conditions = unique(condition_strings);
 condition_map = containers.Map(unique_conditions, 1:numel(unique_conditions));
 
-contConditions(:, 6) = cell2mat(values(condition_map, condition_strings));
+contConditions(:, 8) = cell2mat(values(condition_map, condition_strings));
 
 % Directions in this session (4, corrected by rotation factor)
 dirsdeg  =  sort(unique(trialTbl.Direction)); % direction for each trial 

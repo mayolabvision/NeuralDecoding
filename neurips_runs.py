@@ -76,7 +76,8 @@ for j, job in enumerate(job_arr):
         y = acc_binned
 
     num_trls = crossDecoding.get_trial_num(cond_binned)
-    parameters = ['contrast', 'speed', 'direction', 'AV']
+    #parameters = ['contrast', 'speed', 'direction', 'AV']
+    parameters = ['direction']
     for param in parameters:
         if param in ['contrast', 'speed', 'AV']:
             num_conds = 3
@@ -136,7 +137,7 @@ for j, job in enumerate(job_arr):
                 output = {0: 'position', 1: 'velocity', 2: 'acceleration'}.get(o)
                 result = [int(sys.argv[1]),s,t,dto,df,wi,dti,nn,nm,nf,outer_fold,repeat,tp,y_train.shape[0],output,m,prms,param,cond_tr,cond_te,pp_time,train_time,test_time,R2_train,rho_train,rmse_train,R2_test,rho_test,rmse_test]     
 
-                truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-o{:d}-fold{:0>1d}-{}-tr{}_te{}".format(s, t, dto, df, o, outer_fold, param, tr, te)
+                truth_file = "actual-s{:02d}-t{:01d}-dto{:03d}-df{:01d}-o{:d}-fold{:0>1d}-repeat{:0>3d}-{}-tr{}_te{}".format(s, t, dto, df, o, outer_fold, repeat, param, tr, te)
                 file_path = os.path.join(datapath, 'runs/actual', truth_file + '.pickle')
                 if not os.path.isfile(file_path):
                     print('saving recorded eye traces')
